@@ -1,0 +1,10 @@
+# .gitignore
+__pycache__/
+*.pyc
+.env
+venv/
+old/
+test-files/
+trip-diary-env/
+*.egg-info/
+myenv/
