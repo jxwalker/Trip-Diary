@@ -1,0 +1,115 @@
+{
+  "flights": [
+    {
+      "flight_number": "BA2303",
+      "operator": "Qatar Airways",
+      "class": "Economy",
+      "departure": {
+        "date": "2024-12-20",
+        "time": "16:00",
+        "location": "Heathrow",
+        "terminal": "Terminal 4"
+      },
+      "arrival": {
+        "date": "2024-12-21",
+        "time": "01:40",
+        "location": "Doha",
+        "terminal": null
+      },
+      "baggage_allowance": {
+        "hand_baggage": "1 bag at 23kg (51lbs)",
+        "checked_baggage": "1 bag at 23kg (51lbs)"
+      },
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    },
+    {
+      "flight_number": "BA7000",
+      "operator": "Qatar Airways",
+      "class": "Economy",
+      "departure": {
+        "date": "2024-12-21",
+        "time": "02:30",
+        "location": "Doha",
+        "terminal": null
+      },
+      "arrival": {
+        "date": "2024-12-21",
+        "time": "12:55",
+        "location": "Phuket",
+        "terminal": "Terminal I"
+      },
+      "baggage_allowance": {
+        "hand_baggage": "1 bag at 23kg (51lbs)",
+        "checked_baggage": "1 bag at 23kg (51lbs)"
+      },
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    },
+    {
+      "flight_number": "BA2230",
+      "operator": "British Airways",
+      "class": "World Traveller",
+      "departure": {
+        "date": "2024-12-29",
+        "time": "22:55",
+        "location": "Bangkok",
+        "terminal": null
+      },
+      "arrival": {
+        "date": "2024-12-30",
+        "time": "05:30",
+        "location": "Gatwick",
+        "terminal": "Terminal S"
+      },
+      "baggage_allowance": {
+        "hand_baggage": "1 handbag/laptop bag, plus 1 additional cabin bag",
+        "checked_baggage": "2 bags at 23kg (51lbs)"
+      },
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    }
+  ],
+  "hotels": [
+    {
+      "name": "Phuket Marriott Resort and Spa, Nai Yang Beach",
+      "room_details": "Premium Pool Access, 1 King, Mini fridge, 54sqm /581sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "2024-12-21",
+      "check_out": "2024-12-27",
+      "city": "Phuket",
+      "address": "92, 92/1 Moo 3, Tambol Sakoo, Amphur, Talang",
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    },
+    {
+      "name": "Phuket Marriott Resort and Spa, Nai Yang Beach",
+      "room_details": "Premium Pool Access, 2 Double, Mini fridge, 54sqm/581sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "2024-12-21",
+      "check_out": "2024-12-27",
+      "city": "Phuket",
+      "address": "92, 92/1 Moo 3, Tambol Sakoo, Amphur, Talang",
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    },
+    {
+      "name": "Bangkok Marriott Hotel The Surawongse",
+      "room_details": "1 King, Mini fridge, 37sqm/398sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "2024-12-27",
+      "check_out": "2024-12-29",
+      "city": "Bangkok",
+      "address": "262 Surawong Road, Si Phraya, Bangrak",
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    },
+    {
+      "name": "Bangkok Marriott Hotel The Surawongse",
+      "room_details": "Deluxe Room, 2 Double, Mini fridge, 37sqm/398sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "2024-12-27",
+      "check_out": "2024-12-29",
+      "city": "Bangkok",
+      "address": "262 Surawong Road, Si Phraya, Bangrak",
+      "booking_reference": "MYH9XH",
+      "source_file": "test-ticket.pdf"
+    }
+  ]
+}
