@@ -45,18 +45,25 @@ class ContentValidator:
     @classmethod
     def validate_itinerary_data(cls, itinerary: dict, file_path: str) -> None:
         """Validate required fields in parsed itinerary data."""
-        required_fields = ['booking_reference', 'flights']
+        required_fields = {
+            'booking_reference': 'Booking reference',
+            'passengers': 'Passenger information',
+            'flights': 'Flight information'
+        }
+        
         missing_fields = [
-            field for field in required_fields 
+            field_name for field, field_name in required_fields.items()
             if not itinerary.get(field)
         ]
         
         if missing_fields:
-            raise NoTravelContentError(
-                f"Missing required fields in {file_path}: {', '.join(missing_fields)}"
+            raise ValueError(
+                f"Missing required information in {file_path}: {', '.join(missing_fields)}"
             )
         
+        # Validate that at least one passenger exists
+        if not itinerary.get('passengers'):
+            raise ValueError(f"No passenger information found in {file_path}")
+            
         if not itinerary.get('flights'):
-            raise NoTravelContentError(
-                f"No flight information found in {file_path}"
-            )
+            raise ValueError(f"No flight information found in {file_path}")

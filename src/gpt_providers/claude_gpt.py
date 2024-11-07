@@ -10,17 +10,22 @@ class ClaudeGPT(GPTInterface):
                 raise ValueError("API key not found. Please set the ANTHROPIC_API_KEY environment variable.")
         self.client = Anthropic(api_key=api_key)
 
-    def generate_text(self, prompt: str, system_prompt: str = None) -> str:
+    def generate_text(self, prompt: str, system: str | None = None) -> str:
+        messages = []
+        if system:
+            messages.append({
+                "role": "system",
+                "content": system
+            })
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        
         message = self.client.messages.create(
             model="claude-3-sonnet-20240229",
             max_tokens=4000,
             temperature=0,
-            system=system_prompt if system_prompt else None,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            messages=messages
         )
-        return message.content[0].text
+        return message.content

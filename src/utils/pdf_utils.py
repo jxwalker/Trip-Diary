@@ -1,6 +1,10 @@
 import pypdf
+import warnings
 from pathlib import Path
 from src.models.exceptions import PDFReadError
+
+# Suppress the specific PyPDF warning about wrong pointing objects
+warnings.filterwarnings('ignore', message='.*?pointing.*?')
 
 def extract_text_from_pdf(file_path: str) -> str:
     """Extract text content from a PDF file."""
