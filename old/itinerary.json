@@ -1,0 +1,48 @@
+{
+  "booking_reference": "MYH9XH",
+  "flights": [],
+  "hotels": [
+    {
+      "name": "Phuket Marriott Resort and Spa",
+      "room_details": "Premium Pool Access, 1 King, Mini fridge, 54sqm/581sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "21 Dec 2024",
+      "check_out": "27 Dec 2024",
+      "city": "Nai Yang Beach",
+      "address": "Phuket, 92, 92/1 Moo 3, Tambol Sakoo, Amphur, Talang"
+    },
+    {
+      "name": "Phuket Marriott Resort and Spa",
+      "room_details": "Premium Pool Access, 2 Double, Mini fridge, 54sqm/581sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "21 Dec 2024",
+      "check_out": "27 Dec 2024",
+      "city": "Nai Yang Beach",
+      "address": "Phuket, 92, 92/1 Moo 3, Tambol Sakoo, Amphur, Talang"
+    },
+    {
+      "name": "Bangkok Marriott Hotel The Surawongse",
+      "room_details": "1 King, Mini fridge, 37sqm/398sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "27 Dec 2024",
+      "check_out": "29 Dec 2024",
+      "city": "Bangkok",
+      "address": "262 Surawong Road, SiPhraya, Bangrak"
+    },
+    {
+      "name": "Bangkok Marriott Hotel The Surawongse",
+      "room_details": "Deluxe Room, 2 Double, Mini fridge, 37sqm/398sqft, Living/sitting area, Wireless internet, complimentary, Coffee/tea maker - Full breakfast - Daily breakfast for up to 2 adults per room",
+      "check_in": "27 Dec 2024",
+      "check_out": "29 Dec 2024",
+      "city": "Bangkok",
+      "address": "262 Surawong Road, SiPhraya, Bangrak"
+    }
+  ],
+  "passengers": [
+    {
+      "name": "MRS CLARE WALKER",
+      "baggage_allowance": "Standard Economy allowance"
+    },
+    {
+      "name": "MISS EMMA WALKER",
+      "baggage_allowance": "Standard Economy allowance"
+    }
+  ]
+}
