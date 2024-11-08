@@ -2,6 +2,7 @@ import os
 import openai
 import json
 from src.gpt_interfaces.gpt_interface import GPTInterface
+from typing import Dict, Any
 
 class SambanovaGPT(GPTInterface):
     def __init__(self, api_key: str = None):
@@ -14,12 +15,12 @@ class SambanovaGPT(GPTInterface):
             base_url="https://api.sambanova.ai/v1"
         )
 
-    def generate_text(self, prompt: str, system_prompt: str = None) -> str:
+    def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
         system_content = (
-            f"{system_prompt}\n\n"
+            f"{system}\n\n"
             "IMPORTANT: You must respond with ONLY a valid JSON object. "
             "Do not include any other text, markdown formatting, or explanations."
-        ) if system_prompt else "You are a helpful assistant"
+        ) if system else "You are a helpful assistant"
 
         try:
             response = self.client.chat.completions.create(
@@ -40,14 +41,21 @@ class SambanovaGPT(GPTInterface):
                 end = content.rfind('}') + 1
                 if start >= 0 and end > start:
                     json_str = content[start:end]
-                    # Validate JSON is parseable
-                    json.loads(json_str)
-                    return json_str
+                    return json.loads(json_str)
             except json.JSONDecodeError:
-                print(f"Invalid JSON in response: {content}")
+                logger.error(f"Invalid JSON in response: {content}")
                 
-            return content
+            # Return empty structure on failure
+            return {
+                "flights": [],
+                "hotels": [],
+                "passengers": []
+            }
             
         except Exception as e:
-            print(f"SambaNova API error: {str(e)}")
-            raise
+            logger.error(f"SambaNova API error: {str(e)}")
+            return {
+                "flights": [],
+                "hotels": [],
+                "passengers": []
+            }

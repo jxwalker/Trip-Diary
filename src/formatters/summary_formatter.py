@@ -1,124 +1,73 @@
+# src/formatters/summary_formatter.py
 from typing import List
-from src.models.events import Flight, Hotel, Passenger
-from src.formatters.timeline_formatter import TimelineFormatter
-from src.utils.timer import Timer
-from datetime import datetime, timedelta
+from datetime import datetime
+from ..models.events import Flight, Hotel, Passenger
+from .timeline_formatter import TimelineFormatter
+import re
+from collections import defaultdict
 
 class SummaryFormatter:
+    """Formats travel information into readable summaries."""
+    
     @staticmethod
     def format_summary(flights: List[Flight], hotels: List[Hotel], passengers: List[Passenger]) -> str:
         """Format the complete itinerary summary."""
         summary = []
         
-        # Deduplicate passengers
-        unique_passengers = list(set(passengers))
-        unique_passengers.sort(key=lambda p: (p.last_name.lower(), p.first_name.lower()))
+        # Deduplicate passengers using a dictionary
+        unique_passengers = {
+            f"{p.title}_{p.first_name}_{p.last_name}": p 
+            for p in passengers
+        }.values()
         
         # Add passenger information
         if unique_passengers:
             summary.append("Passengers:")
-            for passenger in unique_passengers:
-                summary.append(SummaryFormatter.format_passenger_details(passenger))
+            for passenger in sorted(unique_passengers, key=lambda p: (p.last_name, p.first_name)):
+                summary.append(f"  {passenger.title} {passenger.first_name} {passenger.last_name}")
+                if passenger.frequent_flyer:
+                    summary.append(f"    Frequent Flyer: {passenger.frequent_flyer}")
             summary.append("")
         
         # Add timeline
         summary.append("Timeline:")
-        summary.append(SummaryFormatter.format_timeline(flights, hotels))
+        summary.append(TimelineFormatter.format_timeline(flights, hotels))
         summary.append("")
         
-        # Add detailed itinerary
+        # Add detailed itinerary section
         summary.append("Detailed Itinerary:")
         summary.append("")
         
-        # Add date range
+        # Add date range if we have events
+        all_dates = []
         if flights:
-            first_date = min(datetime.strptime(f.departure_date, '%Y-%m-%d') for f in flights)
-            last_date = max(datetime.strptime(f.arrival_date, '%Y-%m-%d') for f in flights)
-            summary.append(f"Date Range: {first_date.strftime('%Y-%m-%d')} to {last_date.strftime('%Y-%m-%d')}")
+            all_dates.extend([datetime.strptime(f.departure.date, '%Y-%m-%d') for f in flights])
+            all_dates.extend([datetime.strptime(f.arrival.date, '%Y-%m-%d') for f in flights])
+        if hotels:
+            all_dates.extend([datetime.strptime(h.check_in_date, '%Y-%m-%d') for h in hotels])
+            all_dates.extend([datetime.strptime(h.check_out_date, '%Y-%m-%d') for h in hotels])
+            
+        if all_dates:
+            summary.append(f"Date Range: {min(all_dates).strftime('%Y-%m-%d')} to {max(all_dates).strftime('%Y-%m-%d')}")
             summary.append("")
         
         # Add flights
         if flights:
             summary.append("Flights:")
-            for flight in flights:
+            sorted_flights = sorted(flights, key=lambda f: (f.departure.date, f.departure.time))
+            for flight in sorted_flights:
                 summary.append(SummaryFormatter.format_flight_details(flight))
             summary.append("")
         
-        # Add hotels (deduplicated by room type)
+        # Add hotels
         if hotels:
             summary.append("Hotels:")
-            seen_rooms = set()
-            for hotel in hotels:
-                room_key = f"{hotel.name}_{hotel.room_type}"
-                if room_key not in seen_rooms:
-                    summary.append(SummaryFormatter.format_hotel_details(hotel))
-                    summary.append("")  # Add blank line between hotels
-                    seen_rooms.add(room_key)
+            sorted_hotels = sorted(hotels, key=lambda h: h.check_in_date)
+            for hotel in sorted_hotels:
+                summary.append(SummaryFormatter.format_hotel_details(hotel))
+                summary.append("")
         
         return "\n".join(summary)
-
-    @staticmethod
-    def format_timeline(flights: List[Flight], hotels: List[Hotel]) -> str:
-        """Format a chronological timeline of events."""
-        events = []
-        seen_hotel_events = set()  # Track unique hotel events
-        
-        # Add flight events
-        for flight in flights:
-            events.append({
-                'date': datetime.strptime(flight.departure_date, '%Y-%m-%d'),
-                'time': flight.departure_time,
-                'type': 'DEPARTURE',
-                'details': f"Flight {flight.flight_number} from {flight.departure_location}"
-            })
-            events.append({
-                'date': datetime.strptime(flight.arrival_date, '%Y-%m-%d'),
-                'time': flight.arrival_time,
-                'type': 'ARRIVAL',
-                'details': f"Flight {flight.flight_number} to {flight.arrival_location}"
-            })
-        
-        # Add hotel events (deduplicated)
-        for hotel in hotels:
-            # Create unique identifiers for check-in/out events
-            checkin_key = f"{hotel.name}_{hotel.check_in_date}_IN"
-            checkout_key = f"{hotel.name}_{hotel.check_out_date}_OUT"
-            
-            # Only add check-in if we haven't seen it
-            if checkin_key not in seen_hotel_events:
-                events.append({
-                    'date': datetime.strptime(hotel.check_in_date, '%Y-%m-%d'),
-                    'time': '12:00',  # Default check-in time
-                    'type': 'CHECK-IN',
-                    'details': f"Check in at {hotel.name}, {hotel.city}"
-                })
-                seen_hotel_events.add(checkin_key)
-            
-            # Only add check-out if we haven't seen it
-            if checkout_key not in seen_hotel_events:
-                events.append({
-                    'date': datetime.strptime(hotel.check_out_date, '%Y-%m-%d'),
-                    'time': '11:00',  # Default check-out time
-                    'type': 'CHECK-OUT',
-                    'details': f"Check out from {hotel.name}, {hotel.city}"
-                })
-                seen_hotel_events.add(checkout_key)
-        
-        # Sort events chronologically
-        events.sort(key=lambda x: (x['date'], x['time']))
-        
-        # Format timeline
-        timeline = []
-        current_date = None
-        
-        for event in events:
-            if current_date != event['date'].date():
-                current_date = event['date'].date()
-                timeline.append(f"\n  {current_date.strftime('%Y-%m-%d')}:")
-            
-            timeline.append(f"    {event['time']} - {event['type']}: {event['details']}")
-        
-        return "\n".join(timeline)
 
     @staticmethod
     def format_passenger_details(passenger: Passenger) -> str:
@@ -129,82 +78,56 @@ class SummaryFormatter:
         return "\n".join(details)
 
     @staticmethod
-    def format_details(flights: List[Flight], hotels: List[Hotel]) -> str:
-        """Format the detailed itinerary section."""
-        details = []
-        
-        # Handle empty flights list
-        if not flights:
-            details.append("No flights found in itinerary.")
-            flight_dates = []
-        else:
-            flight_dates = [
-                datetime.strptime(flight.departure_date, '%Y-%m-%d')
-                for flight in flights
-            ]
-        
-        # Handle empty hotels list
-        if not hotels:
-            details.append("No hotels found in itinerary.")
-            hotel_dates = []
-        else:
-            hotel_dates = [
-                datetime.strptime(hotel.check_in_date, '%Y-%m-%d')
-                for hotel in hotels
-            ]
-        
-        # Get date range if any dates exist
-        all_dates = flight_dates + hotel_dates
-        if all_dates:
-            start_date = min(all_dates)
-            end_date = max(all_dates)
-            details.append(f"\nDate Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-        else:
-            details.append("\nNo dates found in itinerary.")
-        
-        if flights:
-            details.append("\nFlights:")
-            for flight in flights:
-                details.append(SummaryFormatter.format_flight_details(flight))
-        
-        if hotels:
-            details.append("\nHotels:")
-            for hotel in hotels:
-                details.append(SummaryFormatter.format_hotel_details(hotel))
-        
-        return "\n".join(details)
-
-    @staticmethod
     def format_flight_details(flight: Flight) -> str:
+        """Format flight details."""
+        # Use TimelineFormatter for consistent location formatting
+        dep_location = TimelineFormatter.format_location(flight.departure.location, flight.departure.terminal)
+        arr_location = TimelineFormatter.format_location(flight.arrival.location, flight.arrival.terminal)
+        
         details = [
             f"  {flight.flight_number} ({flight.operator})",
-            f"  {flight.departure_location} Terminal {flight.departure_terminal or 'N/A'} → {flight.arrival_location} Terminal {flight.arrival_terminal or 'N/A'}",
-            f"  Departure: {flight.departure_date} {flight.departure_time}",
-            f"  Arrival: {flight.arrival_date} {flight.arrival_time}",
-            f"  Class: {flight.travel_class}",
-            f"  Baggage: {flight.checked_baggage}, Hand: {flight.hand_baggage or 'N/A'}"
+            f"  {dep_location} → {arr_location}",
+            f"  Departure: {flight.departure.date} {flight.departure.time}",
+            f"  Arrival: {flight.arrival.date} {flight.arrival.time}",
+            f"  Class: {flight.travel_class}"
         ]
+        
+        if flight.baggage_allowance:
+            baggage = []
+            if flight.baggage_allowance.checked_baggage:
+                baggage.append(f"Baggage: {flight.baggage_allowance.checked_baggage}")
+            if flight.baggage_allowance.hand_baggage:
+                baggage.append(f"Hand: {flight.baggage_allowance.hand_baggage}")
+            if baggage:
+                details.append("  " + ", ".join(baggage))
+        
         return "\n".join(details)
 
     @staticmethod
     def format_hotel_details(hotel: Hotel) -> str:
-        """Format hotel details in a cleaner way."""
-        # Clean up the room features
-        features = hotel.room_features.replace(',', ', ')  # Add spaces after commas
-        features = ' '.join(features.split())  # Remove extra whitespace
-        
-        # Split amenities into bullet points
-        amenities = [a.strip() for a in features.split('-') if a.strip()]
-        
-        details = [
-            f"  {hotel.name} [Booking: {hotel.booking_reference or 'None'}]",
-            f"  {hotel.city}: {hotel.check_in_date} to {hotel.check_out_date}",
-            f"  Room Type: {hotel.room_type}",
-            "  Room Features:"
-        ]
-        
-        # Add amenities as bullet points
-        for amenity in amenities:
-            details.append(f"    • {amenity}")
-        
-        return "\n".join(details)
+        """Format hotel details including numbered rooms."""
+        lines = []
+        lines.append(f"\n{hotel.name} [{hotel.city}] [Booking: {hotel.booking_reference}]")
+        lines.append(f"{hotel.check_in_date} to {hotel.check_out_date}\n")
+
+        # Format each room with a room number
+        for i, room in enumerate(hotel.rooms, 1):
+            lines.append(f"Room {i}:")
+            lines.append(f"  {room.room_type}")
+            if room.bed_type:
+                lines.append(f"  Bed Configuration: {room.bed_type}")
+            if room.size:
+                lines.append(f"  Size: {room.size}")
+            
+            if room.features:
+                lines.append("  Room Features:")
+                for feature in sorted(room.features):
+                    lines.append(f"    • {feature}")
+            
+            if room.meal_plan:
+                lines.append(f"  Meal Plan: {room.meal_plan}")
+            if room.occupancy:
+                lines.append(f"  Occupancy: {room.occupancy}")
+            lines.append("")  # Add blank line between rooms
+
+        return "\n".join(lines)

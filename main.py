@@ -1,64 +1,14 @@
 import argparse
-import json
+import time
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict
 from src.processors.pdf_processor import PDFProcessor
-from src.models.events import Flight, Hotel, Passenger
 from src.formatters.summary_formatter import SummaryFormatter
 from src.gpt_providers.gpt_selector import GPTSelector
-from src.utils.timer import Timer
-import time
+from src.parsers import TravelDataParser
+import logging
 
-def parse_flight(flight_data: Dict) -> Flight:
-    """Parse flight data into Flight object."""
-    departure = flight_data['departure']
-    arrival = flight_data['arrival']
-    baggage = flight_data.get('baggage_allowance', {})
-    
-    return Flight(
-        flight_number=flight_data['flight_number'],
-        operator=flight_data['operator'],
-        booking_reference=flight_data.get('booking_reference', 'N/A'),
-        departure_location=departure['location'],
-        departure_terminal=departure.get('terminal'),
-        departure_date=departure['date'],
-        departure_time=departure['time'],
-        departure_city=departure.get('city'),
-        arrival_location=arrival['location'],
-        arrival_terminal=arrival.get('terminal'),
-        arrival_date=arrival['date'],
-        arrival_time=arrival['time'],
-        arrival_city=arrival.get('city'),
-        travel_class=flight_data.get('class', 'Economy'),
-        checked_baggage=baggage.get('checked_baggage'),
-        hand_baggage=baggage.get('hand_baggage')
-    )
-
-def parse_hotel(hotel_data: Dict) -> Hotel:
-    """Parse hotel data into Hotel object."""
-    try:
-        return Hotel(
-            name=hotel_data['name'],
-            city=hotel_data['city'],
-            check_in_date=hotel_data['check_in_date'],
-            check_out_date=hotel_data['check_out_date'],
-            room_type=hotel_data['room_type'],
-            room_features=hotel_data.get('room_features', ''),
-            booking_reference=hotel_data.get('booking_reference')
-        )
-    except Exception as e:
-        print(f"Error parsing hotel: {str(e)}")
-        print(f"Hotel data: {hotel_data}")
-        return None
-
-def parse_passenger(passenger_data: Dict) -> Passenger:
-    """Parse passenger data into Passenger object."""
-    return Passenger(
-        title=passenger_data['title'],
-        first_name=passenger_data['first_name'],
-        last_name=passenger_data['last_name'],
-        frequent_flyer=passenger_data.get('frequent_flyer')
-    )
+logger = logging.getLogger(__name__)
 
 def main():
     print("Starting Trip Diary Processing...\n")
@@ -83,7 +33,7 @@ def main():
         itineraries, errors, processing_time = PDFProcessor.process_files(args.input, gpt_provider)
         
         if errors:
-            print("\nErrors encountered:")
+            print("\nErrors encountered during PDF processing:")
             for error in errors:
                 print(f"- {error}")
             if not itineraries:
@@ -93,45 +43,35 @@ def main():
             print("\nNo valid itineraries found!")
             return
         
-        # Parse data
+        # Parse all itineraries using the new parser
         flights = []
         hotels = []
         passengers = []
+        parse_errors = []
         
-        # Process each itinerary
         for itinerary in itineraries:
-            # Add passengers
-            for passenger in itinerary.get('passengers', []):
-                try:
-                    passengers.append(parse_passenger(passenger))
-                except Exception as e:
-                    print(f"Error parsing passenger: {e}")
+            parsed_data = TravelDataParser.parse_itinerary(itinerary)
             
-            # Add flights
-            for flight in itinerary.get('flights', []):
-                try:
-                    flight['booking_reference'] = itinerary.get('booking_reference', 'N/A')
-                    flights.append(parse_flight(flight))
-                except Exception as e:
-                    print(f"Error parsing flight: {e}")
+            flights.extend(parsed_data['flights'])
+            hotels.extend(parsed_data['hotels'])
+            passengers.extend(parsed_data['passengers'])
             
-            # Add hotels
-            for hotel in itinerary.get('hotels', []):
-                try:
-                    hotels.append(parse_hotel(hotel))
-                except Exception as e:
-                    print(f"Error parsing hotel: {e}")
+            if parsed_data['errors']:
+                parse_errors.extend(parsed_data['errors'])
         
         # Sort chronologically
-        flights.sort(key=lambda x: (x.departure_date, x.departure_time))
-        hotels.sort(key=lambda x: x.check_in_date)
+        flights = sorted(flights, key=lambda x: (x.departure.date, x.departure.time))
+        hotels = sorted(hotels, key=lambda x: x.check_in_date)
+        passengers = sorted(list(passengers), key=lambda x: (x.last_name, x.first_name))
         
+        # Generate and print summary
         end_time = time.perf_counter()
         total_time = end_time - start_time
         
         print("\nConsolidated Itinerary Summary:\n")
         print(SummaryFormatter.format_summary(flights, hotels, passengers))
         
+        # Print processing summary
         print("\nProcessing Summary:")
         print(f"PDF Processing Time: {processing_time:.2f} seconds")
         print(f"Total Execution Time: {total_time:.2f} seconds")
@@ -141,10 +81,15 @@ def main():
         print(f"Passengers Found: {len(passengers)}")
         
         if errors:
-            print(f"Errors Encountered: {len(errors)}")
+            print(f"PDF Processing Errors: {len(errors)}")
+        if parse_errors:
+            print(f"Data Parsing Errors: {len(parse_errors)}")
+            print("\nParsing Errors encountered:")
+            for error in parse_errors:
+                print(f"- {error}")
             
     except Exception as e:
-        print(f"\nFatal error: {type(e).__name__}: {str(e)}")
+        logger.error(f"Fatal error: {type(e).__name__}: {str(e)}", exc_info=True)
         raise
 
 if __name__ == "__main__":

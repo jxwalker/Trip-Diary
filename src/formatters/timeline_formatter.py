@@ -1,127 +1,119 @@
-from typing import List, Tuple
-from datetime import datetime
+# src/formatters/timeline_formatter.py
+from typing import List
+from datetime import datetime, timedelta
 from ..models.events import TravelEvent, Flight, Hotel
 from ..processors.time_processor import calculate_checkin_time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TimelineFormatter:
     """Formats travel events into a chronological timeline."""
     
+    @staticmethod
+    def calculate_checkin_time(flight: Flight) -> str:
+        """Calculate check-in time for a flight (2 hours before departure)."""
+        try:
+            departure_time = datetime.strptime(flight.departure.time, '%H:%M')
+            checkin_time = departure_time - timedelta(hours=2)
+            return checkin_time.strftime('%H:%M')
+        except Exception as e:
+            logger.error(f"Could not calculate check-in time from {flight.departure.time}: {str(e)}")
+            return "00:00"  # Default time if calculation fails
+    
+    @staticmethod
+    def format_location(location: str, terminal: str | None) -> str:
+        """Format location and terminal consistently."""
+        if not terminal:
+            return location
+        # Remove any existing "Terminal" text to avoid duplication
+        location = location.replace(" Terminal", "")
+        terminal = terminal.replace("Terminal ", "")
+        return f"{location} Terminal {terminal}"
+    
     @classmethod
     def create_flight_events(cls, flight: Flight) -> List[TravelEvent]:
-        """Create check-in, departure, and arrival events for a flight."""
+        """Create check-in, departure and arrival events for a flight."""
         events = []
-        
-        # Calculate check-in time
-        checkin_date, checkin_time = calculate_checkin_time(
-            flight.departure_date, 
-            flight.departure_time
-        )
-        
-        # Add check-in event
-        events.append(TravelEvent(
-            date=checkin_date,
-            time=checkin_time,
-            type='flight_checkin',
-            description=f"Check in for flight {flight.flight_number} at {flight.departure_location}"
-        ))
-        
-        # Add departure event
-        events.append(TravelEvent(
-            date=flight.departure_date,
-            time=flight.departure_time,
-            type='flight_departure',
-            description=f"Flight {flight.flight_number} departs {flight.departure_location} → {flight.arrival_location}"
-        ))
-        
-        # Add arrival event
-        events.append(TravelEvent(
-            date=flight.arrival_date,
-            time=flight.arrival_time,
-            type='flight_arrival',
-            description=f"Flight {flight.flight_number} arrives at {flight.arrival_location}"
-        ))
-        
+        try:
+            # Format location names consistently
+            dep_loc = flight.departure.location.split(' (')[0]  # Remove anything in parentheses
+            arr_loc = flight.arrival.location.split(' (')[0]
+
+            # Create events
+            events.extend([
+                TravelEvent(
+                    event_type='flight_checkin',
+                    start_date=f"{flight.departure.date} {cls.calculate_checkin_time(flight)}",
+                    description=f"Check in for flight {flight.flight_number} at {dep_loc}"
+                ),
+                TravelEvent(
+                    event_type='flight_departure',
+                    start_date=f"{flight.departure.date} {flight.departure.time}",
+                    description=f"Flight {flight.flight_number} departs {dep_loc} → {arr_loc}"
+                ),
+                TravelEvent(
+                    event_type='flight_arrival',
+                    start_date=f"{flight.arrival.date} {flight.arrival.time}",
+                    description=f"Flight {flight.flight_number} arrives at {arr_loc}"
+                )
+            ])
+        except Exception as e:
+            logger.error(f"Error creating flight events: {str(e)}")
         return events
     
     @classmethod
     def create_hotel_events(cls, hotel: Hotel) -> List[TravelEvent]:
         """Create check-in and check-out events for a hotel."""
+        # Standardize hotel name by removing city suffix
+        hotel_name = hotel.name.split(',')[0].strip()
+        
         return [
             TravelEvent(
-                date=hotel.check_in_date,
-                time='15:00',
-                type='hotel_checkin',
-                description=f"Check in to {hotel.name}, {hotel.city}"
+                event_type='hotel_checkin',
+                start_date=f"{hotel.check_in_date} 15:00",  # Standard check-in time
+                description=f"Check in at {hotel_name}, {hotel.city}"
             ),
             TravelEvent(
-                date=hotel.check_out_date,
-                time='12:00',
-                type='hotel_checkout',
-                description=f"Check out from {hotel.name}, {hotel.city}"
+                event_type='hotel_checkout',
+                start_date=f"{hotel.check_out_date} 11:00",  # Standard check-out time
+                description=f"Check out from {hotel_name}, {hotel.city}"
             )
         ]
-    
-    @classmethod
-    def check_transfer_times(cls, events: List[TravelEvent]) -> List[str]:
-        """Check for short or impossible transfer times between flights."""
-        warnings = []
-        last_arrival = None
-        min_transfer_time = 90  # minutes for international transfers
-        
-        for i, event in enumerate(events):
-            if event.type == 'flight_arrival':
-                last_arrival = event
-                # Look ahead for next check-in and departure
-                for next_event in events[i+1:]:
-                    if next_event.type == 'flight_checkin':
-                        checkin_dt = datetime.strptime(f"{next_event.date} {next_event.time}", "%Y-%m-%d %H:%M")
-                        arrival_dt = datetime.strptime(f"{last_arrival.date} {last_arrival.time}", "%Y-%m-%d %H:%M")
-                        if checkin_dt < arrival_dt:
-                            warnings.append("⚠️  Warning: Check-in for next flight is before previous flight lands")
-                            
-                    elif next_event.type == 'flight_departure' and last_arrival:
-                        departure_dt = datetime.strptime(f"{next_event.date} {next_event.time}", "%Y-%m-%d %H:%M")
-                        arrival_dt = datetime.strptime(f"{last_arrival.date} {last_arrival.time}", "%Y-%m-%d %H:%M")
-                        
-                        time_diff = (departure_dt - arrival_dt).total_seconds() / 60
-                        if time_diff < min_transfer_time:
-                            location = last_arrival.description.split("arrives at ")[1]
-                            warnings.append(f"⚠️  Warning: Only {int(time_diff)} minutes for transfer at {location}")
-                        break  # Only check the next departure
-        
-        return warnings
     
     @classmethod
     def format_timeline(cls, flights: List[Flight], hotels: List[Hotel]) -> str:
         """Create a chronological timeline of all travel events."""
         events = []
         
-        # Add flight events
-        for flight in flights:
-            events.extend(cls.create_flight_events(flight))
-        
-        # Add hotel events (deduplicated)
-        seen_hotels = set()
-        for hotel in hotels:
-            hotel_key = (hotel.name, hotel.check_in_date, hotel.check_out_date)
-            if hotel_key not in seen_hotels:
+        try:
+            # Add flight events
+            for flight in flights:
+                events.extend(cls.create_flight_events(flight))
+            
+            # Add hotel events
+            for hotel in hotels:
                 events.extend(cls.create_hotel_events(hotel))
-                seen_hotels.add(hotel_key)
-        
-        # Sort events chronologically
-        events.sort()
-        
-        # Check for transfer time issues
-        warnings = cls.check_transfer_times(events)
-        
-        # Format the timeline with warnings at the top
-        timeline = []
-        if warnings:
-            timeline.extend(warnings)
-            timeline.append("")  # Add spacing after warnings
-        
-        timeline.append("Chronological Timeline:")
-        for event in events:
-            timeline.append(f"- {event.date} {event.time}: {event.description}")
-        
-        return "\n".join(timeline)
+            
+            # Sort events chronologically
+            events.sort()
+            
+            # Format the timeline
+            timeline = ["Chronological Timeline:"]
+            current_date = None
+            
+            for event in events:
+                # Split start_date into date and time components
+                date_str, time_str = event.start_date.split(" ", 1)
+                
+                if date_str != current_date:
+                    current_date = date_str
+                    timeline.append(f"\n  {current_date}:")
+                
+                timeline.append(f"    {time_str} - {event.description}")
+            
+            return "\n".join(timeline)
+            
+        except Exception as e:
+            logger.error(f"Error formatting timeline: {str(e)}")
+            return "Error creating timeline"

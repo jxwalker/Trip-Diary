@@ -2,6 +2,7 @@ import os
 from anthropic import Anthropic
 from src.gpt_interfaces.gpt_interface import GPTInterface
 import json
+from typing import Dict, Any
 
 class XAIGPT(GPTInterface):
     def __init__(self, api_key: str = None):
@@ -14,16 +15,14 @@ class XAIGPT(GPTInterface):
             base_url="https://api.x.ai"
         )
 
-    def generate_text(self, prompt: str, system_prompt: str = None) -> str:
+    def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
         try:
-            # Let PDFProcessor handle the JSON validation and cleaning
-            # Just focus on getting a clean response from the API
             messages = []
             
-            if system_prompt:
+            if system:
                 messages.append({
-                    "role": "user",
-                    "content": system_prompt
+                    "role": "system",
+                    "content": system
                 })
             
             messages.append({
@@ -40,7 +39,17 @@ class XAIGPT(GPTInterface):
             if not hasattr(response, 'content') or not response.content:
                 raise Exception("Empty response from API")
                 
-            return response.content[0].text.strip()
+            # Parse the response into structured data
+            content = response.content[0].text.strip()
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                raise Exception("Failed to parse response as JSON")
             
         except Exception as e:
-            raise Exception(f"XAI API error: {str(e)}")
+            logger.error(f"XAI API error: {str(e)}")
+            return {
+                "flights": [],
+                "hotels": [],
+                "passengers": []
+            }
