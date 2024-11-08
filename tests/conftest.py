@@ -28,10 +28,11 @@ def sample_hotel():
     return Hotel(
         name="Phuket Marriott Resort and Spa, Nai Yang Beach",
         city="Phuket",
-        booking_reference="MYH9XH",
         check_in_date="2024-12-21",
         check_out_date="2024-12-27",
-        room_details="Premium Pool Access, 1 King, Mini fridge"
+        room_type="Premium Pool Access",
+        room_features="WiFi, TV, Pool Access",
+        booking_reference="TEST123"
     )
 
 @pytest.fixture

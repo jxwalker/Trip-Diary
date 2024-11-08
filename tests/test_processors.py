@@ -9,32 +9,45 @@ from pypdf import PdfWriter
 
 # Mock GPTInterface for testing
 class MockGPTProvider(GPTInterface):
+    """Mock GPT provider for testing."""
     def generate_text(self, prompt: str, system_prompt: str) -> str:
-        # Return a mock JSON response
+        """Return a valid mock response matching the expected format."""
         return json.dumps({
             "booking_reference": "TEST123",
+            "passengers": [{
+                "title": "MR",
+                "first_name": "Test",
+                "last_name": "User"
+            }],
             "flights": [{
-                "flight_number": "AB123",
-                "operator": "Airline",
-                "class": "Economy",
+                "flight_number": "BA123",
+                "operator": "British Airways",
                 "departure": {
-                    "date": "2024-12-20",
-                    "time": "16:00",
-                    "location": "LHR",
-                    "terminal": "5"
+                    "location": "London",
+                    "terminal": "5",
+                    "date": "2024-01-01",
+                    "time": "10:00"
                 },
                 "arrival": {
-                    "date": "2024-12-20",
-                    "time": "20:00",
-                    "location": "JFK",
-                    "terminal": "4"
+                    "location": "Paris",
+                    "terminal": "2",
+                    "date": "2024-01-01",
+                    "time": "13:00"
                 },
+                "travel_class": "Economy",
                 "baggage_allowance": {
-                    "hand_baggage": "7kg",
-                    "checked_baggage": "23kg"
+                    "checked_baggage": "23kg",
+                    "hand_baggage": "10kg"
                 }
             }],
-            "hotels": []
+            "hotels": [{
+                "name": "Test Hotel",
+                "city": "Paris",
+                "check_in_date": "2024-01-01",
+                "check_out_date": "2024-01-02",
+                "room_type": "Standard",
+                "room_features": "WiFi, TV"
+            }]
         })
 
 @pytest.fixture

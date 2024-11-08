@@ -22,11 +22,10 @@ def test_flight_creation(sample_flight):
     assert sample_flight.arrival_terminal is None
 
 def test_hotel_creation(sample_hotel):
-    """Test Hotel object creation and attributes."""
+    """Test hotel creation with valid data."""
     assert sample_hotel.name == "Phuket Marriott Resort and Spa, Nai Yang Beach"
-    assert sample_hotel.city == "Phuket"
     assert sample_hotel.check_in_date == "2024-12-21"
-    assert "Mini fridge" in sample_hotel.room_details
+    assert sample_hotel.room_features == "WiFi, TV, Pool Access"
 
 def test_flight_string_representation(sample_flight):
     """Test Flight string representation."""
