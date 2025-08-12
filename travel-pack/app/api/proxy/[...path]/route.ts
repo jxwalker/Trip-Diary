@@ -54,10 +54,10 @@ export async function POST(
   
   try {
     // Get the body - handle both FormData and JSON
-    const contentType = request.headers.get('content-type');
+    const reqContentType = request.headers.get('content-type');
     let response;
     
-    if (contentType?.includes('multipart/form-data')) {
+    if (reqContentType?.includes('multipart/form-data')) {
       // For file uploads, get the FormData and forward it
       const formData = await request.formData();
       
@@ -81,7 +81,7 @@ export async function POST(
         method: 'POST',
         body: body,
         headers: {
-          'Content-Type': contentType || 'application/json',
+          'Content-Type': reqContentType || 'application/json',
         },
       });
     }
