@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -30,7 +31,7 @@ import {
 import Link from "next/link";
 import EnhancedGuideDisplay from "@/app/components/EnhancedGuideDisplay";
 
-export default function ItineraryPage() {
+function ItineraryPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tripId = searchParams.get("tripId");
@@ -661,5 +662,13 @@ export default function ItineraryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ItineraryPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ItineraryPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ import {
   DollarSign
 } from "lucide-react";
 
-export default function SinglePagePreferences() {
+function SinglePagePreferencesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -482,5 +482,13 @@ export default function SinglePagePreferences() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SinglePagePreferences() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SinglePagePreferencesContent />
+    </Suspense>
   );
 }

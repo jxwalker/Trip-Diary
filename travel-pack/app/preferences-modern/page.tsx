@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -99,7 +100,7 @@ const QUICK_TEMPLATES = {
   }
 };
 
-export default function ModernPreferencesPage() {
+function ModernPreferencesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -953,5 +954,13 @@ export default function ModernPreferencesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ModernPreferencesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ModernPreferencesPageContent />
+    </Suspense>
   );
 }

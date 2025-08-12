@@ -1,5 +1,64 @@
 # UX Improvement TODO Plan
 
+## ✅ MVP Launch Readiness (Code Review Findings)
+Concrete tasks to fix before MVP, based on current code.
+
+### Flow and Navigation
+- [ ] Consolidate to a single flow: Upload → Summary → Preferences → Progress → Guide
+- [ ] Remove/deprecate legacy preferences routes from navigation; keep `preferences-modern` as canonical
+- [ ] Add consistent CTAs across the app:
+  - [ ] Restaurants: "Reserve Table"
+  - [ ] Attractions: "Get Tickets"
+  - [ ] Events: "Get Tickets"
+  - [ ] Hotels: "Book Now" + "Compare Prices"
+  - [ ] Always show secondary "Open in Maps"
+
+### Preferences UX and Data Model
+- [ ] Eliminate food/meal duplication in Interests; keep all dining in Dining section only (`travel-pack/app/preferences/page.tsx`)
+- [ ] Canonicalize preferences schema (server-side) using Pydantic model similar to `travel-pack/backend/models/user_profile.py`
+- [ ] Add backend transformer to accept both legacy and modern payloads and normalize to canonical model
+- [ ] Validate preferences input (enums, unknown keys, defaults) and reject invalid requests
+- [ ] Decide naming convention: camelCase in frontend, snake_case in backend; add server-side map between them
+
+### Guide Content and Booking URLs
+- [ ] After guide generation, enrich with booking URLs using `EnhancedRecommendationsService.enhance_all_recommendations`
+  - [ ] Wire this enrichment into `POST /api/preferences/{trip_id}` before storing `enhanced_guide`
+  - [ ] Ensure daily itinerary items include `type`, `name`, and `address` so activities get `booking_url` and `map_url`
+- [ ] Replace any placeholder UI data in guide (weather, tips, amenities). If real data isn’t available, hide the section
+- [ ] Wire "Download PDF" in `guide-modern` to the existing PDF API (reuse logic from `app/itinerary/page.tsx`)
+- [ ] Add empty states (no events/restaurants) with helpful copy
+
+### Profiles (Save/Load)
+- [ ] Implement backend endpoints to save/load/list profiles using `ProfileManager` (see `travel-pack/backend/models/user_profile.py`)
+- [ ] Wire `preferences-modern` "Saved" tab to list and load real profiles
+- [ ] Support saving current preferences as a named profile
+
+### API and Services
+- [ ] Add preferences request model in `backend/main.py` to normalize modern/legacy payloads into canonical structure
+- [ ] Provide a small update endpoint to persist edits from `summary` page back into `trip_data`
+- [ ] Expose weather endpoint (or reuse existing service) and call it from guide sidebar instead of static values
+- [ ] Ensure events contain date/venue/ticket URLs; use URL generators when missing
+
+### Progress and Reliability
+- [ ] Use SSE (`/api/generation-stream/{trip_id}`) on the generate-itinerary page with retry on transient errors
+- [ ] Debounce/batch preference updates if switching to autosave later (post-MVP)
+
+### Testing (Pre-MVP)
+- [ ] Integration test: posting preferences triggers guide generation and items contain `booking_urls` and `map_url`
+- [ ] Unit test: preferences transformer (legacy and modern → canonical)
+- [ ] E2E happy path: Upload sample → Summary confirm → Preferences → Progress → Guide with working CTAs
+
+### Ops, Security, Cleanup
+- [ ] Add TTL cleanup for `uploads/` and `output/` to prevent disk bloat
+- [ ] Tighten CORS for prod (no `*`); keep permissive only in dev
+- [ ] Ensure no secrets are logged; remove key prints outside test utilities
+- [ ] Remove duplicate/old directories (`Trip-Diary/`, `trip-diary/`) and unused files
+- [ ] Fix stray `requirements.tx`; ensure `server-manager.sh` installs all required backend deps
+
+### Accessibility and Visual Polish
+- [ ] Replace badge-toggles with accessible buttons/checkbox groups (aria-pressed, roles)
+- [ ] Standardize spacing/typography scale; reduce icon noise where not informative
+
 ## 🚀 Phase 1: Quick Wins (Week 1)
 *High impact, low effort improvements*
 

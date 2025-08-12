@@ -46,7 +46,16 @@ interface UploadedFile {
   status: "uploading" | "processing" | "completed" | "error";
   progress: number;
   file?: File; // Actual file object for real upload
-  extractedData?: any;
+  extractedData?: {
+    destination?: string;
+    dates?: {
+      start_date: string;
+      end_date: string;
+    };
+    flights?: unknown[];
+    hotels?: unknown[];
+    [key: string]: unknown;
+  };
 }
 
 interface TripDetails {
@@ -74,7 +83,16 @@ export default function UploadPage() {
   const [processingStatus, setProcessingStatus] = useState<{
     progress: number;
     message: string;
-    extractedData?: any;
+    extractedData?: {
+      destination?: string;
+      dates?: {
+        start_date: string;
+        end_date: string;
+      };
+      flights?: unknown[];
+      hotels?: unknown[];
+      [key: string]: unknown;
+    };
   }>({ progress: 0, message: "" });
   const [tripDetails, setTripDetails] = useState<TripDetails>({
     startDate: "",
@@ -127,7 +145,7 @@ export default function UploadPage() {
         localStorage.removeItem('uploadSession');
       }
     }
-  }, []);
+  }, [router]);
 
   // Save session data when it changes
   useEffect(() => {
@@ -335,10 +353,10 @@ export default function UploadPage() {
       // Start polling after 2 seconds to give backend time to start
       setTimeout(checkStatus, 2000);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error processing with AI:", error);
       // Better error handling
-      const errorMessage = error?.message || "Unknown error occurred";
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       console.log("Full error:", error);
       
       // Show more specific error message
@@ -566,7 +584,7 @@ export default function UploadPage() {
                         <p className="text-xl font-medium mb-2">
                           {isDragActive
                             ? "Drop your files here"
-                            : "Drag & drop your files here"}
+                            : "Drag &amp; drop your files here"}
                         </p>
                         <p className="text-gray-500 mb-4">
                           or click to browse from your computer
@@ -677,7 +695,7 @@ export default function UploadPage() {
                           </code>
                         </div>
                         <p className="text-sm text-gray-500 mt-4">
-                          We'll automatically extract all travel details from your emails
+                          We&apos;ll automatically extract all travel details from your emails
                         </p>
                       </div>
                     </Card>
@@ -823,7 +841,7 @@ export default function UploadPage() {
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                Upload multiple files at once - we'll process them all together
+                Upload multiple files at once - we&apos;ll process them all together
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />

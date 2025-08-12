@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ import {
   Loader2
 } from "lucide-react";
 
-export default function ConsolidatedPreferencesPage() {
+function ConsolidatedPreferencesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -512,5 +512,13 @@ export default function ConsolidatedPreferencesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConsolidatedPreferencesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ConsolidatedPreferencesContent />
+    </Suspense>
   );
 }

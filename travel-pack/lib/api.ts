@@ -4,18 +4,78 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+export interface TripDetails {
+  destination?: string;
+  startDate?: string;
+  endDate?: string;
+  travelers?: number;
+  flights?: {
+    outbound?: string;
+    return?: string;
+  };
+  hotels?: Array<{
+    name?: string;
+    checkIn?: string;
+    checkOut?: string;
+  }>;
+}
+
+export interface Preferences {
+  interests?: string[];
+  dining?: {
+    cuisines?: string[];
+    dietary_restrictions?: string[];
+    price_range?: string[];
+    meal_preferences?: string[];
+  };
+  activities?: {
+    types?: string[];
+    intensity?: string;
+    indoor_outdoor?: string;
+  };
+  travel_style?: string;
+  budget?: string;
+  group_type?: string;
+}
+
 export interface ProcessingResponse {
   trip_id: string;
   status: string;
   message: string;
   progress: number;
-  extracted_data?: any;
+  extracted_data?: {
+    destination?: string;
+    dates?: {
+      start_date: string;
+      end_date: string;
+    };
+    flights?: unknown[];
+    hotels?: unknown[];
+    passengers?: unknown[];
+    [key: string]: unknown;
+  };
 }
 
 export interface ItineraryResponse {
   trip_id: string;
-  itinerary: any;
-  recommendations: any;
+  itinerary: {
+    trip_summary?: {
+      destination?: string;
+      start_date?: string;
+      end_date?: string;
+      duration?: string;
+    };
+    flights?: unknown[];
+    hotels?: unknown[];
+    passengers?: unknown[];
+    [key: string]: unknown;
+  };
+  recommendations: {
+    restaurants?: unknown[];
+    attractions?: unknown[];
+    events?: unknown[];
+    [key: string]: unknown;
+  };
   pdf_url?: string;
 }
 
@@ -25,7 +85,7 @@ class TripCraftAPI {
    */
   async uploadAndProcess(
     files: File[],
-    tripDetails?: any,
+    tripDetails?: TripDetails,
     freeText?: string
   ): Promise<ProcessingResponse> {
     const formData = new FormData();
@@ -108,7 +168,7 @@ class TripCraftAPI {
   /**
    * Update preferences
    */
-  async updatePreferences(tripId: string, preferences: any): Promise<any> {
+  async updatePreferences(tripId: string, preferences: Preferences): Promise<{ status: string; message?: string }> {
     const response = await fetch(`${API_BASE_URL}/api/preferences/${tripId}`, {
       method: 'POST',
       headers: {

@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 
+interface TestResult {
+  test: string;
+  status: string;
+  details: string;
+}
+
 export default function TestPage() {
-  const [testResults, setTestResults] = useState<any[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
 
   const runTests = async () => {
     setTesting(true);
     setTestResults([]);
-    const results: any[] = [];
+    const results: TestResult[] = [];
 
     // Test 1: Backend health check
     try {
@@ -61,11 +67,11 @@ export default function TestPage() {
       } else {
         throw new Error(`Upload failed: ${response.status}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       results.push({
         test: "Upload Endpoint",
         status: "❌ FAIL",
-        details: error.message
+        details: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
     setTestResults([...results]);
@@ -166,11 +172,11 @@ export default function TestPage() {
           });
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       results.push({
         test: "Perplexity Content Generation",
         status: "❌ FAIL",
-        details: error.message
+        details: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
     

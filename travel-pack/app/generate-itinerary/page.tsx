@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -11,7 +12,7 @@ import {
   Clock
 } from "lucide-react";
 
-export default function GenerateItineraryPage() {
+function GenerateItineraryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -153,5 +154,13 @@ export default function GenerateItineraryPage() {
         </Card>
       </motion.div>
     </div>
+  );
+}
+
+export default function GenerateItineraryPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GenerateItineraryContent />
+    </Suspense>
   );
 }

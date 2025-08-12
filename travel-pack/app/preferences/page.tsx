@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -105,7 +105,7 @@ const dietaryOptions = [
   "Halal", "Kosher", "Nut Allergy", "Shellfish Allergy"
 ];
 
-export default function PreferencesPage() {
+function PreferencesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -686,5 +686,13 @@ export default function PreferencesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PreferencesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PreferencesContent />
+    </Suspense>
   );
 }

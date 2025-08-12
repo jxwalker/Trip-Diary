@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,14 +42,8 @@ import {
   Share2,
   Settings,
   Heart,
-  BookOpen,
   Ticket,
-  ShoppingBag,
-  Coffee,
-  Wine,
   Map,
-  Filter,
-  Search,
   Bookmark,
   Check,
   X,
@@ -60,12 +55,96 @@ import {
 import { cn } from "@/lib/utils";
 
 interface GuideData {
-  itinerary: any;
-  enhanced_guide: any;
-  recommendations: any;
+  itinerary: {
+    trip_summary?: {
+      destination?: string;
+      start_date?: string;
+      end_date?: string;
+      duration?: string;
+    };
+    accommodations?: Array<{
+      name: string;
+      address: string;
+      check_in: string;
+      check_out: string;
+      booking_urls?: {
+        booking_com?: string;
+        google_hotels?: string;
+      };
+      primary_booking_url?: string;
+      compare_prices_url?: string;
+      map_url?: string;
+    }>;
+  };
+  enhanced_guide: {
+    restaurants?: Array<{
+      name: string;
+      cuisine: string;
+      price_range: string;
+      rating?: number;
+      description: string;
+      address: string;
+      why_recommended?: string;
+      best_dishes?: string[];
+      booking_urls?: {
+        opentable?: string;
+        google_maps?: string;
+        yelp?: string;
+      };
+      primary_booking_url?: string;
+      map_url?: string;
+    }>;
+    attractions?: Array<{
+      name: string;
+      type: string;
+      description: string;
+      address: string;
+      hours?: string;
+      price?: string;
+      tips?: string;
+      why_visit?: string;
+      visit_duration?: string;
+      booking_urls?: {
+        viator?: string;
+        google_maps?: string;
+        tripadvisor?: string;
+      };
+      primary_booking_url?: string;
+      map_url?: string;
+    }>;
+    events?: Array<{
+      name: string;
+      date: string;
+      venue: string;
+      type: string;
+      description: string;
+      ticket_info?: string;
+      ticket_urls?: {
+        ticketmaster?: string;
+      };
+      primary_ticket_url?: string;
+      venue_info_url?: string;
+    }>;
+    daily_itinerary?: Array<{
+      date: string;
+      theme: string;
+      activities?: Array<{
+        name: string;
+        time: string;
+        duration?: string;
+        description: string;
+        address?: string;
+        tips?: string;
+        booking_url?: string;
+        map_url?: string;
+      }>;
+    }>;
+    hotel_writeup?: string;
+  };
+  recommendations: unknown;
 }
 
-export default function ModernGuidePage() {
+function ModernGuidePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -77,14 +156,13 @@ export default function ModernGuidePage() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
   const [filterPrice, setFilterPrice] = useState<string[]>([]);
-  const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState(false);
 
   useEffect(() => {
     if (tripId) {
       fetchGuide();
     }
-  }, [tripId]);
+  }, [tripId, router]);
 
   const fetchGuide = async () => {
     try {
@@ -101,8 +179,8 @@ export default function ModernGuidePage() {
       
       const data = await response.json();
       setGuide(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -181,12 +259,12 @@ export default function ModernGuidePage() {
   const dailyItinerary = enhanced_guide?.daily_itinerary || [];
 
   // Filter functions
-  const filterByPrice = (items: any[], priceKey: string = "price_range") => {
+  const filterByPrice = (items: Array<Record<string, unknown>>, priceKey: string = "price_range") => {
     if (filterPrice.length === 0) return items;
     return items.filter(item => filterPrice.includes(item[priceKey]));
   };
 
-  const filterByBookmark = (items: any[]) => {
+  const filterByBookmark = (items: Array<{ name: string }>) => {
     if (!showOnlyBookmarked) return items;
     return items.filter(item => bookmarkedItems.has(item.name));
   };
@@ -330,7 +408,7 @@ export default function ModernGuidePage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {restaurants.slice(0, 3).map((restaurant: any, idx: number) => (
+                    {restaurants.slice(0, 3).map((restaurant, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -374,7 +452,7 @@ export default function ModernGuidePage() {
                     <div className="flex items-center justify-between">
                       <CardTitle>Daily Schedule</CardTitle>
                       <div className="flex gap-2">
-                        {dailyItinerary.map((_: any, idx: number) => (
+                        {dailyItinerary.map((_, idx: number) => (
                           <Button
                             key={idx}
                             size="sm"
@@ -395,7 +473,7 @@ export default function ModernGuidePage() {
                         </div>
                         
                         <div className="space-y-3">
-                          {dailyItinerary[selectedDay].activities?.map((activity: any, idx: number) => (
+                          {dailyItinerary[selectedDay].activities?.map((activity, idx: number) => (
                             <motion.div
                               key={idx}
                               initial={{ opacity: 0, x: -20 }}
@@ -507,32 +585,32 @@ export default function ModernGuidePage() {
 
                 {/* Restaurant Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filterByBookmark(filterByPrice(restaurants)).map((restaurant: any, idx: number) => (
+                  {filterByBookmark(filterByPrice(restaurants as Array<Record<string, unknown>>)).map((restaurant, idx: number) => (
                     <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div>
                             <CardTitle className="text-lg flex items-center gap-2">
-                              {restaurant.name}
+                              {(restaurant as any).name}
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => toggleBookmark(restaurant.name)}
+                                onClick={() => toggleBookmark((restaurant as any).name)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Bookmark className={cn(
                                   "h-4 w-4",
-                                  bookmarkedItems.has(restaurant.name) && "fill-yellow-500 text-yellow-500"
+                                  bookmarkedItems.has((restaurant as any).name) && "fill-yellow-500 text-yellow-500"
                                 )} />
                               </Button>
                             </CardTitle>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary">{restaurant.cuisine}</Badge>
-                              <Badge variant="outline">{restaurant.price_range}</Badge>
-                              {restaurant.rating && (
+                              <Badge variant="secondary">{(restaurant as any).cuisine}</Badge>
+                              <Badge variant="outline">{(restaurant as any).price_range}</Badge>
+                              {(restaurant as any).rating && (
                                 <div className="flex items-center gap-1">
                                   <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                                  <span className="text-sm">{restaurant.rating}</span>
+                                  <span className="text-sm">{(restaurant as any).rating}</span>
                                 </div>
                               )}
                             </div>
@@ -541,25 +619,25 @@ export default function ModernGuidePage() {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <p className="text-sm text-gray-600">
-                          {restaurant.description}
+                          {(restaurant as any).description}
                         </p>
                         
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {restaurant.address}
+                          {(restaurant as any).address}
                         </div>
                         
-                        {restaurant.why_recommended && (
+                        {(restaurant as any).why_recommended && (
                           <div className="p-2 bg-green-50 rounded text-sm">
                             <span className="font-medium text-green-900">Why we recommend: </span>
-                            <span className="text-green-700">{restaurant.why_recommended}</span>
+                            <span className="text-green-700">{(restaurant as any).why_recommended}</span>
                           </div>
                         )}
                         
-                        {restaurant.best_dishes && restaurant.best_dishes.length > 0 && (
+                        {(restaurant as any).best_dishes && (restaurant as any).best_dishes.length > 0 && (
                           <div className="text-sm">
                             <span className="font-medium">Must try: </span>
-                            {restaurant.best_dishes.join(", ")}
+                            {(restaurant as any).best_dishes.join(", ")}
                           </div>
                         )}
                         
@@ -570,9 +648,9 @@ export default function ModernGuidePage() {
                             size="sm"
                             className="flex-1"
                             onClick={() => openBookingUrl(
-                              restaurant.booking_urls?.opentable || 
-                              restaurant.primary_booking_url ||
-                              `https://www.opentable.com/s?term=${encodeURIComponent(restaurant.name)}`
+                              (restaurant as any).booking_urls?.opentable || 
+                              (restaurant as any).primary_booking_url ||
+                              `https://www.opentable.com/s?term=${encodeURIComponent((restaurant as any).name)}`
                             )}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
@@ -582,18 +660,18 @@ export default function ModernGuidePage() {
                             size="sm"
                             variant="outline"
                             onClick={() => openBookingUrl(
-                              restaurant.map_url ||
-                              restaurant.booking_urls?.google_maps ||
-                              `https://maps.google.com/maps?q=${encodeURIComponent(restaurant.name + " " + restaurant.address)}`
+                              (restaurant as any).map_url ||
+                              (restaurant as any).booking_urls?.google_maps ||
+                              `https://maps.google.com/maps?q=${encodeURIComponent((restaurant as any).name + " " + (restaurant as any).address)}`
                             )}
                           >
                             <Navigation className="h-3 w-3" />
                           </Button>
-                          {restaurant.booking_urls?.yelp && (
+                          {(restaurant as any).booking_urls?.yelp && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => openBookingUrl(restaurant.booking_urls.yelp)}
+                              onClick={() => openBookingUrl((restaurant as any).booking_urls.yelp)}
                             >
                               Reviews
                             </Button>
@@ -608,72 +686,72 @@ export default function ModernGuidePage() {
               {/* Attractions Tab */}
               <TabsContent value="attractions" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filterByBookmark(attractions).map((attraction: any, idx: number) => (
+                  {filterByBookmark(attractions).map((attraction, idx: number) => (
                     <Card key={idx}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
                             <CardTitle className="text-lg flex items-center gap-2">
-                              {attraction.name}
+                              {(attraction as any).name}
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => toggleBookmark(attraction.name)}
+                                onClick={() => toggleBookmark((attraction as any).name)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Bookmark className={cn(
                                   "h-4 w-4",
-                                  bookmarkedItems.has(attraction.name) && "fill-yellow-500 text-yellow-500"
+                                  bookmarkedItems.has((attraction as any).name) && "fill-yellow-500 text-yellow-500"
                                 )} />
                               </Button>
                             </CardTitle>
                             <Badge variant="secondary" className="mt-1">
-                              {attraction.type}
+                              {(attraction as any).type}
                             </Badge>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <p className="text-sm text-gray-600">
-                          {attraction.description}
+                          {(attraction as any).description}
                         </p>
                         
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-1 text-gray-500">
                             <MapPin className="h-3 w-3" />
-                            {attraction.address}
+                            {(attraction as any).address}
                           </div>
-                          {attraction.hours && (
+                          {(attraction as any).hours && (
                             <div className="flex items-center gap-1 text-gray-500">
                               <Clock className="h-3 w-3" />
-                              {attraction.hours}
+                              {(attraction as any).hours}
                             </div>
                           )}
-                          {attraction.price && (
+                          {(attraction as any).price && (
                             <div className="flex items-center gap-1 text-gray-500">
                               <DollarSign className="h-3 w-3" />
-                              {attraction.price}
+                              {(attraction as any).price}
                             </div>
                           )}
-                          {attraction.visit_duration && (
+                          {(attraction as any).visit_duration && (
                             <div className="flex items-center gap-1 text-gray-500">
                               <Clock className="h-3 w-3" />
-                              Suggested duration: {attraction.visit_duration}
+                              Suggested duration: {(attraction as any).visit_duration}
                             </div>
                           )}
                         </div>
                         
-                        {attraction.why_visit && (
+                        {(attraction as any).why_visit && (
                           <div className="p-2 bg-blue-50 rounded text-sm">
                             <span className="font-medium text-blue-900">Why visit: </span>
-                            <span className="text-blue-700">{attraction.why_visit}</span>
+                            <span className="text-blue-700">{(attraction as any).why_visit}</span>
                           </div>
                         )}
                         
-                        {attraction.tips && (
+                        {(attraction as any).tips && (
                           <div className="p-2 bg-amber-50 rounded text-sm">
                             <span className="font-medium text-amber-900">Tip: </span>
-                            <span className="text-amber-700">{attraction.tips}</span>
+                            <span className="text-amber-700">{(attraction as any).tips}</span>
                           </div>
                         )}
                         
@@ -684,9 +762,9 @@ export default function ModernGuidePage() {
                             size="sm"
                             className="flex-1"
                             onClick={() => openBookingUrl(
-                              attraction.booking_urls?.viator ||
-                              attraction.primary_booking_url ||
-                              `https://www.viator.com/searchResults/all?text=${encodeURIComponent(attraction.name)}`
+                              (attraction as any).booking_urls?.viator ||
+                              (attraction as any).primary_booking_url ||
+                              `https://www.viator.com/searchResults/all?text=${encodeURIComponent((attraction as any).name)}`
                             )}
                           >
                             <Ticket className="h-3 w-3 mr-1" />
@@ -696,18 +774,18 @@ export default function ModernGuidePage() {
                             size="sm"
                             variant="outline"
                             onClick={() => openBookingUrl(
-                              attraction.map_url ||
-                              attraction.booking_urls?.google_maps ||
-                              `https://maps.google.com/maps?q=${encodeURIComponent(attraction.name + " " + attraction.address)}`
+                              (attraction as any).map_url ||
+                              (attraction as any).booking_urls?.google_maps ||
+                              `https://maps.google.com/maps?q=${encodeURIComponent((attraction as any).name + " " + (attraction as any).address)}`
                             )}
                           >
                             <Navigation className="h-3 w-3" />
                           </Button>
-                          {attraction.booking_urls?.tripadvisor && (
+                          {(attraction as any).booking_urls?.tripadvisor && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => openBookingUrl(attraction.booking_urls.tripadvisor)}
+                              onClick={() => openBookingUrl((attraction as any).booking_urls.tripadvisor)}
                             >
                               Reviews
                             </Button>
@@ -727,33 +805,33 @@ export default function ModernGuidePage() {
                       Events During Your Stay
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {events.map((event: any, idx: number) => (
+                      {events.map((event, idx: number) => (
                         <Card key={idx}>
                           <CardHeader>
-                            <CardTitle className="text-lg">{event.name}</CardTitle>
+                            <CardTitle className="text-lg">{(event as any).name}</CardTitle>
                             <CardDescription>
-                              {event.date} at {event.venue}
+                              {(event as any).date} at {(event as any).venue}
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            <p className="text-sm text-gray-600">{event.description}</p>
+                            <p className="text-sm text-gray-600">{(event as any).description}</p>
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 onClick={() => openBookingUrl(
-                                  event.ticket_urls?.ticketmaster ||
-                                  event.primary_ticket_url ||
-                                  `https://www.ticketmaster.com/search?q=${encodeURIComponent(event.name)}`
+                                  (event as any).ticket_urls?.ticketmaster ||
+                                  (event as any).primary_ticket_url ||
+                                  `https://www.ticketmaster.com/search?q=${encodeURIComponent((event as any).name)}`
                                 )}
                               >
                                 <Ticket className="h-3 w-3 mr-1" />
                                 Get Tickets
                               </Button>
-                              {event.venue_info_url && (
+                              {(event as any).venue_info_url && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => openBookingUrl(event.venue_info_url)}
+                                  onClick={() => openBookingUrl((event as any).venue_info_url)}
                                 >
                                   Venue Info
                                 </Button>
@@ -769,25 +847,25 @@ export default function ModernGuidePage() {
 
               {/* Hotels Tab */}
               <TabsContent value="stay" className="space-y-6">
-                {hotels.map((hotel: any, idx: number) => (
+                {hotels.map((hotel, idx: number) => (
                   <Card key={idx}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle>{hotel.name}</CardTitle>
+                          <CardTitle>{(hotel as any).name}</CardTitle>
                           <CardDescription className="flex items-center gap-1 mt-2">
                             <MapPin className="h-3 w-3" />
-                            {hotel.address}
+                            {(hotel as any).address}
                           </CardDescription>
                         </div>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => toggleBookmark(hotel.name)}
+                          onClick={() => toggleBookmark((hotel as any).name)}
                         >
                           <Bookmark className={cn(
                             "h-4 w-4",
-                            bookmarkedItems.has(hotel.name) && "fill-yellow-500 text-yellow-500"
+                            bookmarkedItems.has((hotel as any).name) && "fill-yellow-500 text-yellow-500"
                           )} />
                         </Button>
                       </div>
@@ -797,17 +875,17 @@ export default function ModernGuidePage() {
                         <div className="md:col-span-2 space-y-3">
                           <p className="text-gray-600">
                             {enhanced_guide?.hotel_writeup || 
-                             `Experience comfort at ${hotel.name}. This carefully selected accommodation offers the perfect base for your ${tripSummary.destination} adventure.`}
+                             `Experience comfort at ${(hotel as any).name}. This carefully selected accommodation offers the perfect base for your ${tripSummary.destination} adventure.`}
                           </p>
                           
                           <div className="flex gap-4 text-sm">
                             <Badge variant="outline" className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Check-in: {hotel.check_in}
+                              Check-in: {(hotel as any).check_in}
                             </Badge>
                             <Badge variant="outline" className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Check-out: {hotel.check_out}
+                              Check-out: {(hotel as any).check_out}
                             </Badge>
                           </div>
                         </div>
@@ -829,9 +907,9 @@ export default function ModernGuidePage() {
                         <Button
                           className="flex-1"
                           onClick={() => openBookingUrl(
-                            hotel.booking_urls?.booking_com ||
-                            hotel.primary_booking_url ||
-                            `https://www.booking.com/search.html?ss=${encodeURIComponent(hotel.name)}`
+                            (hotel as any).booking_urls?.booking_com ||
+                            (hotel as any).primary_booking_url ||
+                            `https://www.booking.com/search.html?ss=${encodeURIComponent((hotel as any).name)}`
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
@@ -840,9 +918,9 @@ export default function ModernGuidePage() {
                         <Button
                           variant="outline"
                           onClick={() => openBookingUrl(
-                            hotel.compare_prices_url ||
-                            hotel.booking_urls?.google_hotels ||
-                            `https://www.google.com/travel/hotels/search?q=${encodeURIComponent(hotel.name)}`
+                            (hotel as any).compare_prices_url ||
+                            (hotel as any).booking_urls?.google_hotels ||
+                            `https://www.google.com/travel/hotels/search?q=${encodeURIComponent((hotel as any).name)}`
                           )}
                         >
                           Compare Prices
@@ -850,8 +928,8 @@ export default function ModernGuidePage() {
                         <Button
                           variant="outline"
                           onClick={() => openBookingUrl(
-                            hotel.map_url ||
-                            `https://maps.google.com/maps?q=${encodeURIComponent(hotel.name + " " + hotel.address)}`
+                            (hotel as any).map_url ||
+                            `https://maps.google.com/maps?q=${encodeURIComponent((hotel as any).name + " " + (hotel as any).address)}`
                           )}
                         >
                           <Navigation className="h-3 w-3" />
@@ -964,5 +1042,13 @@ export default function ModernGuidePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ModernGuidePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ModernGuidePageContent />
+    </Suspense>
   );
 }

@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function SimpleItineraryPage() {
+function SimpleItineraryContent() {
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
   
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{
+    itinerary?: {
+      trip_summary?: {
+        destination?: string;
+        start_date?: string;
+        end_date?: string;
+        duration?: string;
+      };
+      daily_schedule?: unknown[];
+      restaurants?: unknown[];
+      attractions?: unknown[];
+    };
+    recommendations?: {
+      restaurants?: unknown[];
+      attractions?: unknown[];
+    };
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rawJson, setRawJson] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -35,8 +51,8 @@ export default function SimpleItineraryPage() {
       const result = await response.json();
       setData(result);
       console.log("RAW DATA FROM BACKEND:", result);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       console.error("Error:", err);
     } finally {
       setLoading(false);
@@ -293,5 +309,13 @@ export default function SimpleItineraryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SimpleItineraryPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <SimpleItineraryContent />
+    </Suspense>
   );
 }

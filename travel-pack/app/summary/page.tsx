@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
@@ -69,7 +70,7 @@ interface ExtractedData {
   };
 }
 
-export default function SummaryPage() {
+function SummaryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId") || sessionStorage.getItem("tripId");
@@ -658,5 +659,13 @@ export default function SummaryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SummaryPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SummaryPageContent />
+    </Suspense>
   );
 }

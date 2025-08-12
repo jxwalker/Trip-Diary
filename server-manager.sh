@@ -45,6 +45,20 @@ print_header() {
     echo
 }
 
+# Get Tailscale IP address
+get_tailscale_ip() {
+    # Check if tailscale is installed and running
+    if command -v tailscale >/dev/null 2>&1; then
+        # Try to get the IP address
+        local ts_ip=$(tailscale ip -4 2>/dev/null | head -n1)
+        if [ ! -z "$ts_ip" ]; then
+            echo "$ts_ip"
+            return 0
+        fi
+    fi
+    return 1
+}
+
 # Health check for frontend
 check_frontend_health() {
     # Try each port and see if it responds
@@ -239,6 +253,15 @@ stop_all() {
 show_status() {
     print_header "Server Status"
     
+    # Get Tailscale IP if available
+    local tailscale_ip=$(get_tailscale_ip)
+    if [ ! -z "$tailscale_ip" ]; then
+        echo -e "${BOLD}Network Information${NC}"
+        echo -e "${CYAN}──────────────────${NC}"
+        echo -e "  Tailscale IP: ${GREEN}$tailscale_ip${NC}"
+        echo
+    fi
+    
     # Frontend status
     echo -e "${BOLD}Frontend Server${NC}"
     echo -e "${CYAN}───────────────${NC}"
@@ -259,6 +282,9 @@ show_status() {
         echo -e "  Port:    ${CYAN}$frontend_port${NC}"
         echo -e "  PID:     ${CYAN}${frontend_pid:-unknown}${NC}"
         echo -e "  URL:     ${CYAN}http://localhost:$frontend_port${NC}"
+        if [ ! -z "$tailscale_ip" ]; then
+            echo -e "  Remote:  ${CYAN}http://$tailscale_ip:$frontend_port${NC}"
+        fi
         echo -e "  Health:  ${GREEN}✓ Responding${NC}"
     else
         # Check if process exists but not healthy
@@ -294,6 +320,9 @@ show_status() {
         echo -e "  Port:    ${CYAN}8000${NC}"
         echo -e "  PID:     ${CYAN}${backend_pid:-unknown}${NC}"
         echo -e "  API:     ${CYAN}http://localhost:8000${NC}"
+        if [ ! -z "$tailscale_ip" ]; then
+            echo -e "  Remote:  ${CYAN}http://$tailscale_ip:8000${NC}"
+        fi
         echo -e "  Docs:    ${CYAN}http://localhost:8000/docs${NC}"
         echo -e "  Health:  ${GREEN}✓ Responding${NC}"
     else
@@ -334,6 +363,12 @@ show_status() {
 show_quick_status() {
     echo
     echo -e "${CYAN}───────────────────────────────────────────────────────────────${NC}"
+    
+    # Show Tailscale IP if available
+    local tailscale_ip=$(get_tailscale_ip)
+    if [ ! -z "$tailscale_ip" ]; then
+        echo -e "  ${BLUE}◆${NC} Tailscale: ${GREEN}$tailscale_ip${NC}"
+    fi
     
     local frontend_port=$(check_frontend_health)
     if [ $? -eq 0 ]; then

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -77,17 +78,40 @@ interface Event {
   ticket_info: string;
 }
 
-export default function TravelGuidePage() {
+function TravelGuidePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tripId = searchParams.get("tripId");
   
   const [loading, setLoading] = useState(true);
-  const [guide, setGuide] = useState<any>(null);
+  const [guide, setGuide] = useState<{
+    itinerary?: {
+      trip_summary?: {
+        destination?: string;
+        start_date?: string;
+        end_date?: string;
+        duration?: string;
+      };
+      accommodations?: Array<{
+        name: string;
+        address: string;
+        check_in: string;
+        check_out: string;
+      }>;
+    };
+    enhanced_guide?: {
+      summary?: string;
+      hotel_writeup?: string;
+      restaurants?: Restaurant[];
+      attractions?: Attraction[];
+      events?: Event[];
+    };
+    recommendations?: unknown;
+  } | null>(null);
   const [weather, setWeather] = useState<WeatherDay[]>([]);
   const [error, setError] = useState<string | null>(null);
   // Single-page glossy guide; no tabs
-  const [userPreferences, setUserPreferences] = useState<any>(null);
+  const [userPreferences, setUserPreferences] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!tripId) {
@@ -97,7 +121,7 @@ export default function TravelGuidePage() {
     }
 
     fetchGuide();
-  }, [tripId]);
+  }, [tripId, router]);
 
   const fetchGuide = async () => {
     try {
@@ -127,8 +151,8 @@ export default function TravelGuidePage() {
       // Fetch weather data
       fetchWeather(data.destination, data.start_date, data.end_date);
       
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -351,7 +375,7 @@ export default function TravelGuidePage() {
         </section>
 
         <section id="hotels" className="space-y-6">
-            {hotels.map((hotel: any, idx: number) => (
+            {hotels.map((hotel: { name: string; address: string; check_in: string; check_out: string }, idx: number) => (
               <Card key={idx} className="overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-3">
                   <div className="md:col-span-2 p-6">
@@ -390,7 +414,7 @@ export default function TravelGuidePage() {
 
         <section id="dining" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {restaurants.map((restaurant: any, idx: number) => (
+              {restaurants.map((restaurant: Restaurant, idx: number) => (
                 <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50">
                     <div className="flex justify-between items-start">
@@ -432,7 +456,7 @@ export default function TravelGuidePage() {
         </section>
 
         <section id="attractions" className="space-y-6">
-            {attractions.map((attraction: any, idx: number) => (
+            {attractions.map((attraction: Attraction, idx: number) => (
               <Card key={idx}>
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -480,7 +504,7 @@ export default function TravelGuidePage() {
 
         <section id="events" className="space-y-6">
             {events.length > 0 ? (
-              events.map((event: any, idx: number) => (
+              events.map((event: Event, idx: number) => (
                 <Card key={idx}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -545,5 +569,13 @@ export default function TravelGuidePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TravelGuidePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TravelGuidePageContent />
+    </Suspense>
   );
 }
