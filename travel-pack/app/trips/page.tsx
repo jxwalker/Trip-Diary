@@ -97,6 +97,31 @@ export default function SavedTripsPage() {
     }
   };
 
+  // Helper function to create sample trip
+  const createSampleTrip = async () => {
+    try {
+      const sampleData = {
+        destination: "Paris, France",
+        start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        free_text: "Sample trip to Paris with visits to Eiffel Tower, Louvre Museum, and Seine River cruise"
+      };
+      
+      const response = await fetch("/api/proxy/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sampleData)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/summary?tripId=${data.trip_id}`);
+      }
+    } catch (error) {
+      console.error("Error creating sample trip:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-6xl mx-auto">
@@ -134,115 +159,153 @@ export default function SavedTripsPage() {
             <p className="mt-4 text-gray-600">Loading your trips...</p>
           </div>
         ) : filteredTrips.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <div className="text-6xl mb-4">✈️</div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              {searchQuery ? "No trips found" : "No saved trips yet"}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {searchQuery 
-                ? "Try adjusting your search terms"
-                : "Upload your travel documents to get started"
-              }
-            </p>
+          <div className="space-y-6">
+            {/* Enhanced Empty State */}
+            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+              <div className="text-6xl mb-4 animate-bounce">✈️</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                {searchQuery ? "No trips found" : "Start Your Journey"}
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+                {searchQuery 
+                  ? "Try adjusting your search terms or clear the search to see all trips"
+                  : "Upload your travel documents and let AI create your perfect itinerary"
+                }
+              </p>
+              {!searchQuery && (
+                <div className="flex flex-col items-center gap-4">
+                  <a
+                    href="/upload"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition transform hover:scale-105 shadow-lg"
+                  >
+                    📤 Upload Your First Trip
+                  </a>
+                  <button
+                    onClick={() => createSampleTrip()}
+                    className="text-sm text-gray-500 hover:text-gray-700 underline"
+                  >
+                    or try with sample data
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Feature Cards */}
             {!searchQuery && (
-              <a
-                href="/upload"
-                className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              >
-                Create Your First Trip
-              </a>
+              <div className="grid md:grid-cols-3 gap-6 mt-8">
+                <div className="bg-white rounded-lg p-6 text-center shadow-md">
+                  <div className="text-3xl mb-3">📄</div>
+                  <h3 className="font-semibold mb-2">Upload Documents</h3>
+                  <p className="text-sm text-gray-600">PDFs, emails, or manual entry</p>
+                </div>
+                <div className="bg-white rounded-lg p-6 text-center shadow-md">
+                  <div className="text-3xl mb-3">🤖</div>
+                  <h3 className="font-semibold mb-2">AI Processing</h3>
+                  <p className="text-sm text-gray-600">Automatic extraction & organization</p>
+                </div>
+                <div className="bg-white rounded-lg p-6 text-center shadow-md">
+                  <div className="text-3xl mb-3">🗺️</div>
+                  <h3 className="font-semibold mb-2">Perfect Itinerary</h3>
+                  <p className="text-sm text-gray-600">Personalized recommendations</p>
+                </div>
+              </div>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTrips.map((trip) => (
-              <div
-                key={trip.trip_id}
-                className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden"
-              >
-                {/* Trip Header */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4">
-                  <h3 className="text-xl font-bold text-white">
-                    {trip.destination || "Unknown Destination"}
-                  </h3>
-                  <p className="text-blue-100 text-sm mt-1">
-                    {trip.duration || "Duration not set"}
-                  </p>
-                </div>
-
-                {/* Trip Details */}
-                <div className="p-4">
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Dates:</span>
-                      <span className="font-medium">
-                        {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Flights:</span>
-                      <span className="font-medium">{trip.flights || 0}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Hotels:</span>
-                      <span className="font-medium">{trip.hotels || 0}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Passengers:</span>
-                      <span className="font-medium">{trip.passengers || 1}</span>
-                    </div>
-                  </div>
-
-                  {/* Saved At */}
-                  <p className="text-xs text-gray-500 mb-4">
-                    Saved: {formatSavedAt(trip.saved_at)}
-                  </p>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => viewTrip(trip.trip_id)}
-                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-                    >
-                      View Trip
-                    </button>
-                    <button
-                      onClick={() => deleteTrip(trip.trip_id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <TripCard key={trip.trip_id} trip={trip} onView={viewTrip} onDelete={deleteTrip} />
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
 
-        {/* Stats */}
-        {trips.length > 0 && (
-          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-3xl font-bold text-blue-500">{trips.length}</p>
-                <p className="text-gray-600">Total Trips</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-green-500">
-                  {trips.reduce((acc, trip) => acc + (trip.flights || 0), 0)}
-                </p>
-                <p className="text-gray-600">Total Flights</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-purple-500">
-                  {trips.reduce((acc, trip) => acc + (trip.hotels || 0), 0)}
-                </p>
-                <p className="text-gray-600">Total Hotels</p>
-              </div>
-            </div>
-          </div>
+// Trip Card Component
+function TripCard({ trip, onView, onDelete }: { 
+  trip: SavedTrip; 
+  onView: (id: string) => void; 
+  onDelete: (id: string) => void;
+}) {
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "N/A";
+    try {
+      return new Date(dateStr).toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatSavedAt = (dateStr: string) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition p-6">
+      <div className="cursor-pointer" onClick={() => onView(trip.trip_id)}>
+        <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition">
+          {trip.destination}
+        </h3>
+        {trip.title && (
+          <p className="text-sm text-gray-600 mb-3">{trip.title}</p>
         )}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500">📅 Dates:</span>
+            <span className="font-medium">
+              {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">⏱️ Duration:</span>
+            <span className="font-medium">{trip.duration || "N/A"}</span>
+          </div>
+          {trip.passengers > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">👥 Travelers:</span>
+              <span className="font-medium">{trip.passengers}</span>
+            </div>
+          )}
+          <div className="flex gap-4 mt-3">
+            {trip.flights > 0 && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                ✈️ {trip.flights} flights
+              </span>
+            )}
+            {trip.hotels > 0 && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                🏨 {trip.hotels} hotels
+              </span>
+            )}
+          </div>
+        </div>
+        {trip.saved_at && (
+          <p className="text-xs text-gray-400 mt-4">
+            Saved: {formatSavedAt(trip.saved_at)}
+          </p>
+        )}
+      </div>
+      <div className="flex gap-2 mt-4 pt-4 border-t">
+        <button
+          onClick={() => onView(trip.trip_id)}
+          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+        >
+          View Details
+        </button>
+        <button
+          onClick={() => onDelete(trip.trip_id)}
+          className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+        >
+          Delete
+        </button>
       </div>
     </div>
   );

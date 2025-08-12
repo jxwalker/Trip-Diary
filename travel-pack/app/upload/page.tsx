@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,101 @@ export default function UploadPage() {
     hotels: []
   });
   // No mocks, no fake warnings - real backend only
+
+  // Progress Persistence - Save and restore upload state
+  useEffect(() => {
+    // Check for saved upload session on mount
+    const savedSession = localStorage.getItem('uploadSession');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        // Check if session is recent (within 24 hours)
+        const sessionAge = Date.now() - session.timestamp;
+        if (sessionAge < 24 * 60 * 60 * 1000) {
+          // Restore session data
+          if (session.freeText) setFreeText(session.freeText);
+          if (session.tripDetails) setTripDetails(session.tripDetails);
+          if (session.processingStatus) {
+            setProcessingStatus(session.processingStatus);
+            // If there was an ongoing processing, offer to resume
+            if (session.tripId && session.processingStatus.progress < 100) {
+              // Show resume option
+              const shouldResume = window.confirm(
+                'You have an incomplete upload from your previous session. Would you like to resume?'
+              );
+              if (shouldResume) {
+                resumeProcessing(session.tripId);
+              } else {
+                // Clear the saved session if user doesn't want to resume
+                localStorage.removeItem('uploadSession');
+              }
+            }
+          }
+        } else {
+          // Session too old, clear it
+          localStorage.removeItem('uploadSession');
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        localStorage.removeItem('uploadSession');
+      }
+    }
+  }, []);
+
+  // Save session data when it changes
+  useEffect(() => {
+    if (freeText || tripDetails.destination || processingStatus.progress > 0) {
+      const sessionData = {
+        timestamp: Date.now(),
+        freeText,
+        tripDetails,
+        processingStatus,
+        tripId: sessionStorage.getItem('tripId')
+      };
+      localStorage.setItem('uploadSession', JSON.stringify(sessionData));
+    }
+  }, [freeText, tripDetails, processingStatus]);
+
+  // Resume processing function
+  const resumeProcessing = async (tripId: string) => {
+    setIsProcessing(true);
+    let attempts = 0;
+    const maxAttempts = 120;
+    
+    const checkStatus = async () => {
+      try {
+        const statusResponse = await fetch(`/api/proxy/status/${tripId}`);
+        const statusData = await statusResponse.json();
+        
+        console.log("Resume status update:", statusData);
+        
+        setProcessingStatus({
+          progress: statusData.progress || 0,
+          message: statusData.message || "Resuming processing...",
+          extractedData: statusData.extracted_data
+        });
+        
+        if (statusData.status === "completed") {
+          // Clear saved session on completion
+          localStorage.removeItem('uploadSession');
+          router.push(`/summary?tripId=${tripId}`);
+        } else if (statusData.status === "error" || statusData.status === "failed") {
+          throw new Error(statusData.message || "Processing failed");
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkStatus, 1000);
+        } else {
+          throw new Error("Processing timeout. Please try uploading again.");
+        }
+      } catch (err) {
+        console.error("Error checking resume status:", err);
+        setIsProcessing(false);
+        localStorage.removeItem('uploadSession');
+      }
+    };
+    
+    checkStatus();
+  };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Real files - no simulation, no mocks
@@ -214,6 +309,8 @@ export default function UploadPage() {
           });
           
           if (statusData.status === "completed") {
+            // Clear saved session on successful completion
+            localStorage.removeItem('uploadSession');
             // Navigate to summary page with trip ID
             router.push(`/summary?tripId=${tripId}`);
           } else if (statusData.status === "error" || statusData.status === "failed") {
