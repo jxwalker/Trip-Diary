@@ -14,6 +14,10 @@ from typing import Dict, List, Any
 import os
 from datetime import datetime
 import html
+import tempfile
+import urllib.request
+
+from .maps_service import MapsService
 
 class TravelPackGenerator:
     def __init__(self):
@@ -114,6 +118,17 @@ class TravelPackGenerator:
             story.extend(self._create_accommodation_section(itinerary["accommodations"]))
             story.append(PageBreak())
         
+        # Weather (from enhanced guide if available)
+        if enhanced_guide and enhanced_guide.get("weather"):
+            story.extend(self._create_weather_section(enhanced_guide["weather"]))
+            story.append(PageBreak())
+
+        # Static Map (hotel + key POIs) if Maps API configured
+        static_map = await self._maybe_create_static_map(itinerary, enhanced_guide)
+        if static_map:
+            story.extend(static_map)
+            story.append(PageBreak())
+
         # Daily Itinerary (from enhanced guide or basic schedule)
         if enhanced_guide and enhanced_guide.get("daily_itinerary"):
             story.extend(self._create_enhanced_itinerary(enhanced_guide["daily_itinerary"]))
@@ -485,3 +500,84 @@ class TravelPackGenerator:
             story.append(table)
         
         return story
+
+    def _create_weather_section(self, weather_data: Any) -> List:
+        """Create a weather section if structured data is available."""
+        story = []
+        story.append(Paragraph("Weather Forecast", self.styles['SectionHeader']))
+        story.append(Spacer(1, 0.2*inch))
+
+        # Accept either list of dicts or simple strings
+        if isinstance(weather_data, list) and weather_data and isinstance(weather_data[0], dict):
+            # Tabular daily forecast
+            data = [["Date", "High", "Low", "Condition"]]
+            for day in weather_data[:10]:
+                data.append([
+                    self._safe_text(day.get("date", "")),
+                    self._safe_text(day.get("temp_high", "")),
+                    self._safe_text(day.get("temp_low", "")),
+                    self._safe_text(day.get("condition", "")),
+                ])
+            table = Table(data, colWidths=[1.5*inch, 1*inch, 1*inch, 2.5*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e2e8f0')),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('GRID', (0,0), (-1,-1), 0.25, colors.HexColor('#cbd5e1')),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            story.append(table)
+        else:
+            # Fallback to plain paragraphs (still real content, not mocks)
+            if isinstance(weather_data, list):
+                for line in weather_data[:10]:
+                    story.append(Paragraph(self._safe_text(str(line)), self.styles['InfoText']))
+            elif isinstance(weather_data, dict):
+                for k, v in weather_data.items():
+                    story.append(Paragraph(f"<b>{self._safe_text(str(k)).title()}:</b> {self._safe_text(str(v))}", self.styles['InfoText']))
+        return story
+
+    async def _maybe_create_static_map(self, itinerary: Dict, enhanced_guide: Dict | None) -> List:
+        """Insert a static map if we can build a URL with an API key and markers."""
+        try:
+            maps = MapsService()
+            locations: List[Dict[str, Any]] = []
+
+            # Hotel marker
+            hotels = itinerary.get("accommodations", [])
+            if hotels:
+                address = hotels[0].get("address")
+                if address:
+                    locations.append({"address": address})
+
+            # Top restaurants
+            if enhanced_guide and enhanced_guide.get("restaurants"):
+                for r in enhanced_guide["restaurants"][:5]:
+                    addr = r.get("address") or r.get("location")
+                    if addr:
+                        locations.append({"address": addr})
+
+            # Top attractions
+            if enhanced_guide and enhanced_guide.get("attractions"):
+                for a in enhanced_guide["attractions"][:5]:
+                    addr = a.get("address")
+                    if addr:
+                        locations.append({"address": addr})
+
+            if not locations:
+                return []
+
+            url = maps.get_static_map_url(locations)
+            if not url:
+                return []
+
+            # Download to temp file for ReportLab Image
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
+                urllib.request.urlretrieve(url, tmp.name)
+                tmp_path = tmp.name
+
+            img = Image(tmp_path, width=6*inch, height=4*inch)
+            return [Paragraph("Map Overview", self.styles['SectionHeader']), Spacer(1, 0.1*inch), img]
+        except Exception as e:
+            print(f"Static map generation failed: {e}")
+            return []

@@ -18,8 +18,13 @@ class RealtimeDataService:
         """Get weather forecast for destination"""
         try:
             if not self.openweather_key:
-                # Return typical weather if no API key
-                return self._get_typical_weather(destination, start_date)
+                return {
+                    "temperature": None,
+                    "conditions": None,
+                    "packing_tips": None,
+                    "season": None,
+                    "error": "OPENWEATHER_API_KEY not configured"
+                }
             
             async with aiohttp.ClientSession() as session:
                 # Get coordinates for city
@@ -53,58 +58,14 @@ class RealtimeDataService:
         except Exception as e:
             print(f"Weather API error: {e}")
         
-        return self._get_typical_weather(destination, start_date)
-    
-    def _get_typical_weather(self, destination: str, date_str: str) -> Dict:
-        """Get typical weather based on destination and time of year"""
-        try:
-            date = datetime.strptime(date_str, "%Y-%m-%d")
-            month = date.month
-        except:
-            month = datetime.now().month
-        
-        # Seasonal weather patterns
-        weather_patterns = {
-            "New York": {
-                "winter": {"temp": "0-5°C", "conditions": "Cold, possible snow", "pack": "Winter coat, boots"},
-                "spring": {"temp": "10-20°C", "conditions": "Mild, occasional rain", "pack": "Light jacket, umbrella"},
-                "summer": {"temp": "20-30°C", "conditions": "Hot and humid", "pack": "Light clothes, sunscreen"},
-                "fall": {"temp": "10-20°C", "conditions": "Cool and crisp", "pack": "Layers, light jacket"}
-            },
-            "London": {
-                "winter": {"temp": "2-8°C", "conditions": "Cold and rainy", "pack": "Raincoat, umbrella"},
-                "spring": {"temp": "8-15°C", "conditions": "Variable, showers", "pack": "Layers, raincoat"},
-                "summer": {"temp": "15-23°C", "conditions": "Mild, occasional rain", "pack": "Light jacket, umbrella"},
-                "fall": {"temp": "8-15°C", "conditions": "Cool and damp", "pack": "Warm layers, raincoat"}
-            },
-            "Paris": {
-                "winter": {"temp": "3-8°C", "conditions": "Cold, occasional rain", "pack": "Warm coat, scarf"},
-                "spring": {"temp": "10-18°C", "conditions": "Pleasant, some rain", "pack": "Light jacket, umbrella"},
-                "summer": {"temp": "15-25°C", "conditions": "Warm and sunny", "pack": "Light clothes, sunglasses"},
-                "fall": {"temp": "10-18°C", "conditions": "Cool, crisp days", "pack": "Layers, light jacket"}
-            }
-        }
-        
-        # Determine season
-        if month in [12, 1, 2]:
-            season = "winter"
-        elif month in [3, 4, 5]:
-            season = "spring"
-        elif month in [6, 7, 8]:
-            season = "summer"
-        else:
-            season = "fall"
-        
-        # Get weather for destination or default
-        city_weather = weather_patterns.get(destination, weather_patterns.get("New York"))
-        seasonal_weather = city_weather[season]
-        
         return {
-            "temperature": seasonal_weather["temp"],
-            "conditions": seasonal_weather["conditions"],
-            "packing_tips": seasonal_weather["pack"],
-            "season": season
+            "temperature": None,
+            "conditions": None,
+            "packing_tips": None,
+            "season": None
         }
+    
+    # Removed typical weather generator to comply with no-mocks policy
     
     def _format_weather_data(self, weather_data: Dict, start_date: str, end_date: str) -> Dict:
         """Format weather API data"""
@@ -156,7 +117,7 @@ class RealtimeDataService:
         events = []
         
         # Add typical events based on destination and dates
-        events.extend(self._get_typical_events(destination, start_date, end_date, interests))
+        # No typical events; only real providers
         
         # If we have Ticketmaster API, fetch real events
         if self.ticketmaster_key:
@@ -165,11 +126,7 @@ class RealtimeDataService:
         
         return events
     
-    def _get_typical_events(self, destination: str, start_date: str, end_date: str, interests: List[str] = None) -> List[Dict]:
-        """Get events based on user interests - no hardcoding"""
-        # This should be fetched dynamically or left empty
-        # Let Perplexity handle real-time event discovery
-        return []
+    # Removed typical events to comply with no-mocks policy
     
     async def _fetch_ticketmaster_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
         """Fetch real events from Ticketmaster API"""

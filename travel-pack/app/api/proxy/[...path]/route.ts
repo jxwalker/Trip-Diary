@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 export async function GET(
   request: NextRequest,
@@ -12,11 +12,27 @@ export async function GET(
   
   try {
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: Object.fromEntries(request.headers),
     });
-    
+    const contentType = response.headers.get('content-type') || '';
+
+    // Stream Server-Sent Events directly
+    if (contentType.includes('text/event-stream') || path.includes('generation-stream')) {
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'text/event-stream');
+      headers.set('Cache-Control', 'no-cache');
+      headers.set('Connection', 'keep-alive');
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    // Stream file downloads (e.g., PDFs)
+    if (contentType.includes('application/pdf')) {
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'application/pdf');
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    // Default: JSON pass-through
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
@@ -69,7 +85,15 @@ export async function POST(
         },
       });
     }
-    
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      // Non-JSON response (rare for POST) – stream it
+      const headers = new Headers(response.headers);
+      if (contentType) headers.set('Content-Type', contentType);
+      return new Response(response.body, { status: response.status, headers });
+    }
+
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

@@ -122,10 +122,6 @@ export default function PreferencesPage() {
       liveMusic: false,
       concerts: false,
       theater: false,
-      localCuisine: true,
-      fineDining: false,
-      streetFood: false,
-      cafes: false,
       bars: false,
       nightclubs: false,
       shopping: false,
@@ -174,16 +170,6 @@ export default function PreferencesPage() {
         { key: "concerts", label: "Concerts", icon: Music },
         { key: "bars", label: "Bars & Pubs", icon: Wine },
         { key: "nightclubs", label: "Nightclubs", icon: Sparkles },
-      ]
-    },
-    {
-      title: "Food & Drink",
-      icon: Utensils,
-      interests: [
-        { key: "localCuisine", label: "Local Cuisine", icon: Utensils },
-        { key: "fineDining", label: "Fine Dining", icon: Star },
-        { key: "streetFood", label: "Street Food", icon: MapPin },
-        { key: "cafes", label: "Cafés & Coffee", icon: Coffee },
       ]
     },
     {
@@ -276,7 +262,7 @@ export default function PreferencesPage() {
         adventureLevel: preferences.adventureLevel,
         artCulture: preferences.interests.artGalleries || preferences.interests.museums ? 5 : 2,
         music: preferences.interests.liveMusic || preferences.interests.concerts ? 5 : 2,
-        food: preferences.interests.localCuisine || preferences.interests.fineDining ? 5 : 3,
+        food: preferences.cuisineTypes.length > 0 ? 5 : 3,
         nightlife: preferences.interests.bars || preferences.interests.nightclubs ? 5 : 2,
         shopping: preferences.interests.shopping || preferences.interests.localMarkets ? 5 : 2,
         nature: preferences.interests.nature || preferences.interests.beaches ? 5 : 2,
@@ -302,8 +288,8 @@ export default function PreferencesPage() {
       });
       
       if (response.ok) {
-        // Navigate to the magazine-style guide page
-        router.push(`/guide?tripId=${tripId}`);
+        // Navigate to real progress page for guide creation
+        router.push(`/generate-itinerary?tripId=${tripId}`);
       }
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -351,12 +337,11 @@ export default function PreferencesPage() {
           </motion.div>
 
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="interests">Interests</TabsTrigger>
-              <TabsTrigger value="food">Food & Dining</TabsTrigger>
-              <TabsTrigger value="activity">Activity Level</TabsTrigger>
-              <TabsTrigger value="style">Travel Style</TabsTrigger>
-            </TabsList>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="interests">Interests</TabsTrigger>
+            <TabsTrigger value="food">Food</TabsTrigger>
+            <TabsTrigger value="style">Pace & Group</TabsTrigger>
+          </TabsList>
 
             {/* Interests Tab */}
             <TabsContent value="interests" className="space-y-4">
@@ -409,7 +394,7 @@ export default function PreferencesPage() {
               </Card>
             </TabsContent>
 
-            {/* Food & Dining Tab */}
+            {/* Food & Dining Tab (single place; removed duplicates elsewhere) */}
             <TabsContent value="food" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -494,12 +479,12 @@ export default function PreferencesPage() {
               </Card>
             </TabsContent>
 
-            {/* Activity Level Tab */}
-            <TabsContent value="activity" className="space-y-4">
+            {/* Pace & Group Tab (combines activity + travel style) */}
+            <TabsContent value="style" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Activity Preferences</CardTitle>
-                  <CardDescription>How active do you want to be?</CardDescription>
+                  <CardTitle>Activity & Style</CardTitle>
+                  <CardDescription>Set your preferred activity level and pace</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <div>
@@ -524,13 +509,6 @@ export default function PreferencesPage() {
                       step={1}
                       className="mb-2"
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Minimal</span>
-                      <span>Light</span>
-                      <span>Moderate</span>
-                      <span>Active</span>
-                      <span>Very Active</span>
-                    </div>
                   </div>
 
                   <div>
@@ -555,16 +533,8 @@ export default function PreferencesPage() {
                       step={1}
                       className="mb-2"
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Tourist</span>
-                      <span>Popular</span>
-                      <span>Mixed</span>
-                      <span>Adventurous</span>
-                      <span>Explorer</span>
-                    </div>
                   </div>
 
-                  {/* Preferred Times */}
                   <div>
                     <Label className="mb-4 block flex items-center gap-2">
                       <Clock className="h-5 w-5 text-sky-500" />
@@ -572,7 +542,6 @@ export default function PreferencesPage() {
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[
-                        { key: "earlyMorning", label: "Early Morning", time: "5am-8am" },
                         { key: "morning", label: "Morning", time: "8am-12pm" },
                         { key: "afternoon", label: "Afternoon", time: "12pm-5pm" },
                         { key: "evening", label: "Evening", time: "5pm-9pm" },
@@ -604,10 +573,8 @@ export default function PreferencesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            {/* Travel Style Tab */}
-            <TabsContent value="style" className="space-y-4">
+              {/* Travel Style (pace/group) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Travel Style</CardTitle>
@@ -680,6 +647,8 @@ export default function PreferencesPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Removed duplicate Travel Style tab to avoid redundancy */}
           </Tabs>
 
           {/* Action Buttons */}

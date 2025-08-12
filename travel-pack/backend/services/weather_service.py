@@ -35,9 +35,15 @@ class WeatherService:
             Weather forecast data with daily conditions
         """
         
-        # If no API key, return mock data for development
+        # If no API key, return empty with error (no mocks)
         if not self.api_key:
-            return self._get_mock_weather(destination, start_date, end_date)
+            return {
+                "destination": destination,
+                "forecast_period": {"start": start_date, "end": end_date},
+                "daily_forecasts": [],
+                "summary": {},
+                "error": "OPENWEATHER_API_KEY not configured"
+            }
         
         try:
             # Get coordinates for the destination
@@ -54,11 +60,23 @@ class WeatherService:
                         data = await response.json()
                         return self._format_forecast(data, destination, start_date, end_date)
                     else:
-                        return self._get_mock_weather(destination, start_date, end_date)
+                        return {
+                            "destination": destination,
+                            "forecast_period": {"start": start_date, "end": end_date},
+                            "daily_forecasts": [],
+                            "summary": {},
+                            "error": "OpenWeather forecast unavailable"
+                        }
                         
         except Exception as e:
             print(f"Weather API error: {e}")
-            return self._get_mock_weather(destination, start_date, end_date)
+            return {
+                "destination": destination,
+                "forecast_period": {"start": start_date, "end": end_date},
+                "daily_forecasts": [],
+                "summary": {},
+                "error": str(e)
+            }
     
     async def _get_coordinates(self, location: str) -> Optional[Dict]:
         """Get latitude and longitude for a location"""
@@ -175,51 +193,3 @@ class WeatherService:
         
         return list(set(suggestions))  # Remove duplicates
     
-    def _get_mock_weather(self, destination: str, start_date: str, end_date: str) -> Dict:
-        """Return mock weather data for development"""
-        
-        # Calculate days
-        start = datetime.strptime(start_date, "%Y-%m-%d")
-        end = datetime.strptime(end_date, "%Y-%m-%d")
-        days = (end - start).days + 1
-        
-        daily_forecasts = []
-        for i in range(days):
-            date = (start + timedelta(days=i)).strftime("%Y-%m-%d")
-            
-            # Mock varied weather
-            conditions = ["Clear", "Partly Cloudy", "Cloudy", "Light Rain"]
-            condition = conditions[i % len(conditions)]
-            
-            daily_forecasts.append({
-                "date": date,
-                "temp_high": 22 + (i % 5),  # Vary between 22-26°C
-                "temp_low": 15 + (i % 3),    # Vary between 15-17°C
-                "condition": condition,
-                "description": f"{condition.lower()} skies",
-                "humidity": 60 + (i % 20),
-                "wind_speed": 10 + (i % 5),
-                "icon": self._get_weather_icon(condition.split()[0])
-            })
-        
-        return {
-            "destination": destination,
-            "forecast_period": {
-                "start": start_date,
-                "end": end_date
-            },
-            "daily_forecasts": daily_forecasts,
-            "summary": {
-                "avg_high": 24,
-                "avg_low": 16,
-                "predominant_condition": "Partly Cloudy",
-                "packing_suggestions": [
-                    "Light jacket",
-                    "Comfortable walking shoes",
-                    "Sunglasses",
-                    "Umbrella (just in case)",
-                    "Sunscreen",
-                    "Light clothing"
-                ]
-            }
-        }

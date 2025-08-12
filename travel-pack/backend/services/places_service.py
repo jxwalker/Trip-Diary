@@ -48,7 +48,7 @@ class PlacesService:
         """
         
         if not self.google_api_key:
-            return self._get_mock_restaurants(location, preferences)
+            return []
         
         try:
             restaurants = []
@@ -109,7 +109,7 @@ class PlacesService:
             
         except Exception as e:
             print(f"Places API error: {e}")
-            return self._get_mock_restaurants(location, preferences)
+            return []
     
     async def get_attractions(
         self,
@@ -130,7 +130,7 @@ class PlacesService:
         """
         
         if not self.google_api_key:
-            return self._get_mock_attractions(location, preferences)
+            return []
         
         try:
             attractions = []
@@ -208,7 +208,7 @@ class PlacesService:
             
         except Exception as e:
             print(f"Attractions API error: {e}")
-            return self._get_mock_attractions(location, preferences)
+            return []
     
     def _convert_price_range(self, price_str: str) -> Optional[tuple]:
         """Convert $ symbols to Google price levels (0-4)"""
@@ -285,143 +285,6 @@ class PlacesService:
         }
         return suggestions.get(place_type, "Any time")
     
-    def _get_mock_restaurants(self, location: str, preferences: Dict) -> List[Dict]:
-        """Return mock restaurant data for development"""
-        
-        mock_restaurants = [
-            {
-                "name": "The Local Kitchen",
-                "cuisine": "Local Cuisine",
-                "address": f"123 Main Street, {location}",
-                "phone": "+1 555-0101",
-                "rating": 4.6,
-                "price_level": "$$",
-                "opening_hours": [
-                    "Monday: 11:00 AM – 10:00 PM",
-                    "Tuesday: 11:00 AM – 10:00 PM",
-                    "Wednesday: 11:00 AM – 10:00 PM",
-                    "Thursday: 11:00 AM – 10:00 PM",
-                    "Friday: 11:00 AM – 11:00 PM",
-                    "Saturday: 10:00 AM – 11:00 PM",
-                    "Sunday: 10:00 AM – 9:00 PM"
-                ],
-                "website": "https://example.com/local-kitchen",
-                "google_maps_url": "https://maps.google.com",
-                "reviews_summary": "Amazing local dishes with fresh ingredients. The atmosphere is cozy and service is excellent.",
-                "specialties": ["Farm-to-table cuisine", "Seasonal menu", "Local wines"],
-                "reservation_recommended": True,
-                "distance_from_hotel": "0.5 km",
-                "walking_time": "6 mins"
-            },
-            {
-                "name": "Bella Vista Italian",
-                "cuisine": "Italian",
-                "address": f"456 Restaurant Row, {location}",
-                "phone": "+1 555-0102",
-                "rating": 4.5,
-                "price_level": "$$$",
-                "opening_hours": [
-                    "Monday: Closed",
-                    "Tuesday: 5:00 PM – 10:00 PM",
-                    "Wednesday: 5:00 PM – 10:00 PM",
-                    "Thursday: 5:00 PM – 10:00 PM",
-                    "Friday: 5:00 PM – 11:00 PM",
-                    "Saturday: 5:00 PM – 11:00 PM",
-                    "Sunday: 4:00 PM – 9:00 PM"
-                ],
-                "website": "https://example.com/bella-vista",
-                "google_maps_url": "https://maps.google.com",
-                "reviews_summary": "Authentic Italian cuisine with an extensive wine list. Perfect for a romantic dinner.",
-                "specialties": ["Homemade pasta", "Wood-fired pizza", "Tiramisu"],
-                "reservation_recommended": True,
-                "distance_from_hotel": "1.2 km",
-                "walking_time": "15 mins"
-            },
-            {
-                "name": "Sakura Sushi Bar",
-                "cuisine": "Japanese",
-                "address": f"789 Asia District, {location}",
-                "phone": "+1 555-0103",
-                "rating": 4.7,
-                "price_level": "$$$",
-                "opening_hours": [
-                    "Monday: 11:30 AM – 2:30 PM, 5:00 PM – 10:00 PM",
-                    "Tuesday: 11:30 AM – 2:30 PM, 5:00 PM – 10:00 PM",
-                    "Wednesday: 11:30 AM – 2:30 PM, 5:00 PM – 10:00 PM",
-                    "Thursday: 11:30 AM – 2:30 PM, 5:00 PM – 10:00 PM",
-                    "Friday: 11:30 AM – 2:30 PM, 5:00 PM – 11:00 PM",
-                    "Saturday: 12:00 PM – 11:00 PM",
-                    "Sunday: 12:00 PM – 10:00 PM"
-                ],
-                "website": "https://example.com/sakura-sushi",
-                "google_maps_url": "https://maps.google.com",
-                "reviews_summary": "Fresh sushi and authentic Japanese dishes. The omakase menu is highly recommended.",
-                "specialties": ["Omakase", "Fresh sashimi", "Sake selection"],
-                "reservation_recommended": True,
-                "distance_from_hotel": "0.8 km",
-                "walking_time": "10 mins"
-            }
-        ]
-        
-        return mock_restaurants
+    # Removed mock restaurant provider to comply with no-mocks policy
     
-    def _get_mock_attractions(self, location: str, preferences: Dict) -> List[Dict]:
-        """Return mock attraction data for development"""
-        
-        mock_attractions = [
-            {
-                "name": f"{location} Museum of Art",
-                "type": "Museum",
-                "address": f"100 Museum Plaza, {location}",
-                "rating": 4.7,
-                "opening_hours": [
-                    "Monday: Closed",
-                    "Tuesday: 10:00 AM – 5:00 PM",
-                    "Wednesday: 10:00 AM – 5:00 PM",
-                    "Thursday: 10:00 AM – 8:00 PM",
-                    "Friday: 10:00 AM – 5:00 PM",
-                    "Saturday: 10:00 AM – 6:00 PM",
-                    "Sunday: 11:00 AM – 5:00 PM"
-                ],
-                "website": "https://example.com/art-museum",
-                "google_maps_url": "https://maps.google.com",
-                "description": "World-renowned art museum featuring both classical and contemporary collections.",
-                "entry_fee": "$25 adults, $15 students",
-                "typical_duration": "2-3 hours",
-                "best_time_to_visit": "Morning or early afternoon",
-                "distance_from_hotel": "2.5 km",
-                "travel_time": "8 mins by car"
-            },
-            {
-                "name": "Historic Old Town",
-                "type": "Tourist Attraction",
-                "address": f"Old Town Square, {location}",
-                "rating": 4.6,
-                "opening_hours": ["Open 24 hours"],
-                "website": "https://example.com/old-town",
-                "google_maps_url": "https://maps.google.com",
-                "description": "Charming historic district with cobblestone streets, local shops, and cafes.",
-                "entry_fee": "Free",
-                "typical_duration": "2-3 hours",
-                "best_time_to_visit": "Morning for best photos",
-                "distance_from_hotel": "1.0 km",
-                "travel_time": "12 mins walking"
-            },
-            {
-                "name": "Central Park",
-                "type": "Park",
-                "address": f"Park Avenue, {location}",
-                "rating": 4.5,
-                "opening_hours": ["Open 6:00 AM – 10:00 PM"],
-                "website": "https://example.com/central-park",
-                "google_maps_url": "https://maps.google.com",
-                "description": "Beautiful urban park perfect for walking, jogging, or picnicking.",
-                "entry_fee": "Free",
-                "typical_duration": "1-2 hours",
-                "best_time_to_visit": "Morning or late afternoon",
-                "distance_from_hotel": "0.7 km",
-                "travel_time": "8 mins walking"
-            }
-        ]
-        
-        return mock_attractions
+    # Removed mock attractions provider to comply with no-mocks policy

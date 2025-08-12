@@ -7,7 +7,7 @@ import os
 import json
 import asyncio
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable, Awaitable
 from pathlib import Path
 import aiohttp
 from dotenv import load_dotenv
@@ -45,7 +45,9 @@ class EnhancedGuideService:
         end_date: str,
         hotel_info: Dict,
         preferences: Dict,
-        extracted_data: Dict
+        extracted_data: Dict,
+        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None,
+        single_pass: bool = True
     ) -> Dict:
         """
         Generate a comprehensive, personalized travel guide using REAL data
@@ -57,17 +59,28 @@ class EnhancedGuideService:
             hotel_info, preferences, extracted_data
         )
         
-        # Use real Perplexity searches to get actual content
-        if self.perplexity_api_key:
-            guide = await self._generate_with_real_searches(context)
-        else:
+        # If no API key, return error instead of mocks
+        if not self.perplexity_api_key:
             # If no API key, return error instead of mocks
             return {
                 "error": "Perplexity API key not configured. Cannot generate real content.",
                 "message": "Please configure PERPLEXITY_API_KEY in your .env file"
             }
-        
-        return guide
+
+        # Prefer single-pass generation for latency
+        if single_pass:
+            if progress_callback:
+                await progress_callback(10, "Building personalized prompt")
+            prompt = self._construct_master_prompt(context)
+            if progress_callback:
+                await progress_callback(35, "Querying Perplexity")
+            guide = await self._generate_with_perplexity(prompt, context)
+            if progress_callback:
+                await progress_callback(90, "Parsing and organizing guide")
+            return guide
+        else:
+            # Multi-search mode (slower but more granular)
+            return await self._generate_with_real_searches(context, progress_callback)
     
     def _build_context(
         self,
@@ -250,13 +263,30 @@ class EnhancedGuideService:
         return master_prompt
     
     async def _generate_with_perplexity(self, prompt: str, context: Dict) -> Dict:
-        """Generate guide using Perplexity API with web search"""
+        """Generate guide using Perplexity API with web search.
+        No mock fallbacks: on error, return structured empty results with error message.
+        """
         
         if not self.perplexity_api_key:
-            return await self._generate_from_templates(context)
+            return {
+                "error": "Perplexity API key not configured. Cannot generate real content.",
+                "message": "Please configure PERPLEXITY_API_KEY in your .env file",
+                "summary": "",
+                "destination_insights": "",
+                "weather": {},
+                "daily_itinerary": [],
+                "restaurants": [],
+                "attractions": [],
+                "events": [],
+                "neighborhoods": [],
+                "practical_info": {},
+                "hidden_gems": [],
+                "citations": []
+            }
         
         try:
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=90)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 headers = {
                     "Authorization": f"Bearer {self.perplexity_api_key}",
                     "Content-Type": "application/json"
@@ -285,9 +315,9 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                             "content": prompt
                         }
                     ],
-                    "temperature": 0.7,
+                    "temperature": 0.5,
                     "top_p": 0.9,
-                    "max_tokens": 4000
+                    "max_tokens": 2000
                 }
                 
                 async with session.post(url, json=payload, headers=headers) as response:
@@ -303,17 +333,56 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                         return parsed_guide
                     else:
                         print(f"Perplexity API error: {response.status}")
-                        return await self._generate_from_templates(context)
+                        return {
+                            "error": f"Perplexity API error: {response.status}",
+                            "summary": "",
+                            "destination_insights": "",
+                            "weather": {},
+                            "daily_itinerary": [],
+                            "restaurants": [],
+                            "attractions": [],
+                            "events": [],
+                            "neighborhoods": [],
+                            "practical_info": {},
+                            "hidden_gems": [],
+                            "citations": []
+                        }
                         
         except Exception as e:
             print(f"Error with Perplexity API: {e}")
-            return await self._generate_from_templates(context)
+            return {
+                "error": str(e),
+                "summary": "",
+                "destination_insights": "",
+                "weather": {},
+                "daily_itinerary": [],
+                "restaurants": [],
+                "attractions": [],
+                "events": [],
+                "neighborhoods": [],
+                "practical_info": {},
+                "hidden_gems": [],
+                "citations": []
+            }
     
     async def _generate_with_openai(self, prompt: str, context: Dict) -> Dict:
         """Generate guide using OpenAI GPT-4"""
         
         if not self.openai_api_key:
-            return await self._generate_from_templates(context)
+            return {
+                "error": "OpenAI API key not configured.",
+                "summary": "",
+                "destination_insights": "",
+                "weather": {},
+                "daily_itinerary": [],
+                "restaurants": [],
+                "attractions": [],
+                "events": [],
+                "neighborhoods": [],
+                "practical_info": {},
+                "hidden_gems": [],
+                "citations": []
+            }
         
         try:
             async with aiohttp.ClientSession() as session:
@@ -350,11 +419,37 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                         return parsed_guide
                     else:
                         print(f"OpenAI API error: {response.status}")
-                        return await self._generate_from_templates(context)
+                        return {
+                            "error": f"OpenAI API error: {response.status}",
+                            "summary": "",
+                            "destination_insights": "",
+                            "weather": {},
+                            "daily_itinerary": [],
+                            "restaurants": [],
+                            "attractions": [],
+                            "events": [],
+                            "neighborhoods": [],
+                            "practical_info": {},
+                            "hidden_gems": [],
+                            "citations": []
+                        }
                         
         except Exception as e:
             print(f"Error with OpenAI API: {e}")
-            return await self._generate_from_templates(context)
+            return {
+                "error": str(e),
+                "summary": "",
+                "destination_insights": "",
+                "weather": {},
+                "daily_itinerary": [],
+                "restaurants": [],
+                "attractions": [],
+                "events": [],
+                "neighborhoods": [],
+                "practical_info": {},
+                "hidden_gems": [],
+                "citations": []
+            }
     
     def _parse_guide_content(self, content: str, citations: List) -> Dict:
         """Parse LLM response into structured guide format"""
@@ -510,10 +605,12 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                 gems.append({"description": line.strip("- ").strip()})
         return gems
     
-    async def _generate_with_real_searches(self, context: Dict) -> Dict:
+    async def _generate_with_real_searches(self, context: Dict, progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None) -> Dict:
         """Generate guide using real Perplexity searches - NO MOCKS"""
         
         try:
+            if progress_callback:
+                await progress_callback(5, "Preparing real-time searches")
             # Format dates for searches
             dates_dict = {
                 "start": context["start_date"],
@@ -525,6 +622,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
             import asyncio
             
             # Get real restaurants
+            if progress_callback:
+                await progress_callback(10, "Preparing restaurant recommendations")
             restaurants_task = self.perplexity_search.search_restaurants(
                 context["destination"],
                 context["preferences"],
@@ -532,6 +631,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
             )
             
             # Get real attractions
+            if progress_callback:
+                await progress_callback(20, "Preparing attraction recommendations")
             attractions_task = self.perplexity_search.search_attractions(
                 context["destination"],
                 context["preferences"],
@@ -539,6 +640,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
             )
             
             # Get real events for the actual dates
+            if progress_callback:
+                await progress_callback(30, "Searching events")
             events_task = self.perplexity_search.search_events(
                 context["destination"],
                 context["start_date"],
@@ -547,6 +650,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
             )
             
             # Get local insights
+            if progress_callback:
+                await progress_callback(35, "Fetching local insights")
             insights_task = self.perplexity_search.search_local_insights(
                 context["destination"],
                 dates_dict
@@ -559,6 +664,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                 events_task,
                 insights_task
             )
+            if progress_callback:
+                await progress_callback(55, "Assembling daily itineraries")
             
             # Generate daily itineraries
             daily_itinerary = []
@@ -585,6 +692,9 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                     previous_days.extend([item for item in day_itinerary["morning"] if len(item) > 20][:2])
                 if day_itinerary.get("afternoon"):
                     previous_days.extend([item for item in day_itinerary["afternoon"] if len(item) > 20][:2])
+                if progress_callback:
+                    pct = 55 + int(30 * (day_num + 1) / max(1, context["duration_days"]))
+                    await progress_callback(min(pct, 85), f"Planning day {day_num + 1} itinerary")
             
             # Build the complete guide with real data
             guide = {
@@ -608,6 +718,8 @@ IMPORTANT: Use actual current information from the web, not generic recommendati
                 "generated_with": "real_perplexity_search",
                 "timestamp": datetime.now().isoformat()
             }
+            if progress_callback:
+                await progress_callback(95, "Finalizing guide")
             
             return guide
             

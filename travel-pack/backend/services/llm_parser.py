@@ -71,6 +71,8 @@ REQUIRED JSON STRUCTURE:
             "ambiance": "Description of atmosphere",
             "must_try_dishes": ["Dish 1", "Dish 2"],
             "reservations": "Required/Recommended/Not needed",
+            "website": "https://...",
+            "reservation_link": "https://...",
             "address": "Full address",
             "phone": "Phone number",
             "distance_from_hotel": "e.g., 0.5 miles"
@@ -116,6 +118,7 @@ REQUIRED JSON STRUCTURE:
             "type": "Museum/Park/Gallery/Monument",
             "description": "Brief description",
             "address": "Full address",
+            "website": "https://...",
             "hours": "Operating hours",
             "tickets": "Ticket info",
             "tips": "Insider tips"
@@ -129,6 +132,7 @@ REQUIRED JSON STRUCTURE:
             "time": "Time",
             "venue": "Venue name",
             "tickets": "Ticket info",
+            "booking_link": "https://...",
             "description": "Brief description"
         }}
     ],

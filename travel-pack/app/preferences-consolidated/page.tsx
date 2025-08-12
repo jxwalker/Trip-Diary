@@ -62,10 +62,6 @@ export default function ConsolidatedPreferencesPage() {
       liveMusic: false,
       concerts: false,
       theater: false,
-      localCuisine: true,
-      fineDining: false,
-      streetFood: false,
-      cafes: false,
       bars: false,
       nightclubs: false,
       shopping: false,
@@ -132,16 +128,7 @@ export default function ConsolidatedPreferencesPage() {
         { key: "nightclubs", label: "Nightclubs", icon: Sparkles },
       ]
     },
-    {
-      title: "Food & Drink",
-      icon: Utensils,
-      interests: [
-        { key: "localCuisine", label: "Local Cuisine", icon: Utensils },
-        { key: "fineDining", label: "Fine Dining", icon: Star },
-        { key: "streetFood", label: "Street Food", icon: MapPin },
-        { key: "cafes", label: "Cafés & Coffee", icon: Coffee },
-      ]
-    },
+    
     {
       title: "Shopping",
       icon: ShoppingBag,

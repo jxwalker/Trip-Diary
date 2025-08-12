@@ -26,7 +26,12 @@ class MapsService:
         Get travel time between two locations
         """
         if not self.client:
-            return self._mock_travel_time(origin, destination, mode)
+            return {
+                "distance": None,
+                "duration": None,
+                "duration_value": None,
+                "error": "GOOGLE_MAPS_API_KEY not configured"
+            }
         
         try:
             result = self.client.distance_matrix(
@@ -44,28 +49,20 @@ class MapsService:
                     "duration_value": element['duration']['value']
                 }
             else:
-                return self._mock_travel_time(origin, destination, mode)
+                return {
+                    "distance": None,
+                    "duration": None,
+                    "duration_value": None,
+                    "error": "DistanceMatrix returned non-OK status"
+                }
                 
         except Exception as e:
             print(f"Maps API error: {e}")
-            return self._mock_travel_time(origin, destination, mode)
-    
-    def _mock_travel_time(self, origin: str, destination: str, mode: str) -> Dict:
-        """
-        Mock travel time for when API is not available
-        """
-        # Provide reasonable estimates
-        if "airport" in origin.lower() or "airport" in destination.lower():
             return {
-                "distance": "15 miles",
-                "duration": "45 mins",
-                "duration_value": 2700
-            }
-        else:
-            return {
-                "distance": "5 miles",
-                "duration": "15 mins",
-                "duration_value": 900
+                "distance": None,
+                "duration": None,
+                "duration_value": None,
+                "error": str(e)
             }
     
     async def get_place_details(self, place_name: str) -> Dict:
@@ -73,7 +70,17 @@ class MapsService:
         Get details about a place
         """
         if not self.client:
-            return self._mock_place_details(place_name)
+            return {
+                "name": place_name,
+                "address": "",
+                "phone": "",
+                "rating": 0,
+                "price_level": None,
+                "website": "",
+                "hours": [],
+                "location": None,
+                "error": "GOOGLE_MAPS_API_KEY not configured"
+            }
         
         try:
             # Search for the place
@@ -100,37 +107,30 @@ class MapsService:
                     }
                 }
             else:
-                return self._mock_place_details(place_name)
+                return {
+                    "name": place_name,
+                    "address": "",
+                    "phone": "",
+                    "rating": 0,
+                    "price_level": None,
+                    "website": "",
+                    "hours": [],
+                    "location": None
+                }
                 
         except Exception as e:
             print(f"Place details error: {e}")
-            return self._mock_place_details(place_name)
-    
-    def _mock_place_details(self, place_name: str) -> Dict:
-        """
-        Mock place details
-        """
-        return {
-            "name": place_name,
-            "address": "123 Main Street, City",
-            "phone": "+1 555-0123",
-            "rating": 4.5,
-            "price_level": 2,
-            "website": "https://example.com",
-            "hours": [
-                "Monday: 9:00 AM – 9:00 PM",
-                "Tuesday: 9:00 AM – 9:00 PM",
-                "Wednesday: 9:00 AM – 9:00 PM",
-                "Thursday: 9:00 AM – 9:00 PM",
-                "Friday: 9:00 AM – 10:00 PM",
-                "Saturday: 10:00 AM – 10:00 PM",
-                "Sunday: 10:00 AM – 8:00 PM"
-            ],
-            "location": {
-                "lat": 40.7128,
-                "lng": -74.0060
+            return {
+                "name": place_name,
+                "address": "",
+                "phone": "",
+                "rating": 0,
+                "price_level": None,
+                "website": "",
+                "hours": [],
+                "location": None,
+                "error": str(e)
             }
-        }
     
     def get_static_map_url(self, locations: List[Dict], size: str = "600x400") -> str:
         """

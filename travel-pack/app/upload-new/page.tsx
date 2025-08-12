@@ -85,7 +85,7 @@ export default function SimplifiedUploadPage() {
     try {
       const formData = new FormData();
       formData.append("file", uploadedFile.file, uploadedFile.name);
-      formData.append("use_vision", "false");
+      formData.append("use_vision", "true");
       
       const response = await fetch("/api/proxy/upload-single", {
         method: "POST",
@@ -101,7 +101,7 @@ export default function SimplifiedUploadPage() {
       
       // Poll for completion
       let attempts = 0;
-      const maxAttempts = 60;
+      const maxAttempts = 180; // allow up to ~3 minutes
       
       const checkStatus = async () => {
         try {

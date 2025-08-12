@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import os
@@ -331,58 +331,23 @@ async def process_trip_data(
         generator = ItineraryGenerator()
         itinerary = await generator.create_itinerary(extracted_data)
         
-        # IMMEDIATELY enhance with real content from Perplexity
-        processing_status[trip_id]["progress"] = 65
-        processing_status[trip_id]["message"] = "Searching for real restaurants and attractions..."
-        
-        # Debug logging
+        # Store base itinerary only (no recommendations until preferences)
         print(f"[DEBUG] Trip {trip_id} - Destination: {itinerary.get('trip_summary', {}).get('destination')}")
         print(f"[DEBUG] Trip {trip_id} - Start Date: {itinerary.get('trip_summary', {}).get('start_date')}")
         print(f"[DEBUG] Trip {trip_id} - End Date: {itinerary.get('trip_summary', {}).get('end_date')}")
-        
-        try:
-            immediate_generator = ImmediateGuideGenerator()
-            itinerary = await immediate_generator.enhance_itinerary_immediately(itinerary)
-            print(f"[DEBUG] Trip {trip_id} - Enhanced with {len(itinerary.get('restaurants', []))} restaurants")
-            print(f"[DEBUG] Trip {trip_id} - Enhanced with {len(itinerary.get('attractions', []))} attractions")
-        except Exception as e:
-            print(f"[ERROR] Trip {trip_id} - Error enhancing: {e}")
-            import traceback
-            traceback.print_exc()
-        
-        # Store intermediate results for real-time display
-        trip_data[trip_id] = {"itinerary": itinerary}
-        
-        # Update progress after itinerary
-        processing_status[trip_id]["progress"] = 75
-        processing_status[trip_id]["message"] = "Itinerary created! Finding recommendations..."
-        
-        # Get recommendations
-        processing_status[trip_id]["progress"] = 85
-        processing_status[trip_id]["message"] = "Finding the best restaurants and activities..."
-        await asyncio.sleep(0.5)  # Small delay to show progress
-        
-        recommender = RecommendationsService()
-        recommendations = await recommender.get_recommendations(itinerary)
-        
-        # Store trip data
+
         trip_data[trip_id] = {
             "extracted_data": extracted_data,
             "itinerary": itinerary,
-            "recommendations": recommendations,
+            "recommendations": {},
             "created_at": datetime.now().isoformat()
         }
-        
-        # Final processing steps
-        processing_status[trip_id]["progress"] = 95
-        processing_status[trip_id]["message"] = "Finalizing your travel package..."
-        await asyncio.sleep(0.5)
-        
-        # Update final status
+
+        # Finalize upload processing – prompt user to set preferences next
         processing_status[trip_id] = {
             "status": "completed",
             "progress": 100,
-            "message": "Processing complete! Your travel package is ready.",
+            "message": "Itinerary created. Set preferences to personalize your guide.",
             "extracted_data": extracted_data
         }
         
@@ -518,14 +483,24 @@ async def update_preferences(trip_id: str, preferences: Dict):
     # Initialize enhanced guide service
     guide_service = EnhancedGuideService()
     
-    # Generate comprehensive enhanced guide using advanced prompting
+    # Progress callback to surface real-time progress to frontend
+    async def preference_progress(pct: int, message: str):
+        trip_data[trip_id]["preference_progress"] = {
+            "status": "processing",
+            "message": message,
+            "progress": pct
+        }
+    
+    # Generate comprehensive enhanced guide using advanced prompting with progress
     enhanced_guide = await guide_service.generate_enhanced_guide(
         destination=destination,
         start_date=start_date,
         end_date=end_date,
         hotel_info=hotel_info,
         preferences=preferences,
-        extracted_data=trip_data[trip_id].get("extracted_data", {})
+        extracted_data=trip_data[trip_id].get("extracted_data", {}),
+        progress_callback=preference_progress,
+        single_pass=True
     )
     
     # Store enhanced guide
@@ -578,6 +553,39 @@ async def get_generation_status(trip_id: str):
         "message": "Waiting to start generation",
         "progress": 0
     }
+
+@app.get("/api/generation-stream/{trip_id}")
+async def generation_stream(trip_id: str):
+    """
+    Server-Sent Events stream for real-time generation progress
+    """
+    async def event_generator():
+        last_progress = -1
+        try:
+            while True:
+                # Completed?
+                if trip_id in trip_data and trip_data[trip_id].get("enhanced_guide"):
+                    payload = {"status": "completed", "progress": 100, "message": "Guide ready"}
+                    yield f"data: {json.dumps(payload)}\n\n"
+                    break
+
+                # In-progress?
+                progress_state = trip_data.get(trip_id, {}).get("preference_progress")
+                if progress_state:
+                    progress = progress_state.get("progress", 0)
+                    message = progress_state.get("message", "Working...")
+                    # Only send if changed to reduce chatter
+                    if progress != last_progress:
+                        last_progress = progress
+                        payload = {"status": "processing", "progress": progress, "message": message}
+                        yield f"data: {json.dumps(payload)}\n\n"
+
+                await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            return
+
+    headers = {"Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive"}
+    return StreamingResponse(event_generator(), headers=headers)
 
 @app.post("/api/trips/{trip_id}/save")
 async def save_trip(trip_id: str, user_id: str = "default"):

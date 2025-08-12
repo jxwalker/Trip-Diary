@@ -193,7 +193,7 @@ export default function SummaryPage() {
     }
     // Navigate to preferences page to personalize the guide
     setTimeout(() => {
-      router.push(`/preferences?tripId=${tripId}`);
+      router.push(`/preferences-consolidated?tripId=${tripId}`);
     }, 1000);
   };
 

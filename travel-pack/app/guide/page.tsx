@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -87,7 +86,7 @@ export default function TravelGuidePage() {
   const [guide, setGuide] = useState<any>(null);
   const [weather, setWeather] = useState<WeatherDay[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  // Single-page glossy guide; no tabs
   const [userPreferences, setUserPreferences] = useState<any>(null);
 
   useEffect(() => {
@@ -114,7 +113,7 @@ export default function TravelGuidePage() {
       
       if (response.status === 404) {
         // Guide not generated yet, redirect to preferences
-        router.push(`/preferences?tripId=${tripId}`);
+        router.push(`/preferences-consolidated?tripId=${tripId}`);
         return;
       }
       
@@ -185,7 +184,7 @@ export default function TravelGuidePage() {
           <AlertDescription>
             {error || "Guide not found"}
             <Button 
-              onClick={() => router.push(`/preferences?tripId=${tripId}`)}
+              onClick={() => router.push(`/preferences-consolidated?tripId=${tripId}`)}
               className="mt-4 w-full"
             >
               Set Preferences to Generate Guide
@@ -258,19 +257,17 @@ export default function TravelGuidePage() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="hotels">Hotels</TabsTrigger>
-            <TabsTrigger value="dining">Dining</TabsTrigger>
-            <TabsTrigger value="attractions">Attractions</TabsTrigger>
-            <TabsTrigger value="events">Events</TabsTrigger>
-          </TabsList>
+      {/* Main Content - Single Page Glossy Guide */}
+      <div className="max-w-6xl mx-auto px-8 py-12 space-y-8">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => document.getElementById('overview')?.scrollIntoView({ behavior: 'smooth' })}>Overview</Button>
+          <Button variant="outline" onClick={() => document.getElementById('hotels')?.scrollIntoView({ behavior: 'smooth' })}>Hotels</Button>
+          <Button variant="outline" onClick={() => document.getElementById('dining')?.scrollIntoView({ behavior: 'smooth' })}>Dining</Button>
+          <Button variant="outline" onClick={() => document.getElementById('attractions')?.scrollIntoView({ behavior: 'smooth' })}>Attractions</Button>
+          <Button variant="outline" onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>Events</Button>
+        </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-8">
+        <section id="overview" className="space-y-8">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -351,10 +348,9 @@ export default function TravelGuidePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+        </section>
 
-          {/* Hotels Tab */}
-          <TabsContent value="hotels" className="space-y-6">
+        <section id="hotels" className="space-y-6">
             {hotels.map((hotel: any, idx: number) => (
               <Card key={idx} className="overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-3">
@@ -390,10 +386,9 @@ export default function TravelGuidePage() {
                 </div>
               </Card>
             ))}
-          </TabsContent>
+        </section>
 
-          {/* Dining Tab */}
-          <TabsContent value="dining" className="space-y-6">
+        <section id="dining" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {restaurants.map((restaurant: any, idx: number) => (
                 <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -434,10 +429,9 @@ export default function TravelGuidePage() {
                 </Card>
               ))}
             </div>
-          </TabsContent>
+        </section>
 
-          {/* Attractions Tab */}
-          <TabsContent value="attractions" className="space-y-6">
+        <section id="attractions" className="space-y-6">
             {attractions.map((attraction: any, idx: number) => (
               <Card key={idx}>
                 <CardContent className="pt-6">
@@ -482,10 +476,9 @@ export default function TravelGuidePage() {
                 </CardContent>
               </Card>
             ))}
-          </TabsContent>
+        </section>
 
-          {/* Events Tab */}
-          <TabsContent value="events" className="space-y-6">
+        <section id="events" className="space-y-6">
             {events.length > 0 ? (
               events.map((event: any, idx: number) => (
                 <Card key={idx}>
@@ -522,8 +515,7 @@ export default function TravelGuidePage() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-        </Tabs>
+        </section>
 
         {/* Action Bar */}
         <div className="mt-12 flex justify-center gap-4">
@@ -545,7 +537,7 @@ export default function TravelGuidePage() {
           <Button
             size="lg"
             variant="outline"
-            onClick={() => router.push(`/preferences?tripId=${tripId}`)}
+            onClick={() => router.push(`/preferences-consolidated?tripId=${tripId}`)}
           >
             <Settings className="h-5 w-5 mr-2" />
             Update Preferences

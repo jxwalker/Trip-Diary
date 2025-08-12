@@ -41,6 +41,7 @@ export default function ItineraryPage() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [enhancedGuide, setEnhancedGuide] = useState<any>(null);
   const [hasPreferences, setHasPreferences] = useState(false);
+  const [dataAvailabilityNote, setDataAvailabilityNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tripId) {
@@ -124,6 +125,18 @@ export default function ItineraryPage() {
       const data = await response.json();
       console.log("Itinerary data received:", data);
       setItinerary(data);
+      // Check data availability and surface guidance (no mocks)
+      try {
+        const recs = data?.recommendations || {};
+        const noneAvailable = !recs?.restaurants?.length && !recs?.attractions?.length && !recs?.events?.length;
+        if (noneAvailable && !enhancedGuide) {
+          setDataAvailabilityNote(
+            "Live recommendations are unavailable. Configure required API keys (e.g., PERPLEXITY_API_KEY, GOOGLE_MAPS_API_KEY, OPENWEATHER_API_KEY) in your .env and re-run."
+          );
+        } else {
+          setDataAvailabilityNote(null);
+        }
+      } catch {}
       
       // Check if enhanced guide exists
       try {
@@ -302,7 +315,7 @@ export default function ItineraryPage() {
           </div>
           <div className="flex items-center space-x-2">
             {!hasPreferences && (
-              <Link href={`/preferences?tripId=${tripId}`}>
+              <Link href={`/preferences-consolidated?tripId=${tripId}`}>
                 <Button variant="outline" size="sm">
                   <Settings className="h-4 w-4 mr-2" />
                   Personalize
@@ -371,6 +384,22 @@ export default function ItineraryPage() {
               {trip_summary?.duration || ""} • {formatTravelDate(trip_summary?.start_date)} - {formatTravelDate(trip_summary?.end_date)}
             </p>
           </motion.div>
+
+          {/* Data availability note (no mocks) */}
+          {dataAvailabilityNote && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {dataAvailabilityNote}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
 
           {/* Trip Overview */}
           <motion.div
@@ -618,7 +647,7 @@ export default function ItineraryPage() {
                     <p className="text-gray-600 max-w-md mx-auto">
                       Get personalized restaurant recommendations, curated attractions, and local events based on your interests and preferences.
                     </p>
-                    <Link href={`/preferences?tripId=${tripId}`}>
+                    <Link href={`/preferences-consolidated?tripId=${tripId}`}>
                       <Button className="bg-gradient-to-r from-sky-500 to-blue-600">
                         <Settings className="h-4 w-4 mr-2" />
                         Set Your Preferences

@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trip Diary - AI Travel Planner",
-  description: "Plan your trips with real recommendations from Perplexity AI",
+  title: "TripCraft AI - Personal Travel Guide",
+  description: "Create a magazine-quality personal travel guide with real recommendations.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

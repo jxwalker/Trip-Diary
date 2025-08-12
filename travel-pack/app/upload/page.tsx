@@ -158,7 +158,7 @@ export default function UploadPage() {
       if (files.length === 1 && files[0].file) {
         console.log("Single file upload:", files[0].name);
         formData.append("file", files[0].file, files[0].name);
-        formData.append("use_vision", "false");
+        formData.append("use_vision", "true");
         apiPath = '/api/proxy/upload-single';
       } else if (files.length > 1) {
         // Multiple files - use the multi-file endpoint
@@ -168,7 +168,7 @@ export default function UploadPage() {
             formData.append("files", uploadedFile.file, uploadedFile.name);
           }
         });
-        formData.append("use_vision", "false");
+        formData.append("use_vision", "true");
       } else if (!freeText && !tripDetails.destination) {
         // No files and no data - can't process
         throw new Error("Please upload a file or enter trip details");
