@@ -25,8 +25,8 @@ export default function SimpleItineraryPage() {
 
   const fetchData = async () => {
     try {
-      // Direct API call - no proxy, no complexity
-      const response = await fetch(`http://localhost:8000/api/itinerary/${tripId}`);
+      // Use proxy to avoid hard-coded base URL and CORS
+      const response = await fetch(`/api/proxy/itinerary/${tripId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -48,7 +48,7 @@ export default function SimpleItineraryPage() {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-4">Loading Trip Data...</h1>
-          <p>Fetching from: http://localhost:8000/api/itinerary/{tripId}</p>
+            <p>Fetching from: /api/proxy/itinerary/{tripId}</p>
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ export default function SimpleItineraryPage() {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch(`http://localhost:8000/api/trips/${tripId}/save`, {
+                    const response = await fetch(`/api/proxy/trips/${tripId}/save`, {
                       method: 'POST'
                     });
                     if (response.ok) {

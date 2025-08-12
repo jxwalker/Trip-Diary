@@ -246,7 +246,7 @@ export default function UploadPage() {
       
       // Show more specific error message
       if (errorMessage.includes("Load failed") || errorMessage.includes("fetch")) {
-        alert("Connection error: Please ensure the backend is running on http://localhost:8000");
+        alert("Connection error: Please ensure the backend is running and the proxy is configured.");
       } else {
         alert(`Error: ${errorMessage}`);
       }

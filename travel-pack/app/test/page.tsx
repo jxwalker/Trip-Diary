@@ -13,7 +13,7 @@ export default function TestPage() {
 
     // Test 1: Backend health check
     try {
-      const response = await fetch("http://localhost:8000/");
+      const response = await fetch("/api/proxy/");
       const data = await response.json();
       results.push({
         test: "Backend Health",
@@ -35,7 +35,7 @@ export default function TestPage() {
       formData.append("free_text", "Trip to New York, August 9-14, 2025");
       formData.append("use_vision", "false");
       
-      const response = await fetch("http://localhost:8000/api/upload", {
+      const response = await fetch("/api/proxy/upload", {
         method: "POST",
         body: formData
       });
@@ -50,7 +50,7 @@ export default function TestPage() {
         
         // Test status endpoint
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const statusResponse = await fetch(`http://localhost:8000/api/status/${data.trip_id}`);
+        const statusResponse = await fetch(`/api/proxy/status/${data.trip_id}`);
         const statusData = await statusResponse.json();
         
         results.push({
@@ -72,7 +72,7 @@ export default function TestPage() {
 
     // Test 3: Direct pipeline test
     try {
-      const response = await fetch("http://localhost:8000/api/test-pipeline", {
+      const response = await fetch("/api/proxy/test-pipeline", {
         method: "GET"
       });
       
@@ -106,7 +106,7 @@ export default function TestPage() {
       `);
       formData.append("use_vision", "false");
       
-      const response = await fetch("http://localhost:8000/api/upload", {
+      const response = await fetch("/api/proxy/upload", {
         method: "POST",
         body: formData
       });
@@ -120,14 +120,14 @@ export default function TestPage() {
         
         while (attempts < 30 && !completed) {
           await new Promise(resolve => setTimeout(resolve, 2000));
-          const statusResponse = await fetch(`http://localhost:8000/api/status/${data.trip_id}`);
+          const statusResponse = await fetch(`/api/proxy/status/${data.trip_id}`);
           const statusData = await statusResponse.json();
           
           if (statusData.status === "completed") {
             completed = true;
             
             // Get the itinerary
-            const itineraryResponse = await fetch(`http://localhost:8000/api/itinerary/${data.trip_id}`);
+            const itineraryResponse = await fetch(`/api/proxy/itinerary/${data.trip_id}`);
             const itineraryData = await itineraryResponse.json();
             
             const restaurants = itineraryData.itinerary?.restaurants || [];

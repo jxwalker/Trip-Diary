@@ -57,6 +57,26 @@ check_frontend_health() {
     return 1
 }
 
+# Find a free port for Next.js dev (prefers 3000..3003)
+find_free_frontend_port() {
+    for port in 3000 3001 3002 3003; do
+        if command -v ss >/dev/null 2>&1; then
+            if ! ss -ltn | awk '{print $4}' | grep -q ":$port$"; then
+                echo $port
+                return 0
+            fi
+        else
+            # Fallback: try curl; if no service responds, consider it free
+            if ! timeout 1 curl -s -o /dev/null "http://localhost:$port/" 2>/dev/null; then
+                echo $port
+                return 0
+            fi
+        fi
+    done
+    # Default to 3000 if unsure
+    echo 3000
+}
+
 # Health check for backend
 check_backend_health() {
     if timeout 2 curl -s -o /dev/null "http://localhost:8000/" 2>/dev/null; then
@@ -99,7 +119,7 @@ start_frontend() {
     print_header "Starting Frontend Server"
     
     # Kill any existing frontend processes
-    kill_processes "next.*travel-pack\|node.*travel-pack.*next" "Frontend"
+    kill_processes "next.*dev\|node.*next.*dev\|npm.*run dev" "Frontend"
     
     # Clear old PID file
     rm -f "$FRONTEND_PID_FILE"
@@ -107,8 +127,10 @@ start_frontend() {
     echo -e "${BOLD}Starting new frontend server...${NC}"
     cd "$FRONTEND_DIR"
     
-    # Start the server
-    npm run dev > "$FRONTEND_LOG" 2>&1 &
+    # Pick a free port and start the server on it to avoid interactive prompts
+    local port=$(find_free_frontend_port)
+    export PORT=$port
+    npm run dev -- -p $port > "$FRONTEND_LOG" 2>&1 &
     local pid=$!
     echo $pid > "$FRONTEND_PID_FILE"
     
@@ -121,7 +143,7 @@ start_frontend() {
     
     while [ $attempts -lt $max_attempts ]; do
         local port=$(check_frontend_health)
-        if [ $? -eq 0 ]; then
+        if [ -n "$port" ]; then
             echo
             echo -e "  ${GREEN}${CHECK}${NC} Frontend started successfully"
             echo -e "  ${BLUE}${DOT}${NC} PID: ${CYAN}$pid${NC}"
@@ -230,7 +252,7 @@ show_status() {
         
         # Find actual PID if not in file
         if [ -z "$frontend_pid" ] || ! ps -p $frontend_pid > /dev/null 2>&1; then
-            frontend_pid=$(ps aux | grep "node.*next.*travel-pack" | grep -v grep | head -1 | awk '{print $2}')
+            frontend_pid=$(ps aux | grep -E "node.*next.*dev|next.*dev" | grep -v grep | head -1 | awk '{print $2}')
         fi
         
         echo -e "  Status:  ${GREEN}● RUNNING${NC}"
@@ -240,7 +262,7 @@ show_status() {
         echo -e "  Health:  ${GREEN}✓ Responding${NC}"
     else
         # Check if process exists but not healthy
-        local orphan_pids=$(ps aux | grep "next.*travel-pack\|node.*travel-pack.*next" | grep -v grep | awk '{print $2}')
+        local orphan_pids=$(ps aux | grep -E "next.*dev|node.*next.*dev|npm.*run dev" | grep -v grep | awk '{print $2}')
         if [ ! -z "$orphan_pids" ]; then
             echo -e "  Status:  ${YELLOW}● UNHEALTHY${NC}"
             echo -e "  PIDs:    ${CYAN}$orphan_pids${NC}"
@@ -393,7 +415,7 @@ clean_all() {
     print_header "Clean Up"
     
     echo -e "${BOLD}Killing all processes...${NC}"
-    kill_processes "next.*travel-pack\|node.*travel-pack.*next" "Frontend"
+    kill_processes "next.*dev\|node.*next.*dev\|npm.*run dev" "Frontend"
     kill_processes "python.*main.py.*travel-pack/backend" "Backend"
     
     echo
@@ -452,7 +474,7 @@ case "$1" in
                 ;;
             stop)
                 print_header "Stopping Frontend"
-                kill_processes "next.*travel-pack\|node.*travel-pack.*next" "Frontend"
+    kill_processes "next.*dev\|node.*next.*dev\|npm.*run dev" "Frontend"
                 rm -f "$FRONTEND_PID_FILE"
                 show_quick_status
                 ;;
