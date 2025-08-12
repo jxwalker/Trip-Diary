@@ -45,7 +45,8 @@ export default function SavedTripsPage() {
 
   const loadTrips = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/trips/saved");
+      // Use Next.js proxy to avoid CORS and hard-coded base URLs
+      const response = await fetch("/api/proxy/trips/saved");
       const data = await response.json();
       setTrips(data.trips || []);
       setFilteredTrips(data.trips || []);
@@ -64,7 +65,7 @@ export default function SavedTripsPage() {
     if (!confirm("Are you sure you want to delete this trip?")) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/trips/${tripId}`, {
+      const response = await fetch(`/api/proxy/trips/${tripId}`, {
         method: "DELETE"
       });
       
