@@ -1,0 +1,27 @@
+{
+  "hotels": [
+    {
+      "name": "The Grand Hotel Los Angeles",
+      "address": "123 Sunset Boulevard, Los Angeles, CA 90028",
+      "city": "Los Angeles",
+      "confirmation_number": "HTL789456",
+      "check_in_date": "15 March 2025",
+      "check_out_date": "20 March 2025",
+      "room_type": "Deluxe King Suite, 1 King Bed, City View",
+      "confidence": 1
+    }
+  ],
+  "passengers": [
+    {
+      "title": "Mr.",
+      "first_name": "John",
+      "last_name": "Smith",
+      "confidence": 1
+    }
+  ],
+  "_metadata": {
+    "model": "gpt-4o",
+    "processing_type": "multimodal",
+    "document_type": ".pdf"
+  }
+}

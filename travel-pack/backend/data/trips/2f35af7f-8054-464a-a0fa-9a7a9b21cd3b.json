@@ -1,0 +1,923 @@
+{
+  "extracted_data": {
+    "2f35af7f-8054-464a-a0fa-9a7a9b21cd3b_Trip on  09 Aug 25 - PNR ref ONTRLU.pdf": {
+      "flights": [
+        {
+          "flight_number": "BA115",
+          "airline": "British Airways",
+          "departure_airport": "LHR",
+          "departure_airport_name": "London Heathrow",
+          "departure_terminal": "Terminal 5",
+          "arrival_airport": "JFK",
+          "arrival_airport_name": "New York J F Kennedy",
+          "arrival_terminal": "Terminal 8",
+          "departure_date": "2025-08-09",
+          "departure_time": "14:40",
+          "arrival_date": "2025-08-09",
+          "arrival_time": "17:35",
+          "seat": "1A",
+          "class": "First",
+          "duration": "7h 55m",
+          "aircraft": "Boeing 777-300er",
+          "booking_reference": "Z28XKT",
+          "ticket_number": "1252972777762"
+        },
+        {
+          "flight_number": "BA112",
+          "airline": "British Airways",
+          "departure_airport": "JFK",
+          "departure_airport_name": "New York J F Kennedy",
+          "departure_terminal": "Terminal 8",
+          "arrival_airport": "LHR",
+          "arrival_airport_name": "London Heathrow",
+          "arrival_terminal": "Terminal 5",
+          "departure_date": "2025-08-14",
+          "departure_time": "18:30",
+          "arrival_date": "2025-08-15",
+          "arrival_time": "06:30",
+          "seat": "1K",
+          "class": "First",
+          "duration": "7h 00m",
+          "aircraft": "781",
+          "booking_reference": null,
+          "ticket_number": null
+        }
+      ],
+      "hotels": [
+        {
+          "name": "Luxury Collection Manhattan Midtown",
+          "address": "151 West 54th Street",
+          "city": "New York",
+          "postal_code": "10019",
+          "phone": "1 9175905400",
+          "check_in_date": "2025-08-09",
+          "check_out_date": "2025-08-14",
+          "nights": 5,
+          "confirmation_number": "83313860",
+          "room_type": "Suite",
+          "rate_per_night": 641.0,
+          "currency": "USD",
+          "total_amount": 3205.0
+        }
+      ],
+      "passengers": [
+        {
+          "full_name": "Peter James Lloyd Walker",
+          "first_name": "Peter James Lloyd",
+          "last_name": "Walker",
+          "frequent_flyer": "BA47940415"
+        }
+      ],
+      "trip_details": {
+        "trip_locator": "ONTRLU",
+        "booking_date": "2025-07-25",
+        "total_price": 3865.92,
+        "currency": "GBP"
+      }
+    }
+  },
+  "itinerary": {
+    "trip_summary": {
+      "destination": "New York",
+      "start_date": "2025-08-09",
+      "end_date": "2025-08-14",
+      "duration": "6 days",
+      "total_flights": 2,
+      "total_hotels": 1,
+      "total_passengers": 1
+    },
+    "passengers": [
+      {
+        "full_name": "Peter James Lloyd Walker",
+        "first_name": "Peter James Lloyd",
+        "last_name": "Walker",
+        "frequent_flyer": "BA47940415"
+      }
+    ],
+    "daily_schedule": [
+      {
+        "day": 1,
+        "date": "2025-08-09",
+        "day_name": "Saturday",
+        "is_arrival": true,
+        "is_departure": false,
+        "flights": [
+          {
+            "type": "departure",
+            "flight": {
+              "flight_number": "BA115",
+              "airline": "British Airways",
+              "departure_airport": "LHR",
+              "departure_airport_name": "London Heathrow",
+              "departure_terminal": "Terminal 5",
+              "arrival_airport": "JFK",
+              "arrival_airport_name": "New York J F Kennedy",
+              "arrival_terminal": "Terminal 8",
+              "departure_date": "2025-08-09",
+              "departure_time": "14:40",
+              "arrival_date": "2025-08-09",
+              "arrival_time": "17:35",
+              "seat": "1A",
+              "class": "First",
+              "duration": "7h 55m",
+              "aircraft": "Boeing 777-300er",
+              "booking_reference": "Z28XKT",
+              "ticket_number": "1252972777762"
+            }
+          },
+          {
+            "type": "arrival",
+            "flight": {
+              "flight_number": "BA115",
+              "airline": "British Airways",
+              "departure_airport": "LHR",
+              "departure_airport_name": "London Heathrow",
+              "departure_terminal": "Terminal 5",
+              "arrival_airport": "JFK",
+              "arrival_airport_name": "New York J F Kennedy",
+              "arrival_terminal": "Terminal 8",
+              "departure_date": "2025-08-09",
+              "departure_time": "14:40",
+              "arrival_date": "2025-08-09",
+              "arrival_time": "17:35",
+              "seat": "1A",
+              "class": "First",
+              "duration": "7h 55m",
+              "aircraft": "Boeing 777-300er",
+              "booking_reference": "Z28XKT",
+              "ticket_number": "1252972777762"
+            }
+          }
+        ],
+        "note": "",
+        "activities": [
+          "\u2708\ufe0f Arrive at airport, take taxi/train to hotel",
+          "Check in to hotel at 151 West 54th Street",
+          "Evening: Welcome dinner at 1. Piccola Cucina Estiatorio",
+          "\ud83d\udccd Location: 176 Thompson St, New York, NY 10012"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      },
+      {
+        "day": 2,
+        "date": "2025-08-10",
+        "day_name": "Sunday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit The Metropolitan Museum of Art",
+          "\ud83d\udccd 1000 5th Ave, New York, NY 10028",
+          "Lunch: 2. Charlie Bird",
+          "Afternoon: Explore Museum of Modern Art",
+          "\ud83d\udccd 11 W 53rd St, New York, NY 10019",
+          "Dinner: 3. Chito Gvrito"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      },
+      {
+        "day": 3,
+        "date": "2025-08-11",
+        "day_name": "Monday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit Smorgasburg Food Market",
+          "\ud83d\udccd Fridays - World Trade Center at The Oculus, Manhattan; Saturdays - 90 Kent Ave., Williamsburg, Brooklyn; Sundays - Breeze Hill in Prospect Park, Brooklyn",
+          "Lunch: 3. Chito Gvrito",
+          "Afternoon: Explore Chelsea Market + High Line + Hudson Yards Food & History Tour",
+          "\ud83d\udccd Chelsea Market, 75 9th Ave, New York, NY 10011 (meeting point)",
+          "Dinner: 4. Cervo\u2019s Lower East Side"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      },
+      {
+        "day": 4,
+        "date": "2025-08-12",
+        "day_name": "Tuesday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit The Tenement Museum",
+          "\ud83d\udccd 103 Orchard St, New York, NY 10002",
+          "Lunch: 4. Cervo\u2019s Lower East Side",
+          "Afternoon: Explore Whitney Museum of American Art",
+          "\ud83d\udccd 99 Gansevoort St, New York, NY 10014",
+          "Dinner: 5. Il Gigante Trattoria"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      },
+      {
+        "day": 5,
+        "date": "2025-08-13",
+        "day_name": "Wednesday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit The New York Public Library \u2013 Stephen A. Schwarzman Building",
+          "\ud83d\udccd 476 5th Ave, New York, NY 10018",
+          "Lunch: 5. Il Gigante Trattoria",
+          "Afternoon: Explore The Cloisters (Metropolitan Museum branch)",
+          "\ud83d\udccd 99 Margaret Corbin Dr, New York, NY 10040 (Fort Tryon Park, Manhattan)",
+          "Dinner: 6. Nan Xiang Soup Dumplings - Manhattan"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      },
+      {
+        "day": 6,
+        "date": "2025-08-14",
+        "day_name": "Thursday",
+        "is_arrival": false,
+        "is_departure": true,
+        "flights": [
+          {
+            "type": "departure",
+            "flight": {
+              "flight_number": "BA112",
+              "airline": "British Airways",
+              "departure_airport": "JFK",
+              "departure_airport_name": "New York J F Kennedy",
+              "departure_terminal": "Terminal 8",
+              "arrival_airport": "LHR",
+              "arrival_airport_name": "London Heathrow",
+              "arrival_terminal": "Terminal 5",
+              "departure_date": "2025-08-14",
+              "departure_time": "18:30",
+              "arrival_date": "2025-08-15",
+              "arrival_time": "06:30",
+              "seat": "1K",
+              "class": "First",
+              "duration": "7h 00m",
+              "aircraft": "781",
+              "booking_reference": null,
+              "ticket_number": null
+            }
+          }
+        ],
+        "note": "",
+        "activities": [
+          "Morning: Visit The Metropolitan Museum of Art",
+          "\ud83d\udccd 1000 5th Ave, New York, NY 10028",
+          "Lunch: 6. Nan Xiang Soup Dumplings - Manhattan",
+          "Afternoon: Explore Museum of Modern Art",
+          "\ud83d\udccd 11 W 53rd St, New York, NY 10019",
+          "Dinner: 7. Ci Siamo"
+        ],
+        "meals": {
+          "breakfast": "Start your day at 1. Piccola Cucina Estiatorio",
+          "lunch": "Try 2. Charlie Bird",
+          "dinner": "Dine at 3. Chito Gvrito"
+        }
+      }
+    ],
+    "flights": [
+      {
+        "flight_number": "BA115",
+        "airline": "British Airways",
+        "departure": {
+          "airport": "LHR",
+          "airport_name": "London Heathrow",
+          "terminal": "Terminal 5",
+          "time": "14:40",
+          "date": "2025-08-09"
+        },
+        "arrival": {
+          "airport": "JFK",
+          "airport_name": "New York J F Kennedy",
+          "terminal": "Terminal 8",
+          "time": "17:35",
+          "date": "2025-08-09"
+        },
+        "seat": "1A",
+        "class": "First",
+        "duration": "7h 55m",
+        "aircraft": "Boeing 777-300er",
+        "booking_reference": "Z28XKT",
+        "ticket_number": "1252972777762",
+        "status": "Confirmed"
+      },
+      {
+        "flight_number": "BA112",
+        "airline": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "airport_name": "New York J F Kennedy",
+          "terminal": "Terminal 8",
+          "time": "18:30",
+          "date": "2025-08-14"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "airport_name": "London Heathrow",
+          "terminal": "Terminal 5",
+          "time": "06:30",
+          "date": "2025-08-15"
+        },
+        "seat": "1K",
+        "class": "First",
+        "duration": "7h 00m",
+        "aircraft": "781",
+        "booking_reference": null,
+        "ticket_number": null,
+        "status": "Confirmed"
+      }
+    ],
+    "accommodations": [
+      {
+        "name": "Luxury Collection Manhattan Midtown",
+        "address": "151 West 54th Street",
+        "city": "New York",
+        "postal_code": "10019",
+        "check_in": "2025-08-09",
+        "check_out": "2025-08-14",
+        "nights": 5,
+        "confirmation": "83313860",
+        "room_type": "Suite",
+        "rate_per_night": 641.0,
+        "currency": "USD",
+        "total_amount": 3205.0,
+        "amenities": [],
+        "contact": "1 9175905400"
+      }
+    ],
+    "transportation": [],
+    "important_info": {
+      "destination": null,
+      "currency": "Local currency",
+      "dates": {
+        "start": "2025-08-09",
+        "end": "2025-08-14"
+      },
+      "note": "Details will be populated with real-time information"
+    },
+    "trip_details": {},
+    "restaurants": [
+      {
+        "name": "1. Piccola Cucina Estiatorio",
+        "address": "176 Thompson St, New York, NY 10012",
+        "cuisine": "Italian, Sicilian",
+        "price": "$$ - $$$",
+        "distance": "",
+        "phone": "+1 212-777-1500",
+        "hours": "Daily 12 PM \u2013 10 PM",
+        "why_recommended": "Authentic Sicilian dishes with attentive service in a lively atmosphere, perfect for groups seeking classic Italian flavors with a local NYC vibe[1].",
+        "signature_dishes": [
+          "Swordfish alla Siciliana",
+          "Arancini",
+          "Fresh Pasta",
+          "Cannoli"
+        ],
+        "review": "\"The service was very attentive despite the restaurant being packed. I highly recommend the Swordfish alla Siciliana\"[1].",
+        "reservation": "Recommended",
+        "description": ""
+      },
+      {
+        "name": "2. Charlie Bird",
+        "address": "5 King St, New York, NY 10012",
+        "cuisine": "International, Italian-inspired",
+        "price": "$$ - $$$",
+        "distance": "",
+        "phone": "+1 212-431-2222",
+        "hours": "Tues-Sat 5 PM \u2013 11 PM, Sun 5 PM \u2013 10 PM, Closed Mon",
+        "why_recommended": "Upscale yet casual spot with inventive comfort food and a strong wine list, great for a trendy dining experience with broad appeal[2].",
+        "signature_dishes": [
+          "Farro Salad with Roasted Pumpkin",
+          "Grilled Prawns with Yuzu Butter",
+          "Housemade Desserts"
+        ],
+        "review": "\"The grilled prawns with yuzu butter have a cult following, and the atmosphere is buzzy and fun\"[2].",
+        "reservation": "Recommended",
+        "description": ""
+      },
+      {
+        "name": "3. Chito Gvrito",
+        "address": "173 Third Ave, New York, NY 10003",
+        "cuisine": "Georgian, International",
+        "price": "$$ - $$$",
+        "distance": "",
+        "phone": "+1 212-777-1234 (confirm before visit)",
+        "hours": "Mon-Sun 12 PM \u2013 10 PM",
+        "why_recommended": "Unique modern Georgian cuisine offering flavorful dishes rarely found in NYC, ideal for adventurous eaters and international cuisine lovers[2].",
+        "signature_dishes": [
+          "Imeruli Khachapuri",
+          "Georgian Shakshuka",
+          "Skewered Scottish Salmon Cubes"
+        ],
+        "review": "\"Transported straight to the Caucasus with fresh herbs and pomegranate flavors\"[2].",
+        "reservation": "Recommended",
+        "description": ""
+      },
+      {
+        "name": "4. Cervo\u2019s Lower East Side",
+        "address": "60 Orchard St, New York, NY 10002",
+        "cuisine": "Iberian, Seafood",
+        "price": "$$ - $$$",
+        "distance": "",
+        "phone": "+1 212-254-0615",
+        "hours": "Daily 5 PM \u2013 11 PM",
+        "why_recommended": "Celebrated for seafood-centric Iberian dishes with local Northeast ingredients, a great choice for flavorful, popular dishes in a casual setting[3].",
+        "signature_dishes": [
+          "Crispy Shrimp Heads",
+          "Fried Sea Bass al Ajillo",
+          "Bomba Rice with Squid",
+          "Flan de Queso"
+        ],
+        "review": "\"A must-try seafood-focused menu that hits the mark every time\"[3].",
+        "reservation": "Recommended",
+        "description": ""
+      },
+      {
+        "name": "5. Il Gigante Trattoria",
+        "address": "880 Woodward Ave, Ridgewood, NY 11385",
+        "cuisine": "Italian",
+        "price": "$ - $$",
+        "distance": "",
+        "phone": "+1 718-456-7890 (confirm before visit)",
+        "hours": "Daily 12 PM \u2013 10 PM",
+        "why_recommended": "Affordable Italian with large portions and smooth jazz ambiance, perfect for casual dinners with friends and budget-conscious groups[4].",
+        "signature_dishes": [
+          "Bolognese Pasta",
+          "Classic Lasagna",
+          "Meatballs",
+          "Tiramisu"
+        ],
+        "review": "\"No pasta costs more than $20 and the portions are quite large\"[4].",
+        "reservation": "Recommended",
+        "description": ""
+      },
+      {
+        "name": "6. Nan Xiang Soup Dumplings - Manhattan",
+        "address": "85 Bayard St, New York, NY 10013",
+        "cuisine": "Chinese, Asian",
+        "price": "$$ - $$$",
+        "distance": "",
+        "phone": "+1 212-334-8899",
+        "hours": "Daily 11 AM \u2013 10 PM",
+        "why_recommended": "Renowned for outstanding soup dumplings and authentic Chinese flavors, great for groups craving popular Asian fare in Chinatown[1].",
+        "signature_dishes": [
+          "Soup Dumplings",
+          "Pork Buns",
+          "Scallion Pancakes",
+          "Spicy Wontons"
+        ],
+        "review": "\"The soup dumplings are outstanding, with a great balance of broth and dough\"[1].",
+        "reservation": "Walk-in, but reservations recommended for larger groups",
+        "description": ""
+      }
+    ],
+    "attractions": [
+      {
+        "name": "The Metropolitan Museum of Art",
+        "type": "",
+        "address": "1000 5th Ave, New York, NY 10028",
+        "hours": "Daily 10:00 AM \u2013 5:30 PM; Fridays and Saturdays until 9:00 PM",
+        "price": "General admission $30; Seniors $22; Students $17; free for children under 12 with adult",
+        "duration": "3-4 hours recommended",
+        "distance": "",
+        "why_visit": "It\u2019s one of the world\u2019s largest and most comprehensive art museums, perfect for deep cultural immersion and exploring diverse collections from ancient to modern art.",
+        "highlights": [
+          "Egyptian artifacts",
+          "European paintings",
+          "American art",
+          "Costume Institute",
+          "and rooftop garden views"
+        ],
+        "tips": "Buy timed-entry tickets online to avoid lines; visit on Friday or Saturday evening for extended hours and smaller crowds",
+        "special": "Check schedule for any special exhibitions during August 2025",
+        "nearby": [
+          "Central Park",
+          "Guggenheim Museum (0.7 miles)",
+          "The Frick Collection (0.3 miles)"
+        ],
+        "description": ""
+      },
+      {
+        "name": "Museum of Modern Art",
+        "type": "MoMA",
+        "address": "11 W 53rd St, New York, NY 10019",
+        "hours": "Daily 10:30 AM \u2013 5:30 PM; Fridays until 8:00 PM",
+        "price": "$25 general; Seniors $18; Students $14; free for children under 16",
+        "duration": "2-3 hours",
+        "distance": "",
+        "why_visit": "Home to an extraordinary collection of modern and contemporary art, including iconic works by Van Gogh, Warhol, and Picasso, ideal for art lovers interested in 20th and 21st-century culture.",
+        "highlights": [
+          "Starry Night",
+          "Campbell\u2019s Soup Cans",
+          "Sculpture Garden",
+          "special exhibitions"
+        ],
+        "tips": "Visit Friday evenings for reduced crowds and extended hours; purchase tickets online in advance",
+        "special": "Rotating exhibitions in summer 2025 to check on MoMA\u2019s website",
+        "nearby": [
+          "Rockefeller Center",
+          "St. Patrick\u2019s Cathedral",
+          "Times Square (all within about 0.5-1 mile)"
+        ],
+        "description": "(type: Museum/Gallery)"
+      },
+      {
+        "name": "Smorgasburg Food Market",
+        "type": "",
+        "address": "Fridays - World Trade Center at The Oculus, Manhattan; Saturdays - 90 Kent Ave., Williamsburg, Brooklyn; Sundays - Breeze Hill in Prospect Park, Brooklyn",
+        "hours": "Fridays 11:00 AM \u2013 6:00 PM, Saturdays 11:00 AM \u2013 6:00 PM, Sundays 11:00 AM \u2013 6:00 PM",
+        "price": "Free entry; food prices vary per vendor (~$5-$15 per item)",
+        "duration": "2-3 hours",
+        "distance": "",
+        "why_visit": "Largest open-air food market in the U.S., offering a vibrant culinary scene with diverse local vendors and innovative street food, perfect for tasting NYC\u2019s food culture in a lively atmosphere.",
+        "highlights": [
+          "Wide variety of cuisines",
+          "artisanal foods",
+          "local desserts",
+          "live music on weekends"
+        ],
+        "tips": "Arrive early for less crowd and more vendor options; bring cash for smaller purchases; Fridays at Oculus are most accessible if staying in Manhattan",
+        "special": "Open through October 2025, including your travel dates",
+        "nearby": [
+          "One World Trade Center",
+          "9/11 Memorial (near Oculus location)"
+        ],
+        "description": "(type: Food Market/Culinary Experience)"
+      },
+      {
+        "name": "Chelsea Market + High Line + Hudson Yards Food & History Tour",
+        "type": "",
+        "address": "Chelsea Market, 75 9th Ave, New York, NY 10011 (meeting point)",
+        "hours": "Tours available daily; book specific times (usually late morning or early afternoon)",
+        "price": "Approx. $75 per person",
+        "duration": "3 hours",
+        "distance": "",
+        "why_visit": "Combines food tastings at Chelsea Market with cultural history of the Meatpacking District and scenic stroll on the High Line with views of Hudson Yards \u2014 ideal for moderate adventure with food and culture interests.",
+        "highlights": [
+          "Tastings of artisanal foods",
+          "historic market facts",
+          "High Line park",
+          "Vessel at Hudson Yards"
+        ],
+        "tips": "Wear comfortable shoes; book tickets online in advance; can skip High Line portion to reduce walking if needed",
+        "special": "Seasonal food offerings and events in Chelsea Market in August",
+        "nearby": [
+          "Whitney Museum of American Art (0.5 miles)",
+          "Meatpacking District shops"
+        ],
+        "description": "(type: Culinary Experience + Cultural Tour)"
+      },
+      {
+        "name": "The Tenement Museum",
+        "type": "",
+        "address": "103 Orchard St, New York, NY 10002",
+        "hours": "Guided tours daily 10:00 AM \u2013 6:00 PM (varies by tour)",
+        "price": "$30 adult; $20 seniors/students; children under 12 not permitted",
+        "duration": "1.5-2 hours per tour",
+        "distance": "",
+        "why_visit": "Offers a unique cultural experience exploring immigrant life in NYC\u2019s Lower East Side through immersive guided tours of restored tenement apartments, perfect for understanding diverse cultural history.",
+        "highlights": [
+          "Guided tours of historic apartments",
+          "stories of immigrant families",
+          "neighborhood history"
+        ],
+        "tips": "Book specific tours in advance, as they sell out quickly; choose a tour matching your interest (e.g., Irish, Jewish, Italian immigrant stories)",
+        "special": "New tours or talks may be scheduled for August 2025 \u2014 check website closer to dates",
+        "nearby": [
+          "Katz\u2019s Delicatessen",
+          "Essex Market (food market)",
+          "Lower East Side galleries"
+        ],
+        "description": ""
+      },
+      {
+        "name": "Whitney Museum of American Art",
+        "type": "",
+        "address": "99 Gansevoort St, New York, NY 10014",
+        "hours": "Wednesday\u2013Monday 10:30 AM \u2013 6:00 PM; Fridays until 10:00 PM; closed Tuesdays",
+        "price": "$25 general; Seniors and students $18; free for 18 and under",
+        "duration": "2-3 hours",
+        "distance": "",
+        "why_visit": "Focuses on 20th- and 21st-century American art with an emphasis on living artists, ideal for contemporary cultural exploration.",
+        "highlights": [
+          "Large collection of modern American art",
+          "outdoor terraces with city views",
+          "special exhibitions"
+        ],
+        "tips": "Visit Friday evening for late hours and smaller crowds; buy timed tickets online",
+        "special": "Summer exhibitions with new artists featured in August 2025",
+        "nearby": [
+          "High Line Park",
+          "Chelsea Market",
+          "Meatpacking District"
+        ],
+        "description": "(type: Museum/Gallery)"
+      },
+      {
+        "name": "The New York Public Library \u2013 Stephen A. Schwarzman Building",
+        "type": "",
+        "address": "476 5th Ave, New York, NY 10018",
+        "hours": "Monday\u2013Saturday 10:00 AM \u2013 6:00 PM; Sunday 1:00 PM \u2013 5:00 PM",
+        "price": "Free entry",
+        "duration": "1-1.5 hours",
+        "distance": "",
+        "why_visit": "Iconic landmark with stunning architecture and cultural significance, perfect for combining landmark sightseeing with a quiet cultural experience.",
+        "highlights": [
+          "Rose Main Reading Room",
+          "original manuscripts and exhibitions",
+          "architecture tours"
+        ],
+        "tips": "Take a free guided tour to learn about building history; visit early to avoid crowds",
+        "special": "Special exhibits on literature and local history often rotate \u2014 check website for August 2025",
+        "nearby": [
+          "Bryant Park",
+          "Times Square (0.5 miles)"
+        ],
+        "description": "(type: Landmark/Cultural Institution)"
+      },
+      {
+        "name": "The Cloisters (Metropolitan Museum branch)",
+        "type": "",
+        "address": "99 Margaret Corbin Dr, New York, NY 10040 (Fort Tryon Park, Manhattan)",
+        "hours": "Wednesday\u2013Monday 10:00 AM \u2013 5:15 PM; closed Tuesdays",
+        "price": "Included with Met Museum admission (General $30)",
+        "duration": "2-3 hours",
+        "distance": "",
+        "why_visit": "Dedicated to medieval European art and architecture in a serene park setting, ideal for a culturally rich but slightly off-the-beaten-path experience with moderate walking.",
+        "highlights": [
+          "Medieval tapestries",
+          "gardens",
+          "architecture",
+          "views of the Hudson River"
+        ],
+        "tips": "Take public transportation to avoid parking hassles; combine with a walk in Fort Tryon Park",
+        "special": "Check for medieval art exhibitions in August 2025",
+        "nearby": [
+          "Fort Tryon Park",
+          "Hudson River Greenway"
+        ],
+        "description": "(type: Museum/Gallery)"
+      }
+    ]
+  },
+  "recommendations": {
+    "restaurants": [
+      {
+        "name": "Le Bernardin",
+        "cuisine": "French Seafood",
+        "price_range": "$$$$",
+        "rating": 4.8,
+        "address": "155 West 51st Street",
+        "phone": "+1 212-554-1515",
+        "description": "Exquisite French seafood in elegant setting",
+        "reservation_required": true,
+        "distance_from_hotel": "0.8 miles",
+        "must_try": [
+          "Tuna Carpaccio",
+          "Lobster",
+          "Black Bass"
+        ]
+      },
+      {
+        "name": "Joe's Pizza",
+        "cuisine": "Italian",
+        "price_range": "$",
+        "rating": 4.5,
+        "address": "7 Carmine Street",
+        "phone": "+1 212-366-1182",
+        "description": "Classic New York pizza joint",
+        "reservation_required": false,
+        "distance_from_hotel": "1.2 miles",
+        "must_try": [
+          "Cheese Pizza",
+          "Pepperoni Slice"
+        ]
+      },
+      {
+        "name": "Eleven Madison Park",
+        "cuisine": "Contemporary American",
+        "price_range": "$$$$",
+        "rating": 4.9,
+        "address": "11 Madison Avenue",
+        "phone": "+1 212-889-0905",
+        "description": "Award-winning fine dining experience",
+        "reservation_required": true,
+        "distance_from_hotel": "2.1 miles",
+        "must_try": [
+          "Tasting Menu"
+        ]
+      },
+      {
+        "name": "Shake Shack",
+        "cuisine": "American",
+        "price_range": "$$",
+        "rating": 4.3,
+        "address": "Madison Square Park",
+        "phone": "+1 646-747-7200",
+        "description": "Gourmet burgers and shakes",
+        "reservation_required": false,
+        "distance_from_hotel": "1.5 miles",
+        "must_try": [
+          "ShackBurger",
+          "Cheese Fries",
+          "Concrete"
+        ]
+      }
+    ],
+    "attractions": [
+      {
+        "name": "Metropolitan Museum of Art",
+        "type": "Museum",
+        "price": "$30 adults",
+        "rating": 4.7,
+        "address": "1000 5th Avenue",
+        "hours": "10:00 AM - 5:00 PM",
+        "description": "One of the world's largest and most important art museums",
+        "time_needed": "3-4 hours",
+        "best_time": "Weekday mornings",
+        "highlights": [
+          "Egyptian Art",
+          "American Wing",
+          "Rooftop Garden"
+        ]
+      },
+      {
+        "name": "Central Park",
+        "type": "Park",
+        "price": "Free",
+        "rating": 4.8,
+        "address": "Central Park",
+        "hours": "6:00 AM - 1:00 AM",
+        "description": "843-acre green oasis in the heart of Manhattan",
+        "time_needed": "2-3 hours",
+        "best_time": "Morning or late afternoon",
+        "highlights": [
+          "Bethesda Fountain",
+          "Bow Bridge",
+          "Strawberry Fields"
+        ]
+      },
+      {
+        "name": "Empire State Building",
+        "type": "Landmark",
+        "price": "$44 adults",
+        "rating": 4.6,
+        "address": "350 5th Avenue",
+        "hours": "10:00 AM - 12:00 AM",
+        "description": "Iconic Art Deco skyscraper with observation decks",
+        "time_needed": "1-2 hours",
+        "best_time": "Sunset",
+        "highlights": [
+          "86th Floor Observatory",
+          "102nd Floor Observatory"
+        ]
+      },
+      {
+        "name": "Brooklyn Bridge",
+        "type": "Landmark",
+        "price": "Free",
+        "rating": 4.8,
+        "address": "Brooklyn Bridge",
+        "hours": "24 hours",
+        "description": "Historic bridge connecting Manhattan and Brooklyn",
+        "time_needed": "45 minutes to walk",
+        "best_time": "Sunrise or sunset",
+        "highlights": [
+          "Walking path",
+          "Bike path",
+          "Photo opportunities"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "Broadway Show: Hamilton",
+        "type": "Theater",
+        "date": "Multiple dates available",
+        "venue": "Richard Rodgers Theatre",
+        "address": "226 West 46th Street",
+        "price_range": "$149-$849",
+        "description": "Award-winning musical about Alexander Hamilton",
+        "ticket_link": "https://hamiltonmusical.com",
+        "duration": "2 hours 45 minutes"
+      },
+      {
+        "name": "Yankees vs Red Sox",
+        "type": "Sports",
+        "date": "Check schedule",
+        "venue": "Yankee Stadium",
+        "address": "1 E 161st St, Bronx",
+        "price_range": "$25-$300",
+        "description": "Classic MLB rivalry game",
+        "ticket_link": "https://mlb.com/yankees",
+        "duration": "3 hours"
+      },
+      {
+        "name": "Jazz at Lincoln Center",
+        "type": "Music",
+        "date": "Various performances",
+        "venue": "Lincoln Center",
+        "address": "10 Columbus Circle",
+        "price_range": "$35-$150",
+        "description": "World-class jazz performances",
+        "ticket_link": "https://jazz.org",
+        "duration": "2 hours"
+      }
+    ],
+    "shopping": [
+      {
+        "name": "Fifth Avenue",
+        "type": "Shopping District",
+        "description": "Luxury shopping with flagship stores",
+        "highlights": [
+          "Tiffany & Co",
+          "Apple Store",
+          "Saks Fifth Avenue"
+        ],
+        "best_for": "Luxury goods, flagship stores"
+      },
+      {
+        "name": "Chelsea Market",
+        "type": "Indoor Market",
+        "description": "Food hall and shopping in former factory",
+        "highlights": [
+          "Local vendors",
+          "Artisanal foods",
+          "Unique gifts"
+        ],
+        "best_for": "Food, local products, souvenirs"
+      },
+      {
+        "name": "SoHo",
+        "type": "Shopping District",
+        "description": "Trendy boutiques and cast-iron architecture",
+        "highlights": [
+          "Independent boutiques",
+          "Art galleries",
+          "Vintage stores"
+        ],
+        "best_for": "Fashion, art, unique finds"
+      }
+    ],
+    "transportation": {
+      "airport_transfer": {
+        "options": [
+          "Taxi ($70)",
+          "Uber/Lyft ($40-60)",
+          "AirTrain + Subway ($8)",
+          "Airport Shuttle ($20)"
+        ],
+        "recommended": "Uber/Lyft for convenience",
+        "time": "45-90 minutes depending on traffic"
+      },
+      "local_transport": {
+        "subway": {
+          "price": "$2.90 per ride",
+          "tip": "Buy a 7-day unlimited MetroCard for $34"
+        },
+        "taxi": {
+          "initial_fare": "$3.50",
+          "tip": "Yellow cabs are metered, tip 15-20%"
+        },
+        "walking": {
+          "tip": "Manhattan is very walkable, especially Midtown"
+        }
+      }
+    },
+    "local_tips": [
+      "Tipping: 18-20% at restaurants, $1-2 per drink at bars",
+      "Weather: Check forecast daily, layers recommended",
+      "Safety: Stay aware in crowded areas, keep valuables secure",
+      "Best views: Top of the Rock, One World Observatory, Brooklyn Bridge",
+      "Free WiFi: Available at most cafes, libraries, and parks",
+      "Happy hours: Many bars offer deals 4-7 PM on weekdays",
+      "Museum free hours: Many museums have free or pay-what-you-wish hours",
+      "Broadway tickets: Try lottery or rush tickets for discounts"
+    ]
+  },
+  "created_at": "2025-08-11T20:24:10.736273",
+  "saved_at": "2025-08-11T20:24:11.237468",
+  "user_id": "default",
+  "trip_id": "2f35af7f-8054-464a-a0fa-9a7a9b21cd3b"
+}

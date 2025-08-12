@@ -1,0 +1,43 @@
+{
+  "flights": [
+    {
+      "flight_number": "BA283",
+      "operator": "British Airways",
+      "booking_reference": "ABC123",
+      "departure": {
+        "location": "London Heathrow",
+        "airport_code": "LHR",
+        "terminal": "5",
+        "gate": "A23",
+        "date": "15 Mar 2025",
+        "time": "10:30"
+      },
+      "arrival": {
+        "location": "Los Angeles",
+        "airport_code": "LAX",
+        "terminal": "B",
+        "date": "15 Mar 2025",
+        "time": "13:45"
+      },
+      "seat": "12A",
+      "travel_class": "Economy",
+      "confidence": 1
+    }
+  ],
+  "passengers": [
+    {
+      "title": "Mr",
+      "first_name": "John",
+      "last_name": "Smith",
+      "frequent_flyer": "BA1234567",
+      "confidence": 1
+    }
+  ],
+  "hotels": [],
+  "other": [],
+  "_metadata": {
+    "model": "gpt-4o",
+    "processing_type": "multimodal",
+    "document_type": ".pdf"
+  }
+}

@@ -1,0 +1,691 @@
+{
+  "extracted_data": {
+    "abbed841-0af9-46fc-adc5-e3a10f895dc6_test_trip.txt": {
+      "flights": [
+        {
+          "flight_number": "AA100",
+          "airline": "American Airlines",
+          "departure_airport": "LAX",
+          "departure_airport_name": "Los Angeles International",
+          "departure_terminal": null,
+          "arrival_airport": "JFK",
+          "arrival_airport_name": "New York J F Kennedy",
+          "arrival_terminal": null,
+          "departure_date": "2025-01-15",
+          "departure_time": "08:00",
+          "arrival_date": "2025-01-15",
+          "arrival_time": "16:30",
+          "seat": null,
+          "class": null,
+          "duration": null,
+          "aircraft": null,
+          "booking_reference": null,
+          "ticket_number": null
+        },
+        {
+          "flight_number": "AA200",
+          "airline": "American Airlines",
+          "departure_airport": "JFK",
+          "departure_airport_name": "New York J F Kennedy",
+          "departure_terminal": null,
+          "arrival_airport": "LAX",
+          "arrival_airport_name": "Los Angeles International",
+          "arrival_terminal": null,
+          "departure_date": "2025-01-20",
+          "departure_time": "18:00",
+          "arrival_date": "2025-01-20",
+          "arrival_time": "21:30",
+          "seat": null,
+          "class": null,
+          "duration": null,
+          "aircraft": null,
+          "booking_reference": null,
+          "ticket_number": null
+        }
+      ],
+      "hotels": [
+        {
+          "name": "The Plaza Hotel",
+          "address": "Fifth Avenue at Central Park South",
+          "city": "New York",
+          "postal_code": null,
+          "phone": null,
+          "check_in_date": "2025-01-15",
+          "check_out_date": "2025-01-20",
+          "nights": 5,
+          "confirmation_number": null,
+          "room_type": null,
+          "rate_per_night": null,
+          "currency": null,
+          "total_amount": null
+        }
+      ],
+      "passengers": [
+        {
+          "full_name": "Adult 1",
+          "first_name": "Adult",
+          "last_name": "1",
+          "frequent_flyer": null
+        },
+        {
+          "full_name": "Adult 2",
+          "first_name": "Adult",
+          "last_name": "2",
+          "frequent_flyer": null
+        }
+      ],
+      "trip_details": {
+        "trip_locator": null,
+        "booking_date": null,
+        "total_price": null,
+        "currency": null
+      }
+    }
+  },
+  "itinerary": {
+    "trip_summary": {
+      "destination": "New York",
+      "start_date": "2025-01-15",
+      "end_date": "2025-01-20",
+      "duration": "6 days",
+      "total_flights": 2,
+      "total_hotels": 1,
+      "total_passengers": 2
+    },
+    "passengers": [
+      {
+        "full_name": "Adult 1",
+        "first_name": "Adult",
+        "last_name": "1",
+        "frequent_flyer": null
+      },
+      {
+        "full_name": "Adult 2",
+        "first_name": "Adult",
+        "last_name": "2",
+        "frequent_flyer": null
+      }
+    ],
+    "daily_schedule": [
+      {
+        "day": 1,
+        "date": "2025-01-15",
+        "day_name": "Wednesday",
+        "is_arrival": true,
+        "is_departure": false,
+        "flights": [
+          {
+            "type": "departure",
+            "flight": {
+              "flight_number": "AA100",
+              "airline": "American Airlines",
+              "departure_airport": "LAX",
+              "departure_airport_name": "Los Angeles International",
+              "departure_terminal": null,
+              "arrival_airport": "JFK",
+              "arrival_airport_name": "New York J F Kennedy",
+              "arrival_terminal": null,
+              "departure_date": "2025-01-15",
+              "departure_time": "08:00",
+              "arrival_date": "2025-01-15",
+              "arrival_time": "16:30",
+              "seat": null,
+              "class": null,
+              "duration": null,
+              "aircraft": null,
+              "booking_reference": null,
+              "ticket_number": null
+            }
+          },
+          {
+            "type": "arrival",
+            "flight": {
+              "flight_number": "AA100",
+              "airline": "American Airlines",
+              "departure_airport": "LAX",
+              "departure_airport_name": "Los Angeles International",
+              "departure_terminal": null,
+              "arrival_airport": "JFK",
+              "arrival_airport_name": "New York J F Kennedy",
+              "arrival_terminal": null,
+              "departure_date": "2025-01-15",
+              "departure_time": "08:00",
+              "arrival_date": "2025-01-15",
+              "arrival_time": "16:30",
+              "seat": null,
+              "class": null,
+              "duration": null,
+              "aircraft": null,
+              "booking_reference": null,
+              "ticket_number": null
+            }
+          }
+        ],
+        "note": "",
+        "activities": [
+          "\u2708\ufe0f Arrive at airport, take taxi/train to hotel",
+          "Check in to hotel at Fifth Avenue at Central Park South",
+          "Evening: Welcome dinner at Piccola Cucina Estiatorio"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      },
+      {
+        "day": 2,
+        "date": "2025-01-16",
+        "day_name": "Thursday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit 1. The Metropolitan Museum of Art (The Met Fifth Avenue) - Museum & Art Gallery",
+          "Lunch: Address:",
+          "Afternoon: Explore Admission:",
+          "Dinner: Cuisine Type:"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      },
+      {
+        "day": 3,
+        "date": "2025-01-17",
+        "day_name": "Friday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit Visit Duration:",
+          "Lunch: Cuisine Type:",
+          "Afternoon: Explore Why It Matches:",
+          "Dinner: Price Range:"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      },
+      {
+        "day": 4,
+        "date": "2025-01-18",
+        "day_name": "Saturday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit Special Exhibitions:",
+          "Lunch: Price Range:",
+          "Afternoon: Explore Accessibility:",
+          "Dinner: Why Recommended:"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      },
+      {
+        "day": 5,
+        "date": "2025-01-19",
+        "day_name": "Sunday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": "",
+        "activities": [
+          "Morning: Visit Best Time to Visit:",
+          "Lunch: Why Recommended:",
+          "Afternoon: Explore Nearby Attractions:",
+          "Dinner: Signature Dishes:"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      },
+      {
+        "day": 6,
+        "date": "2025-01-20",
+        "day_name": "Monday",
+        "is_arrival": false,
+        "is_departure": true,
+        "flights": [
+          {
+            "type": "departure",
+            "flight": {
+              "flight_number": "AA200",
+              "airline": "American Airlines",
+              "departure_airport": "JFK",
+              "departure_airport_name": "New York J F Kennedy",
+              "departure_terminal": null,
+              "arrival_airport": "LAX",
+              "arrival_airport_name": "Los Angeles International",
+              "arrival_terminal": null,
+              "departure_date": "2025-01-20",
+              "departure_time": "18:00",
+              "arrival_date": "2025-01-20",
+              "arrival_time": "21:30",
+              "seat": null,
+              "class": null,
+              "duration": null,
+              "aircraft": null,
+              "booking_reference": null,
+              "ticket_number": null
+            }
+          },
+          {
+            "type": "arrival",
+            "flight": {
+              "flight_number": "AA200",
+              "airline": "American Airlines",
+              "departure_airport": "JFK",
+              "departure_airport_name": "New York J F Kennedy",
+              "departure_terminal": null,
+              "arrival_airport": "LAX",
+              "arrival_airport_name": "Los Angeles International",
+              "arrival_terminal": null,
+              "departure_date": "2025-01-20",
+              "departure_time": "18:00",
+              "arrival_date": "2025-01-20",
+              "arrival_time": "21:30",
+              "seat": null,
+              "class": null,
+              "duration": null,
+              "aircraft": null,
+              "booking_reference": null,
+              "ticket_number": null
+            }
+          }
+        ],
+        "note": "",
+        "activities": [
+          "Morning: Visit 2. American Museum of Natural History - Museum",
+          "Lunch: Signature Dishes:",
+          "Afternoon: Explore Admission:",
+          "Dinner: Current Hours:"
+        ],
+        "meals": {
+          "breakfast": "Start your day at Piccola Cucina Estiatorio",
+          "lunch": "Try Address:",
+          "dinner": "Dine at Cuisine Type:"
+        }
+      }
+    ],
+    "flights": [
+      {
+        "flight_number": "AA100",
+        "airline": "American Airlines",
+        "departure": {
+          "airport": "LAX",
+          "airport_name": "Los Angeles International",
+          "terminal": null,
+          "time": "08:00",
+          "date": "2025-01-15"
+        },
+        "arrival": {
+          "airport": "JFK",
+          "airport_name": "New York J F Kennedy",
+          "terminal": null,
+          "time": "16:30",
+          "date": "2025-01-15"
+        },
+        "seat": null,
+        "class": null,
+        "duration": null,
+        "aircraft": null,
+        "booking_reference": null,
+        "ticket_number": null,
+        "status": "Confirmed"
+      },
+      {
+        "flight_number": "AA200",
+        "airline": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "airport_name": "New York J F Kennedy",
+          "terminal": null,
+          "time": "18:00",
+          "date": "2025-01-20"
+        },
+        "arrival": {
+          "airport": "LAX",
+          "airport_name": "Los Angeles International",
+          "terminal": null,
+          "time": "21:30",
+          "date": "2025-01-20"
+        },
+        "seat": null,
+        "class": null,
+        "duration": null,
+        "aircraft": null,
+        "booking_reference": null,
+        "ticket_number": null,
+        "status": "Confirmed"
+      }
+    ],
+    "accommodations": [
+      {
+        "name": "The Plaza Hotel",
+        "address": "Fifth Avenue at Central Park South",
+        "city": "New York",
+        "postal_code": null,
+        "check_in": "2025-01-15",
+        "check_out": "2025-01-20",
+        "nights": 5,
+        "confirmation": null,
+        "room_type": null,
+        "rate_per_night": null,
+        "currency": null,
+        "total_amount": null,
+        "amenities": [],
+        "contact": null
+      }
+    ],
+    "transportation": [],
+    "important_info": {
+      "destination": null,
+      "currency": "Local currency",
+      "dates": {
+        "start": "2025-01-15",
+        "end": "2025-01-20"
+      },
+      "note": "Details will be populated with real-time information"
+    },
+    "trip_details": {},
+    "restaurants": [
+      {
+        "name": "Piccola Cucina Estiatorio"
+      },
+      {
+        "name": "Address:"
+      },
+      {
+        "name": "Cuisine Type:"
+      },
+      {
+        "name": "Price Range:"
+      },
+      {
+        "name": "Why Recommended:"
+      },
+      {
+        "name": "Signature Dishes:"
+      }
+    ],
+    "attractions": [
+      {
+        "name": "1. The Metropolitan Museum of Art (The Met Fifth Avenue) - Museum & Art Gallery"
+      },
+      {
+        "name": "Admission:"
+      },
+      {
+        "name": "Visit Duration:"
+      },
+      {
+        "name": "Why It Matches:"
+      },
+      {
+        "name": "Special Exhibitions:"
+      },
+      {
+        "name": "Accessibility:"
+      },
+      {
+        "name": "Best Time to Visit:"
+      },
+      {
+        "name": "Nearby Attractions:"
+      }
+    ]
+  },
+  "recommendations": {
+    "restaurants": [
+      {
+        "name": "Le Bernardin",
+        "cuisine": "French Seafood",
+        "price_range": "$$$$",
+        "rating": 4.8,
+        "address": "155 West 51st Street",
+        "phone": "+1 212-554-1515",
+        "description": "Exquisite French seafood in elegant setting",
+        "reservation_required": true,
+        "distance_from_hotel": "0.8 miles",
+        "must_try": [
+          "Tuna Carpaccio",
+          "Lobster",
+          "Black Bass"
+        ]
+      },
+      {
+        "name": "Joe's Pizza",
+        "cuisine": "Italian",
+        "price_range": "$",
+        "rating": 4.5,
+        "address": "7 Carmine Street",
+        "phone": "+1 212-366-1182",
+        "description": "Classic New York pizza joint",
+        "reservation_required": false,
+        "distance_from_hotel": "1.2 miles",
+        "must_try": [
+          "Cheese Pizza",
+          "Pepperoni Slice"
+        ]
+      },
+      {
+        "name": "Eleven Madison Park",
+        "cuisine": "Contemporary American",
+        "price_range": "$$$$",
+        "rating": 4.9,
+        "address": "11 Madison Avenue",
+        "phone": "+1 212-889-0905",
+        "description": "Award-winning fine dining experience",
+        "reservation_required": true,
+        "distance_from_hotel": "2.1 miles",
+        "must_try": [
+          "Tasting Menu"
+        ]
+      },
+      {
+        "name": "Shake Shack",
+        "cuisine": "American",
+        "price_range": "$$",
+        "rating": 4.3,
+        "address": "Madison Square Park",
+        "phone": "+1 646-747-7200",
+        "description": "Gourmet burgers and shakes",
+        "reservation_required": false,
+        "distance_from_hotel": "1.5 miles",
+        "must_try": [
+          "ShackBurger",
+          "Cheese Fries",
+          "Concrete"
+        ]
+      }
+    ],
+    "attractions": [
+      {
+        "name": "Metropolitan Museum of Art",
+        "type": "Museum",
+        "price": "$30 adults",
+        "rating": 4.7,
+        "address": "1000 5th Avenue",
+        "hours": "10:00 AM - 5:00 PM",
+        "description": "One of the world's largest and most important art museums",
+        "time_needed": "3-4 hours",
+        "best_time": "Weekday mornings",
+        "highlights": [
+          "Egyptian Art",
+          "American Wing",
+          "Rooftop Garden"
+        ]
+      },
+      {
+        "name": "Central Park",
+        "type": "Park",
+        "price": "Free",
+        "rating": 4.8,
+        "address": "Central Park",
+        "hours": "6:00 AM - 1:00 AM",
+        "description": "843-acre green oasis in the heart of Manhattan",
+        "time_needed": "2-3 hours",
+        "best_time": "Morning or late afternoon",
+        "highlights": [
+          "Bethesda Fountain",
+          "Bow Bridge",
+          "Strawberry Fields"
+        ]
+      },
+      {
+        "name": "Empire State Building",
+        "type": "Landmark",
+        "price": "$44 adults",
+        "rating": 4.6,
+        "address": "350 5th Avenue",
+        "hours": "10:00 AM - 12:00 AM",
+        "description": "Iconic Art Deco skyscraper with observation decks",
+        "time_needed": "1-2 hours",
+        "best_time": "Sunset",
+        "highlights": [
+          "86th Floor Observatory",
+          "102nd Floor Observatory"
+        ]
+      },
+      {
+        "name": "Brooklyn Bridge",
+        "type": "Landmark",
+        "price": "Free",
+        "rating": 4.8,
+        "address": "Brooklyn Bridge",
+        "hours": "24 hours",
+        "description": "Historic bridge connecting Manhattan and Brooklyn",
+        "time_needed": "45 minutes to walk",
+        "best_time": "Sunrise or sunset",
+        "highlights": [
+          "Walking path",
+          "Bike path",
+          "Photo opportunities"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "Broadway Show: Hamilton",
+        "type": "Theater",
+        "date": "Multiple dates available",
+        "venue": "Richard Rodgers Theatre",
+        "address": "226 West 46th Street",
+        "price_range": "$149-$849",
+        "description": "Award-winning musical about Alexander Hamilton",
+        "ticket_link": "https://hamiltonmusical.com",
+        "duration": "2 hours 45 minutes"
+      },
+      {
+        "name": "Yankees vs Red Sox",
+        "type": "Sports",
+        "date": "Check schedule",
+        "venue": "Yankee Stadium",
+        "address": "1 E 161st St, Bronx",
+        "price_range": "$25-$300",
+        "description": "Classic MLB rivalry game",
+        "ticket_link": "https://mlb.com/yankees",
+        "duration": "3 hours"
+      },
+      {
+        "name": "Jazz at Lincoln Center",
+        "type": "Music",
+        "date": "Various performances",
+        "venue": "Lincoln Center",
+        "address": "10 Columbus Circle",
+        "price_range": "$35-$150",
+        "description": "World-class jazz performances",
+        "ticket_link": "https://jazz.org",
+        "duration": "2 hours"
+      }
+    ],
+    "shopping": [
+      {
+        "name": "Fifth Avenue",
+        "type": "Shopping District",
+        "description": "Luxury shopping with flagship stores",
+        "highlights": [
+          "Tiffany & Co",
+          "Apple Store",
+          "Saks Fifth Avenue"
+        ],
+        "best_for": "Luxury goods, flagship stores"
+      },
+      {
+        "name": "Chelsea Market",
+        "type": "Indoor Market",
+        "description": "Food hall and shopping in former factory",
+        "highlights": [
+          "Local vendors",
+          "Artisanal foods",
+          "Unique gifts"
+        ],
+        "best_for": "Food, local products, souvenirs"
+      },
+      {
+        "name": "SoHo",
+        "type": "Shopping District",
+        "description": "Trendy boutiques and cast-iron architecture",
+        "highlights": [
+          "Independent boutiques",
+          "Art galleries",
+          "Vintage stores"
+        ],
+        "best_for": "Fashion, art, unique finds"
+      }
+    ],
+    "transportation": {
+      "airport_transfer": {
+        "options": [
+          "Taxi ($70)",
+          "Uber/Lyft ($40-60)",
+          "AirTrain + Subway ($8)",
+          "Airport Shuttle ($20)"
+        ],
+        "recommended": "Uber/Lyft for convenience",
+        "time": "45-90 minutes depending on traffic"
+      },
+      "local_transport": {
+        "subway": {
+          "price": "$2.90 per ride",
+          "tip": "Buy a 7-day unlimited MetroCard for $34"
+        },
+        "taxi": {
+          "initial_fare": "$3.50",
+          "tip": "Yellow cabs are metered, tip 15-20%"
+        },
+        "walking": {
+          "tip": "Manhattan is very walkable, especially Midtown"
+        }
+      }
+    },
+    "local_tips": [
+      "Tipping: 18-20% at restaurants, $1-2 per drink at bars",
+      "Weather: Check forecast daily, layers recommended",
+      "Safety: Stay aware in crowded areas, keep valuables secure",
+      "Best views: Top of the Rock, One World Observatory, Brooklyn Bridge",
+      "Free WiFi: Available at most cafes, libraries, and parks",
+      "Happy hours: Many bars offer deals 4-7 PM on weekdays",
+      "Museum free hours: Many museums have free or pay-what-you-wish hours",
+      "Broadway tickets: Try lottery or rush tickets for discounts"
+    ]
+  },
+  "created_at": "2025-08-11T17:05:39.211201",
+  "saved_at": "2025-08-11T17:05:39.712472",
+  "user_id": "default",
+  "trip_id": "abbed841-0af9-46fc-adc5-e3a10f895dc6"
+}

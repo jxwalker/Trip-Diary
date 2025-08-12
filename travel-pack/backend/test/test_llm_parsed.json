@@ -1,0 +1,361 @@
+{
+  "summary": "New York City in December is a dazzling blend of iconic sights, festive spirit, and vibrant culture that captures the essence of the city that never sleeps. This guide presents a detailed, four-day itinerary (December 20\u201323, 2024) tailored to moderate walking and balanced activity levels, featuring top restaurants with local cuisine, cultural attractions, nightlife, and shopping, enriched with insider tips and current event listings to make your winter trip unforgettable.",
+  "weather": {
+    "temperature_range": "30-45\u00b0F",
+    "conditions": "Cold, partly cloudy, with possible snow showers",
+    "forecast_details": [
+      "Dec 20: Cold, partly cloudy, high 42\u00b0F, low 31\u00b0F",
+      "Dec 21: Snow showers possible, high 38\u00b0F, low 29\u00b0F",
+      "Dec 22: Mostly cloudy, chance of light snow, high 40\u00b0F, low 28\u00b0F",
+      "Dec 23: Clear skies, brisk, high 41\u00b0F, low 30\u00b0F"
+    ],
+    "packing_tips": [
+      "Warm layers",
+      "Waterproof boots",
+      "Scarf",
+      "Gloves",
+      "Hat",
+      "Warm coat",
+      "Umbrella"
+    ]
+  },
+  "hotels": null,
+  "restaurants": [
+    {
+      "name": "The Modern",
+      "cuisine": "Contemporary American",
+      "price_range": "$$$$",
+      "ambiance": "Sleek, museum setting",
+      "must_try_dishes": [
+        "Seasonal tasting menu"
+      ],
+      "reservations": "Required (2+ weeks ahead)",
+      "address": "9 W 53rd St, New York, NY 10019",
+      "phone": "+1 212-333-1220",
+      "distance_from_hotel": "0.5 miles"
+    },
+    {
+      "name": "Keens Steakhouse",
+      "cuisine": "Classic American",
+      "price_range": "$$$",
+      "ambiance": "Historic, cozy",
+      "must_try_dishes": [
+        "Mutton chop",
+        "classic cocktails"
+      ],
+      "reservations": "Recommended",
+      "address": "72 W 36th St, New York, NY 10018",
+      "phone": "+1 212-947-3636",
+      "distance_from_hotel": "0.7 miles"
+    },
+    {
+      "name": "Los Tacos No.1",
+      "cuisine": "Mexican Street Food",
+      "price_range": "$$",
+      "ambiance": "Casual, bustling",
+      "must_try_dishes": [
+        "Adobada taco",
+        "quesadilla"
+      ],
+      "reservations": "No reservations",
+      "address": "Chelsea Market, 75 9th Ave",
+      "phone": null,
+      "distance_from_hotel": "2.3 miles"
+    },
+    {
+      "name": "Gallaghers Steakhouse",
+      "cuisine": "Classic American",
+      "price_range": "$$$",
+      "ambiance": "Traditional NYC steakhouse",
+      "must_try_dishes": [
+        "Prime rib",
+        "martinis"
+      ],
+      "reservations": "Recommended",
+      "address": "228 W 52nd St, New York, NY 10019",
+      "phone": "+1 212-245-3000",
+      "distance_from_hotel": "0.5 miles"
+    },
+    {
+      "name": "Juliana\u2019s Pizza",
+      "cuisine": "New York Pizza",
+      "price_range": "$$",
+      "ambiance": "Casual, lively",
+      "must_try_dishes": [
+        "Margherita pizza"
+      ],
+      "reservations": "No reservations",
+      "address": "19 Old Fulton St, Brooklyn, NY 11201",
+      "phone": null,
+      "distance_from_hotel": "4.5 miles"
+    },
+    {
+      "name": "The River Caf\u00e9",
+      "cuisine": "Upscale American",
+      "price_range": "$$$$",
+      "ambiance": "Romantic, scenic",
+      "must_try_dishes": [
+        "Lobster",
+        "oysters"
+      ],
+      "reservations": "Required",
+      "address": "1 Water St, Brooklyn, NY 11201",
+      "phone": "+1 718-522-5200",
+      "distance_from_hotel": "4.5 miles"
+    },
+    {
+      "name": "Caf\u00e9 Sabarsky",
+      "cuisine": "Austrian",
+      "price_range": "$$$",
+      "ambiance": "Elegant, art deco",
+      "must_try_dishes": [
+        "Apple strudel",
+        "schnitzel"
+      ],
+      "reservations": "Recommended",
+      "address": "1048 5th Ave, New York, NY 10028",
+      "phone": "+1 212-288-2000",
+      "distance_from_hotel": "2.5 miles"
+    },
+    {
+      "name": "Le Bernardin",
+      "cuisine": "French Seafood",
+      "price_range": "$$$$",
+      "ambiance": "Formal, refined",
+      "must_try_dishes": [
+        "Tuna tartare",
+        "tasting menus with wine pairing"
+      ],
+      "reservations": "Essential months ahead",
+      "address": "155 W 51st St, New York, NY 10019",
+      "phone": "+1 212-554-1515",
+      "distance_from_hotel": "0.3 miles"
+    }
+  ],
+  "daily_itinerary": [
+    {
+      "day": 1,
+      "date": "December 20, 2024",
+      "morning": {
+        "time": "8:00 AM - 12:00 PM",
+        "activity": "Central Park Winter Walk & Photo Spots",
+        "location": "Central Park",
+        "description": "Begin with a gentle stroll through Central Park. Visit Bethesda Terrace and Bow Bridge. Optional horse carriage ride if weather permits.",
+        "tips": null
+      },
+      "lunch": {
+        "time": "12:30 PM - 2:00 PM",
+        "restaurant": "The Modern",
+        "location": "9 W 53rd St, New York, NY 10019"
+      },
+      "afternoon": {
+        "time": "2:30 PM - 5:00 PM",
+        "activity": "Museum of Modern Art (MoMA)",
+        "location": "MoMA",
+        "description": "Explore iconic modern art including works by Van Gogh and Warhol."
+      },
+      "dinner": {
+        "time": "6:00 PM - 9:00 PM",
+        "restaurant": "Keens Steakhouse",
+        "location": "72 W 36th St, New York, NY 10018"
+      },
+      "evening": {
+        "time": null,
+        "activity": null,
+        "location": null
+      }
+    },
+    {
+      "day": 2,
+      "date": "December 21, 2024",
+      "morning": {
+        "time": "8:00 AM - 12:00 PM",
+        "activity": "High Line & Chelsea Market",
+        "location": "High Line entrance: Gansevoort St & Washington St",
+        "description": "Walk the elevated High Line park to enjoy winter city views, then explore Chelsea Market\u2019s artisanal food stalls and shops.",
+        "tips": null
+      },
+      "lunch": {
+        "time": "12:30 PM - 2:00 PM",
+        "restaurant": "Los Tacos No.1",
+        "location": "Chelsea Market, 75 9th Ave"
+      },
+      "afternoon": {
+        "time": "2:30 PM - 5:00 PM",
+        "activity": "9/11 Memorial & Museum",
+        "location": "180 Greenwich St, New York, NY 10007",
+        "description": "Reflective cultural visit."
+      },
+      "dinner": {
+        "time": "6:30 PM - 9:00 PM",
+        "restaurant": "Gallaghers Steakhouse",
+        "location": "228 W 52nd St, New York, NY 10019"
+      },
+      "evening": {
+        "time": null,
+        "activity": null,
+        "location": null
+      }
+    },
+    {
+      "day": 3,
+      "date": "December 22, 2024",
+      "morning": {
+        "time": "8:00 AM - 12:00 PM",
+        "activity": "Brooklyn Bridge Walk & DUMBO Exploration",
+        "location": "Brooklyn Bridge to DUMBO",
+        "description": "Cross the iconic Brooklyn Bridge (easy pace), explore DUMBO\u2019s art galleries and waterfront parks.",
+        "tips": null
+      },
+      "lunch": {
+        "time": "12:30 PM - 2:00 PM",
+        "restaurant": "Juliana\u2019s Pizza",
+        "location": "19 Old Fulton St, Brooklyn, NY 11201"
+      },
+      "afternoon": {
+        "time": "2:30 PM - 5:00 PM",
+        "activity": "Brooklyn Museum",
+        "location": "200 Eastern Pkwy, Brooklyn, NY 11238",
+        "description": "Renowned for diverse collections and special exhibitions."
+      },
+      "dinner": {
+        "time": "6:30 PM - 9:00 PM",
+        "restaurant": "The River Caf\u00e9",
+        "location": "1 Water St, Brooklyn, NY 11201"
+      },
+      "evening": {
+        "time": null,
+        "activity": null,
+        "location": null
+      }
+    },
+    {
+      "day": 4,
+      "date": "December 23, 2024",
+      "morning": {
+        "time": "8:00 AM - 12:00 PM",
+        "activity": "The Metropolitan Museum of Art",
+        "location": "1000 5th Ave, New York, NY 10028",
+        "description": "Explore vast art collections; plan a focused visit to favorite sections like American Wing or Ancient Egypt."
+      },
+      "lunch": {
+        "time": "12:30 PM - 2:00 PM",
+        "restaurant": "Caf\u00e9 Sabarsky",
+        "location": "1048 5th Ave, New York, NY 10028"
+      },
+      "afternoon": {
+        "time": "2:30 PM - 5:00 PM",
+        "activity": "Shopping on Madison Avenue",
+        "location": "Madison Avenue",
+        "description": "Upscale boutiques and designer stores for a chic shopping experience."
+      },
+      "dinner": {
+        "time": "6:00 PM - 9:00 PM",
+        "restaurant": "Le Bernardin",
+        "location": "155 W 51st St, New York, NY 10019"
+      },
+      "evening": {
+        "time": null,
+        "activity": null,
+        "location": null
+      }
+    }
+  ],
+  "attractions": [],
+  "events": [],
+  "neighborhoods": [
+    {
+      "name": "Midtown Manhattan",
+      "character": "Bustling, iconic landmarks",
+      "highlights": [
+        "Times Square",
+        "Rockefeller Center"
+      ],
+      "distance_from_hotel": "Walking distance"
+    },
+    {
+      "name": "Chelsea",
+      "character": "Artsy, trendy",
+      "highlights": [
+        "High Line",
+        "Chelsea Market"
+      ],
+      "distance_from_hotel": "2 miles"
+    },
+    {
+      "name": "DUMBO (Brooklyn)",
+      "character": "Artistic, scenic waterfront",
+      "highlights": [
+        "Brooklyn Bridge Park",
+        "galleries"
+      ],
+      "distance_from_hotel": "4.5 miles"
+    },
+    {
+      "name": "Upper East Side",
+      "character": "Elegant, museum district",
+      "highlights": [
+        "The Met",
+        "Madison Ave shopping"
+      ],
+      "distance_from_hotel": "2.5 miles"
+    },
+    {
+      "name": "West Village",
+      "character": "Charming, historic",
+      "highlights": [
+        "Boutique shops",
+        "cozy cafes"
+      ],
+      "distance_from_hotel": "2 miles"
+    }
+  ],
+  "transportation": null,
+  "practical_tips": {
+    "tipping": "15-20% in restaurants, $1\u20132 per drink at bars, $2\u20135 for taxi rides.",
+    "currency": null,
+    "language": "English predominantly; Spanish common in some areas. Useful phrase: \u201cExcuse me, do you speak English?\u201d",
+    "safety": [
+      "Stay aware in crowded places; Midtown and tourist areas are generally safe."
+    ],
+    "emergency": "Dial 911 for emergencies, 311 for city services."
+  },
+  "hidden_gems": [
+    {
+      "name": "Venetian Room at New York Public Library",
+      "description": "A rare, stunning Gilded Age interior for a quiet, elegant visit.",
+      "location": null,
+      "best_time": null
+    },
+    {
+      "name": "Little Red Lighthouse",
+      "description": "Under George Washington Bridge; a serene and photogenic spot accessible by a short hike.",
+      "location": null,
+      "best_time": null
+    },
+    {
+      "name": "The Elevated Acre",
+      "description": "A hidden park with great skyline views, tucked away near the Financial District.",
+      "location": null,
+      "best_time": null
+    },
+    {
+      "name": "East Village Street Art Tour",
+      "description": "Explore murals and vibrant street art in this bohemian neighborhood.",
+      "location": null,
+      "best_time": null
+    },
+    {
+      "name": "Nicola Tesla Exhibit at The New Yorker Hotel",
+      "description": "Fascinating small museum dedicated to the inventor\u2019s legacy.",
+      "location": null,
+      "best_time": null
+    },
+    {
+      "name": "Roosevelt Island Tramway",
+      "description": "Scenic and less crowded aerial tramway ride offering spectacular views of Manhattan.",
+      "location": null,
+      "best_time": null
+    }
+  ]
+}

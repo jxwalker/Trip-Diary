@@ -1,0 +1,57 @@
+{
+  "travel_guide": {
+    "base_prompt": "You are an expert travel concierge creating a personalized, magazine-quality travel guide. Create a comprehensive, detailed guide that rivals the best travel publications like Condé Nast Traveler or Lonely Planet.",
+    "components": {
+      "destination_overview": "Provide a captivating overview of {destination} that captures its essence, culture, and what makes it unique. Include current local insights and hidden gems that only locals know about.",
+      "weather_analysis": "Analyze the weather for {dates} in {destination}. Provide specific daily forecasts if available, what to pack, best times for outdoor activities, and any weather-related events or considerations.",
+      "personalized_recommendations": {
+        "template": "Based on the traveler's preferences:\n{preferences_summary}\n\nCreate highly personalized recommendations for:\n1. Restaurants and dining experiences\n2. Cultural attractions and activities\n3. Entertainment and nightlife\n4. Shopping and markets\n5. Unique experiences\n\nFor each recommendation, include:\n- Why it matches their preferences\n- Specific address and contact details\n- Best times to visit\n- Insider tips\n- Reservation requirements\n- Price range\n- Distance from their hotel at {hotel_address}",
+        "interests_mapping": {
+          "art_galleries": "contemporary and classical art galleries, museum exhibitions, artist studios, gallery openings",
+          "historical_sites": "UNESCO World Heritage sites, historical monuments, archaeological sites, historic districts, guided heritage tours",
+          "architecture": "architectural landmarks, notable buildings, architectural tours, design museums",
+          "live_music": "jazz clubs, concert venues, live music bars, acoustic sessions, local music scenes",
+          "theater": "theaters, Broadway-style shows, local productions, comedy clubs, performance art",
+          "local_cuisine": "authentic local restaurants, traditional eateries, food markets, regional specialties",
+          "fine_dining": "Michelin-starred restaurants, chef's table experiences, tasting menus, wine pairings",
+          "street_food": "food trucks, street markets, local food stalls, food tours",
+          "nature": "parks, gardens, nature reserves, hiking trails, scenic viewpoints",
+          "beaches": "beaches, coastal walks, water sports, beach clubs, seaside restaurants",
+          "photography": "photogenic locations, sunrise/sunset spots, Instagram-worthy places, photography tours",
+          "wellness": "spas, wellness centers, yoga studios, meditation retreats, thermal baths",
+          "family_activities": "family-friendly attractions, interactive museums, parks, entertainment centers"
+        }
+      },
+      "daily_itinerary": {
+        "template": "Create a day-by-day itinerary for {duration} considering:\n- Travel pace preference: {pace}\n- Walking tolerance: {walking_level}\n- Preferred activity times: {preferred_times}\n- Group type: {group_type}\n\nFor each day include:\n- Morning, afternoon, and evening activities\n- Specific timings and durations\n- Transportation between locations\n- Meal recommendations with reservations needed\n- Alternative options for weather or energy levels\n- Free time for relaxation"
+      },
+      "events_search": "Search for and list all events happening in {destination} from {start_date} to {end_date} including:\n- Concerts and music festivals\n- Theater and performances\n- Sports events\n- Art exhibitions\n- Food and wine festivals\n- Local celebrations and holidays\n- Seasonal events\n\nInclude ticket information, venues, and booking links.",
+      "restaurant_guide": {
+        "template": "Based on cuisine preferences ({cuisines}), dietary restrictions ({dietary}), and price range ({price_range}), recommend restaurants with:\n- Detailed descriptions of ambiance and specialties\n- Must-try dishes\n- Wine/drink recommendations\n- Reservation policies and tips\n- Best times to visit\n- Dress code if applicable\n- Chef's background for notable establishments"
+      },
+      "local_insights": "Provide current local insights including:\n- Neighborhoods to explore with character descriptions\n- Local customs and etiquette\n- Language tips and useful phrases\n- Tipping culture\n- Safety considerations\n- Transportation tips and apps\n- Money matters and payment methods\n- Emergency contacts",
+      "hidden_gems": "Discover and recommend hidden gems and off-the-beaten-path experiences that match the traveler's adventure level of {adventure_level}. Include secret spots, local favorites, and experiences not found in typical guidebooks.",
+      "shopping_guide": "Curate shopping recommendations based on interests including:\n- Local markets and times\n- Artisan shops and crafts\n- Fashion districts\n- Bookstores and record shops\n- Specialty food stores\n- Souvenirs worth buying\n- Tax-free shopping information",
+      "evening_entertainment": "Based on nightlife interest level ({nightlife_level}), suggest:\n- Cocktail bars with signature drinks\n- Wine bars and breweries\n- Jazz clubs and live music venues\n- Rooftop bars with views\n- Late-night food spots\n- Cultural evening activities\n- Sunset viewing locations"
+    },
+    "search_queries": {
+      "current_events": "\"{destination}\" events \"{month} {year}\" concerts festivals exhibitions",
+      "restaurant_trending": "best new restaurants \"{destination}\" 2024 2025 hot tables reservations",
+      "local_news": "\"{destination}\" travel news updates tourism \"{month} {year}\"",
+      "hidden_gems": "\"{destination}\" hidden gems secret spots locals recommendations off beaten path",
+      "weather_forecast": "\"{destination}\" weather forecast \"{dates}\" climate what to pack"
+    },
+    "output_format": "Create a comprehensive guide with the following sections:\n\n# Your Personalized {destination} Travel Guide\n\n## Executive Summary\n[Compelling overview of the trip]\n\n## Destination Insights\n[Cultural overview and current happenings]\n\n## Your Personalized Itinerary\n[Day-by-day breakdown]\n\n## Dining Guide\n[Curated restaurant recommendations]\n\n## Cultural & Entertainment\n[Events, shows, and cultural activities]\n\n## Neighborhood Guide\n[Areas to explore with maps]\n\n## Practical Information\n[Everything needed for smooth travel]\n\n## Hidden Gems & Local Secrets\n[Special discoveries]\n\nMake it engaging, specific, and actionable. Include specific addresses, phone numbers, websites, and booking information wherever possible."
+  },
+  "document_extraction": {
+    "flight_extraction": "Extract flight details including: airline, flight number, departure/arrival airports and times, dates, passenger names, seat numbers, booking reference, class of service.",
+    "hotel_extraction": "Extract accommodation details including: hotel name, address, check-in/out dates, room type, confirmation number, amenities, contact information.",
+    "multimodal_extraction": "Analyze this travel document image and extract all travel-related information including flights, hotels, dates, passenger names, and any special notes or requirements."
+  },
+  "itinerary_generation": {
+    "base_prompt": "Create a detailed travel itinerary based on the following trip information:\n{trip_details}\n\nGenerate a comprehensive itinerary including daily schedules, important information, and travel tips."
+  },
+  "personalization": {
+    "preference_analysis": "Analyze these user preferences and create a detailed traveler profile:\n{preferences}\n\nIdentify key interests, travel style, must-have experiences, and potential challenges."
+  }
+}
