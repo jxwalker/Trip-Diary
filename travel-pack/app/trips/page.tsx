@@ -58,7 +58,7 @@ export default function SavedTripsPage() {
   };
 
   const viewTrip = (tripId: string) => {
-    router.push(`/itinerary?tripId=${tripId}`);
+    router.push(`/guide-modern?tripId=${tripId}`);
   };
 
   const deleteTrip = async (tripId: string) => {

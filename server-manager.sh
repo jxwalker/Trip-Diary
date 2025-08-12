@@ -195,7 +195,10 @@ start_backend() {
         python3 -m venv venv
         source venv/bin/activate
         echo -e "  ${YELLOW}${DOT}${NC} Installing dependencies..."
-        pip install -q fastapi uvicorn aiofiles pypdf python-dotenv openai anthropic pymupdf
+        # Install all required backend dependencies
+        pip install -q fastapi uvicorn aiofiles pypdf python-dotenv openai anthropic pymupdf \
+                      pydantic typing-extensions python-multipart Pillow reportlab \
+                      httpx aiohttp
         deactivate
     fi
     

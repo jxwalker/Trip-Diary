@@ -47,7 +47,7 @@ function GenerateItineraryContent() {
             setProgress(100);
             setStatusMessage('Your personalized guide is ready!');
             source.close();
-            setTimeout(() => router.push(`/guide?tripId=${tripId}`), 800);
+            setTimeout(() => router.push(`/guide-modern?tripId=${tripId}`), 800);
           }
         } catch (e) {
           console.error('SSE parse error', e);
@@ -66,7 +66,7 @@ function GenerateItineraryContent() {
             if (data.status === 'completed') {
               clearInterval(poll);
               setProgress(100);
-              setTimeout(() => router.push(`/guide?tripId=${tripId}`), 500);
+              setTimeout(() => router.push(`/guide-modern?tripId=${tripId}`), 500);
             }
           } catch {}
         }, 1500);

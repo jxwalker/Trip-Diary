@@ -8,9 +8,9 @@ export default function Navigation() {
 
   const navItems = [
     { href: "/", label: "🏠 Home", name: "Home" },
-    { href: "/upload-new", label: "📤 Upload", name: "Upload" },
+    { href: "/upload", label: "📤 Upload", name: "Upload" },
     { href: "/trips", label: "📚 My Trips", name: "My Trips" },
-    { href: "/guide", label: "📖 Guide", name: "Travel Guide" },
+    { href: "/guide-modern", label: "📖 Guide", name: "Travel Guide" },
   ];
 
   return (

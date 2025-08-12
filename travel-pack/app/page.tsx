@@ -82,7 +82,7 @@ export default function Home() {
             <Link href="/trips">
               <Button variant="ghost">My Trips</Button>
             </Link>
-            <Link href="/upload-new">
+            <Link href="/upload">
               <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700">
                 Upload Trip
               </Button>
@@ -116,7 +116,7 @@ export default function Home() {
             </p>
 
             <div className="flex gap-4 justify-center mb-12">
-              <Link href="/upload-new">
+              <Link href="/upload">
                 <Button size="lg" className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-lg px-8 py-6">
                   <Upload className="mr-2 h-5 w-5" />
                   Upload Your Trip
@@ -316,7 +316,7 @@ export default function Home() {
             <p className="text-xl mb-8 opacity-90">
               No more generic suggestions - get real venues with actual addresses
             </p>
-            <Link href="/upload-new">
+            <Link href="/upload">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6">
                 Upload Your Documents
                 <ArrowRight className="ml-2 h-5 w-5" />

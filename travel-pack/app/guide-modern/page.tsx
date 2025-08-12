@@ -202,6 +202,28 @@ function ModernGuidePageContent() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      // First generate the PDF
+      const generateResponse = await fetch(`http://localhost:8000/api/generate-pdf/${tripId}`, {
+        method: 'POST',
+      });
+      
+      if (!generateResponse.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+      
+      const { pdf_url } = await generateResponse.json();
+      
+      // Then download it
+      const downloadUrl = `http://localhost:8000${pdf_url}`;
+      window.open(downloadUrl, '_blank');
+    } catch (error) {
+      console.error('PDF download error:', error);
+      alert('Failed to download PDF. Please try again.');
+    }
+  };
+
   const getPriceSymbol = (range: string) => {
     return range || "$$";
   };
@@ -584,6 +606,20 @@ function ModernGuidePageContent() {
                 </Card>
 
                 {/* Restaurant Cards */}
+                {restaurants.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center py-8">
+                        <Utensils className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Restaurants Found</h3>
+                        <p className="text-gray-500 max-w-md mx-auto">
+                          We couldn't find restaurant recommendations for your trip yet. 
+                          Try adjusting your preferences or check back later as we update our recommendations.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filterByBookmark(filterByPrice(restaurants as Array<Record<string, unknown>>)).map((restaurant, idx: number) => (
                     <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -681,10 +717,26 @@ function ModernGuidePageContent() {
                     </Card>
                   ))}
                 </div>
+                )}
               </TabsContent>
 
               {/* Attractions Tab */}
               <TabsContent value="attractions" className="space-y-6">
+                {attractions.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center py-8">
+                        <Camera className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Attractions Found</h3>
+                        <p className="text-gray-500 max-w-md mx-auto">
+                          We haven't discovered any attractions for your destination yet. 
+                          This might be because you're visiting a less touristy area or we need more information about your preferences.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filterByBookmark(attractions).map((attraction, idx: number) => (
                     <Card key={idx}>
@@ -827,6 +879,17 @@ function ModernGuidePageContent() {
                                 <Ticket className="h-3 w-3 mr-1" />
                                 Get Tickets
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openBookingUrl(
+                                  (event as any).map_url ||
+                                  `https://maps.google.com/maps?q=${encodeURIComponent((event as any).venue || (event as any).name)}`
+                                )}
+                              >
+                                <Navigation className="h-3 w-3 mr-1" />
+                                Open in Maps
+                              </Button>
                               {(event as any).venue_info_url && (
                                 <Button
                                   size="sm"
@@ -842,6 +905,8 @@ function ModernGuidePageContent() {
                       ))}
                     </div>
                   </>
+                )}
+                </>
                 )}
               </TabsContent>
 
@@ -913,7 +978,7 @@ function ModernGuidePageContent() {
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
-                          Book on Booking.com
+                          Book Now
                         </Button>
                         <Button
                           variant="outline"
@@ -950,7 +1015,12 @@ function ModernGuidePageContent() {
                 <CardTitle className="text-base">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline" size="sm">
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDownloadPDF}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
                 </Button>

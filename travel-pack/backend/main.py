@@ -24,20 +24,61 @@ from services.places_service import PlacesService
 from services.events_service import EventsService
 from services.enhanced_guide_service import EnhancedGuideService
 from services.immediate_guide_generator import ImmediateGuideGenerator
+from services.enhanced_recommendations import EnhancedRecommendationsService
+from services.cleanup_service import CleanupService
 from database import TripDatabase
+from models.preferences import CanonicalPreferences, PreferencesTransformer
 
 app = FastAPI(title="TripCraft AI API", version="1.0.0")
+
+# Initialize cleanup service with 24-hour TTL
+cleanup_service = CleanupService(uploads_dir="uploads", outputs_dir="output", ttl_hours=24)
 
 # Initialize database
 db = TripDatabase()
 
-# Configure CORS - allow all origins in development
+# Background task for periodic cleanup
+@app.on_event("startup")
+async def startup_event():
+    """Start background cleanup task on app startup"""
+    asyncio.create_task(cleanup_service.start_periodic_cleanup(interval_hours=1))
+    print("✅ Cleanup service started - will run every hour")
+
+# Configure CORS based on environment
+# In production, replace with your actual domains
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+if ENVIRONMENT == "production":
+    # Production CORS settings - restrict to specific origins
+    allowed_origins = [
+        "https://yourdomain.com",
+        "https://www.yourdomain.com",
+        "https://app.yourdomain.com",
+        # Add your production domains here
+    ]
+    # Also allow Tailscale IPs if needed
+    tailscale_ip = os.getenv("TAILSCALE_IP")
+    if tailscale_ip:
+        allowed_origins.append(f"http://{tailscale_ip}:3000")
+        allowed_origins.append(f"https://{tailscale_ip}:3000")
+else:
+    # Development CORS settings - more permissive
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://127.0.0.1:3000",
+        "http://100.99.206.46:3000",  # Your Tailscale IP
+        "*"  # Allow all in development
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Content-Type", "X-Trip-ID"]
 )
 
 # Create upload directory
@@ -461,6 +502,21 @@ async def download_pdf(trip_id: str):
         filename=f"travel_pack_{trip_id}.pdf"
     )
 
+@app.post("/api/admin/cleanup")
+async def manual_cleanup():
+    """
+    Manually trigger cleanup of old files (admin endpoint)
+    """
+    try:
+        stats = await cleanup_service.cleanup_all()
+        return {
+            "status": "success",
+            "message": "Cleanup completed successfully",
+            "stats": stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+
 @app.post("/api/preferences/{trip_id}")
 async def update_preferences(trip_id: str, preferences: Dict):
     """
@@ -469,8 +525,16 @@ async def update_preferences(trip_id: str, preferences: Dict):
     if trip_id not in trip_data:
         raise HTTPException(status_code=404, detail="Trip not found")
     
-    # Store preferences
-    trip_data[trip_id]["preferences"] = preferences
+    # Transform preferences to canonical format
+    try:
+        canonical_prefs = PreferencesTransformer.from_frontend(preferences)
+        # Store both raw and canonical preferences
+        trip_data[trip_id]["preferences_raw"] = preferences
+        trip_data[trip_id]["preferences"] = canonical_prefs.dict()
+    except Exception as e:
+        print(f"Preferences transformation error: {e}")
+        # Fallback to raw preferences if transformation fails
+        trip_data[trip_id]["preferences"] = preferences
     
     # Get trip details
     itinerary = trip_data[trip_id].get("itinerary", {})
@@ -502,6 +566,10 @@ async def update_preferences(trip_id: str, preferences: Dict):
         progress_callback=preference_progress,
         single_pass=True
     )
+    
+    # Enhance the guide with booking URLs
+    enhancer = EnhancedRecommendationsService()
+    enhanced_guide = await enhancer.enhance_all_recommendations(enhanced_guide)
     
     # Store enhanced guide
     trip_data[trip_id]["enhanced_guide"] = enhanced_guide

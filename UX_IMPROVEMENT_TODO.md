@@ -27,26 +27,33 @@ Concrete tasks to fix before MVP, based on current code.
 - [ ] Replace any placeholder UI data in guide (weather, tips, amenities). If real data isn’t available, hide the section
 - [ ] Wire "Download PDF" in `guide-modern` to the existing PDF API (reuse logic from `app/itinerary/page.tsx`)
 - [ ] Add empty states (no events/restaurants) with helpful copy
+- [ ] Normalize date placeholders: avoid "TBD" in final guide when dates exist; prefer explicit messages otherwise (see `itinerary_generator.py`)
 
 ### Profiles (Save/Load)
 - [ ] Implement backend endpoints to save/load/list profiles using `ProfileManager` (see `travel-pack/backend/models/user_profile.py`)
 - [ ] Wire `preferences-modern` "Saved" tab to list and load real profiles
 - [ ] Support saving current preferences as a named profile
+- [ ] Update frontend calls posting to `/api/proxy/profile/save` to use real backend endpoints
 
 ### API and Services
 - [ ] Add preferences request model in `backend/main.py` to normalize modern/legacy payloads into canonical structure
 - [ ] Provide a small update endpoint to persist edits from `summary` page back into `trip_data`
 - [ ] Expose weather endpoint (or reuse existing service) and call it from guide sidebar instead of static values
 - [ ] Ensure events contain date/venue/ticket URLs; use URL generators when missing
+- [ ] Add `/api/profiles` (GET list), `/api/profile/{profile_id}` (GET), `/api/profile` (POST/PUT) endpoints
+- [ ] Verify proxy behavior for SSE and downloads is consistent across both `/api/proxy/[...path]` and `/api/proxy/generation-stream/[tripId]` routes
 
 ### Progress and Reliability
 - [ ] Use SSE (`/api/generation-stream/{trip_id}`) on the generate-itinerary page with retry on transient errors
 - [ ] Debounce/batch preference updates if switching to autosave later (post-MVP)
+- [ ] Ensure SSE proxy uses `BACKEND_URL` env consistently and gracefully falls back to polling
 
 ### Testing (Pre-MVP)
 - [ ] Integration test: posting preferences triggers guide generation and items contain `booking_urls` and `map_url`
 - [ ] Unit test: preferences transformer (legacy and modern → canonical)
 - [ ] E2E happy path: Upload sample → Summary confirm → Preferences → Progress → Guide with working CTAs
+- [ ] Test SSE path and fallback polling path (simulate SSE failure)
+- [ ] Test PDF generation from guide-modern and download via proxy
 
 ### Ops, Security, Cleanup
 - [ ] Add TTL cleanup for `uploads/` and `output/` to prevent disk bloat
@@ -54,6 +61,7 @@ Concrete tasks to fix before MVP, based on current code.
 - [ ] Ensure no secrets are logged; remove key prints outside test utilities
 - [ ] Remove duplicate/old directories (`Trip-Diary/`, `trip-diary/`) and unused files
 - [ ] Fix stray `requirements.tx`; ensure `server-manager.sh` installs all required backend deps
+- [ ] Update `server-manager.sh` and docs to use consistent project naming (no mixed `Trip-Diary`/`trip-diary`)
 
 ### Accessibility and Visual Polish
 - [ ] Replace badge-toggles with accessible buttons/checkbox groups (aria-pressed, roles)

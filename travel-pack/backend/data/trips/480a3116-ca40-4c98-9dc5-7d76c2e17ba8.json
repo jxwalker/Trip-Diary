@@ -1,0 +1,78 @@
+{
+  "extracted_data": {
+    "manual_input": {
+      "destination": "Paris, France",
+      "start_date": "2025-08-19",
+      "end_date": "2025-08-22",
+      "free_text": "Test trip for weather integration"
+    }
+  },
+  "itinerary": {
+    "trip_summary": {
+      "destination": "Paris, France",
+      "start_date": "2025-08-19",
+      "end_date": "2025-08-22",
+      "duration": "4 days",
+      "total_flights": 0,
+      "total_hotels": 0,
+      "total_passengers": 0
+    },
+    "passengers": [],
+    "daily_schedule": [
+      {
+        "day": 1,
+        "date": "2025-08-19",
+        "day_name": "Tuesday",
+        "is_arrival": true,
+        "is_departure": false,
+        "flights": [],
+        "note": ""
+      },
+      {
+        "day": 2,
+        "date": "2025-08-20",
+        "day_name": "Wednesday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": ""
+      },
+      {
+        "day": 3,
+        "date": "2025-08-21",
+        "day_name": "Thursday",
+        "is_arrival": false,
+        "is_departure": false,
+        "flights": [],
+        "note": ""
+      },
+      {
+        "day": 4,
+        "date": "2025-08-22",
+        "day_name": "Friday",
+        "is_arrival": false,
+        "is_departure": true,
+        "flights": [],
+        "note": ""
+      }
+    ],
+    "flights": [],
+    "accommodations": [],
+    "transportation": [],
+    "important_info": {
+      "destination": "Paris, France",
+      "currency": "Euro (EUR)",
+      "dates": {
+        "start": "2025-08-19",
+        "end": "2025-08-22"
+      },
+      "note": "Details will be populated with real-time information"
+    },
+    "trip_details": {}
+  },
+  "recommendations": {},
+  "created_at": "2025-08-12T17:54:39.563918",
+  "saved_at": "2025-08-12T17:54:39.563940",
+  "user_id": "default",
+  "trip_id": "480a3116-ca40-4c98-9dc5-7d76c2e17ba8"
+}
