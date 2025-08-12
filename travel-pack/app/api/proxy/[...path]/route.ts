@@ -14,10 +14,10 @@ export async function GET(
     const response = await fetch(url, {
       headers: Object.fromEntries(request.headers),
     });
-    const contentType = response.headers.get('content-type') || '';
+    const respType = response.headers.get('content-type') || '';
 
     // Stream Server-Sent Events directly
-    if (contentType.includes('text/event-stream') || path.includes('generation-stream')) {
+    if (respType.includes('text/event-stream') || path.includes('generation-stream')) {
       const headers = new Headers(response.headers);
       headers.set('Content-Type', 'text/event-stream');
       headers.set('Cache-Control', 'no-cache');
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     // Stream file downloads (e.g., PDFs)
-    if (contentType.includes('application/pdf')) {
+    if (respType.includes('application/pdf')) {
       const headers = new Headers(response.headers);
       headers.set('Content-Type', 'application/pdf');
       return new Response(response.body, { status: response.status, headers });
