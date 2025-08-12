@@ -187,7 +187,8 @@ Return ONLY the JSON object, no markdown, no explanations."""
             "destination": None,
             "dates": {},
             "travelers": [],
-            "confirmation_numbers": []
+            "confirmation_numbers": [],
+            "error": "LLM extraction failed, using basic pattern matching"
         }
         
         # Improved flight pattern - matches airline codes + flight numbers

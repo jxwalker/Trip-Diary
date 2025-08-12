@@ -49,7 +49,13 @@ class WeatherService:
             # Get coordinates for the destination
             coords = await self._get_coordinates(destination)
             if not coords:
-                return self._get_mock_weather(destination, start_date, end_date)
+                return {
+                    "destination": destination,
+                    "forecast_period": {"start": start_date, "end": end_date},
+                    "daily_forecasts": [],
+                    "summary": {},
+                    "error": f"Location '{destination}' not found"
+                }
             
             # Get forecast data
             forecast_url = f"{self.base_url}/forecast?lat={coords['lat']}&lon={coords['lon']}&appid={self.api_key}&units=metric"

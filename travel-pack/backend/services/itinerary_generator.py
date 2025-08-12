@@ -88,8 +88,8 @@ class ItineraryGenerator:
         # Build trip summary
         itinerary["trip_summary"] = {
             "destination": destination or self._infer_destination(all_flights, all_hotels),
-            "start_date": dates.get("start", "TBD"),
-            "end_date": dates.get("end", "TBD"),
+            "start_date": dates.get("start", ""),
+            "end_date": dates.get("end", ""),
             "duration": self._calculate_duration(dates.get("start"), dates.get("end")),
             "total_flights": len(all_flights),
             "total_hotels": len(all_hotels),
@@ -115,8 +115,8 @@ class ItineraryGenerator:
             "destination": destination,
             "currency": self._get_currency(destination),
             "dates": {
-                "start": dates.get("start", "TBD"),
-                "end": dates.get("end", "TBD")
+                "start": dates.get("start", ""),
+                "end": dates.get("end", "")
             },
             "note": "Details will be populated with real-time information"
         }
@@ -155,7 +155,7 @@ class ItineraryGenerator:
     def _calculate_duration(self, start_date: str, end_date: str) -> str:
         """Calculate trip duration"""
         try:
-            if start_date and end_date and start_date != "TBD" and end_date != "TBD":
+            if start_date and end_date and start_date != "" and end_date != "":
                 # Try different date formats
                 for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%m-%d-%Y", "%d %b %Y"]:
                     try:
@@ -178,17 +178,17 @@ class ItineraryGenerator:
                     "flight_number": flight.get("flight_number", "Unknown"),
                     "airline": flight.get("airline", "Unknown Airline"),
                     "departure": {
-                        "airport": flight.get("departure_airport", "TBD"),
+                        "airport": flight.get("departure_airport", ""),
                         "airport_name": flight.get("departure_airport_name", ""),
                         "terminal": flight.get("departure_terminal", ""),
-                        "time": flight.get("departure_time", "TBD"),
-                        "date": flight.get("departure_date", flight.get("date", "TBD"))
+                        "time": flight.get("departure_time", ""),
+                        "date": flight.get("departure_date", flight.get("date", ""))
                     },
                     "arrival": {
-                        "airport": flight.get("arrival_airport", "TBD"),
+                        "airport": flight.get("arrival_airport", ""),
                         "airport_name": flight.get("arrival_airport_name", ""),
                         "terminal": flight.get("arrival_terminal", ""),
-                        "time": flight.get("arrival_time", "TBD"),
+                        "time": flight.get("arrival_time", ""),
                         "date": flight.get("arrival_date", "")
                     },
                     "seat": flight.get("seat", ""),
@@ -211,8 +211,8 @@ class ItineraryGenerator:
                     "address": hotel.get("address", "Address TBD"),
                     "city": hotel.get("city", ""),
                     "postal_code": hotel.get("postal_code", ""),
-                    "check_in": hotel.get("check_in_date", "TBD"),
-                    "check_out": hotel.get("check_out_date", "TBD"),
+                    "check_in": hotel.get("check_in_date", ""),
+                    "check_out": hotel.get("check_out_date", ""),
                     "nights": hotel.get("nights", ""),
                     "confirmation": hotel.get("confirmation_number", ""),
                     "room_type": hotel.get("room_type", ""),
@@ -246,7 +246,7 @@ class ItineraryGenerator:
             
             if not start or not end:
                 # Return minimal structure if dates can't be parsed
-                return [{"day": 1, "date": "TBD", "note": "Date parsing failed"}]
+                return [{"day": 1, "date": "", "error": "Date parsing failed"}]
             
             # Generate schedule structure for each day
             current = start
@@ -284,7 +284,7 @@ class ItineraryGenerator:
         except Exception as e:
             print(f"Error generating schedule: {e}")
             # Return minimal structure
-            schedule = [{"day": 1, "date": "TBD", "error": str(e)}]
+            schedule = [{"day": 1, "date": "", "error": str(e)}]
         
         return schedule
     

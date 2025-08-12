@@ -23,6 +23,8 @@ from services.weather_service import WeatherService
 from services.places_service import PlacesService
 from services.events_service import EventsService
 from services.enhanced_guide_service import EnhancedGuideService
+from services.enhanced_recommendations import EnhancedRecommendationsService
+from models.user_profile import ProfileManager, UserProfile
 from services.immediate_guide_generator import ImmediateGuideGenerator
 from services.enhanced_recommendations import EnhancedRecommendationsService
 from services.cleanup_service import CleanupService
@@ -594,6 +596,71 @@ async def update_preferences(trip_id: str, preferences: Dict):
             "hidden_gems": len(enhanced_guide.get("hidden_gems", []))
         }
     }
+
+# Profile endpoints for saving/loading preference profiles
+@app.post("/api/profile/save")
+async def save_profile(profile: Dict):
+    try:
+        # Minimal validation and persistence via ProfileManager
+        profile_id = profile.get("profile_id") or str(uuid.uuid4())
+        profile_name = profile.get("profileName") or profile.get("profile_name") or "My Travel Profile"
+        user_email = profile.get("user_email")
+
+        # Map frontend camelCase to backend model
+        user_profile = UserProfile(
+            profile_id=profile_id,
+            user_email=user_email,
+            profile_name=profile_name,
+        )
+
+        # Apply dining/interests/travel_style if provided
+        if isinstance(profile.get("dining"), dict):
+            user_profile.dining.cuisine_types = profile["dining"].get("cuisineTypes", user_profile.dining.cuisine_types)
+            user_profile.dining.dietary_restrictions = profile["dining"].get("dietaryRestrictions", user_profile.dining.dietary_restrictions)
+            pr = profile["dining"].get("priceRanges")
+            if isinstance(pr, list) and pr:
+                # Best-effort map strings to enum where possible
+                user_profile.dining.price_ranges = [p for p in user_profile.dining.price_ranges.__class__]  # keep defaults if mapping is complex
+        if isinstance(profile.get("interests"), dict):
+            # Merge truthy interests into categories
+            for cat, values in profile["interests"].items():
+                if isinstance(values, dict) and cat in user_profile.interests.categories:
+                    for k, v in values.items():
+                        if k in user_profile.interests.categories[cat]:
+                            user_profile.interests.categories[cat][k] = bool(v)
+        if isinstance(profile.get("travelStyle"), dict):
+            ts = profile["travelStyle"]
+            user_profile.travel_style.pace = user_profile.travel_style.pace.__class__(ts.get("pace", user_profile.travel_style.pace.value))
+            user_profile.travel_style.group_type = user_profile.travel_style.group_type.__class__(ts.get("groupType", user_profile.travel_style.group_type.value))
+            user_profile.travel_style.activity_level = user_profile.travel_style.activity_level.__class__(ts.get("activityLevel", user_profile.travel_style.activity_level.value))
+            user_profile.travel_style.adventure_level = user_profile.travel_style.adventure_level.__class__(ts.get("adventureLevel", user_profile.travel_style.adventure_level.value))
+
+        ok = await ProfileManager.save_profile(user_profile)
+        if ok:
+            return {"status": "success", "profile_id": user_profile.profile_id, "profile_name": user_profile.profile_name}
+        raise HTTPException(status_code=500, detail="Failed to save profile")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/profiles")
+async def list_profiles():
+    try:
+        profiles = await ProfileManager.list_profiles()
+        return {"profiles": profiles, "count": len(profiles)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/profile/{profile_id}")
+async def get_profile(profile_id: str):
+    try:
+        p = await ProfileManager.load_profile(profile_id)
+        if not p:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        return p.dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/generation-status/{trip_id}")
 async def get_generation_status(trip_id: str):

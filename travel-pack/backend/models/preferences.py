@@ -278,7 +278,14 @@ class PreferencesTransformer:
         
         # Handle other fields
         if 'travelStyle' in data:
-            transformed['travel_style'] = data['travelStyle']
+            # travelStyle might be an object or a string
+            travel_style = data['travelStyle']
+            if isinstance(travel_style, dict):
+                # Extract a string value from the object if it has a specific key
+                # or just skip it since it's optional
+                transformed['travel_style'] = travel_style.get('name') or travel_style.get('style')
+            elif isinstance(travel_style, str):
+                transformed['travel_style'] = travel_style
         if 'budgetLevel' in data:
             transformed['budget_level'] = data['budgetLevel']
         if 'specialOccasions' in data:

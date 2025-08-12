@@ -204,8 +204,8 @@ function ModernGuidePageContent() {
 
   const handleDownloadPDF = async () => {
     try {
-      // First generate the PDF
-      const generateResponse = await fetch(`http://localhost:8000/api/generate-pdf/${tripId}`, {
+      // First generate the PDF via proxy
+      const generateResponse = await fetch(`/api/proxy/generate-pdf/${tripId}`, {
         method: 'POST',
       });
       
@@ -215,9 +215,9 @@ function ModernGuidePageContent() {
       
       const { pdf_url } = await generateResponse.json();
       
-      // Then download it
-      const downloadUrl = `http://localhost:8000${pdf_url}`;
-      window.open(downloadUrl, '_blank');
+      // Then download it through the proxy
+      const proxied = `/api/proxy${String(pdf_url).replace('/api', '')}`;
+      window.open(proxied, '_blank');
     } catch (error) {
       console.error('PDF download error:', error);
       alert('Failed to download PDF. Please try again.');
@@ -1066,48 +1066,46 @@ function ModernGuidePageContent() {
               </Card>
             )}
 
-            {/* Weather */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Weather Forecast</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {[1, 2, 3].map(day => (
-                    <div key={day} className="flex items-center justify-between text-sm">
-                      <span>Day {day}</span>
-                      <div className="flex items-center gap-2">
-                        <Sun className="h-4 w-4 text-yellow-500" />
-                        <span>72°F</span>
+            {/* Weather (show only if provided) */}
+            {Array.isArray((enhanced_guide as any)?.weather) && (enhanced_guide as any).weather.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Weather Forecast</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {((enhanced_guide as any).weather as Array<any>).map((w, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span>{w.date || `Day ${idx + 1}`}</span>
+                        <div className="flex items-center gap-2">
+                          {getWeatherIcon(String(w.condition || w.summary || ''))}
+                          <span>{w.temperature || w.temp || ''}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Local Tips</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex gap-2">
-                    <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <span>Best time for museums: Weekday mornings</span>
+            {/* Tips (show only if provided) */}
+            {Array.isArray((enhanced_guide as any)?.practical_info?.tips) && (enhanced_guide as any).practical_info.tips.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Local Tips</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    {((enhanced_guide as any).practical_info.tips as Array<string>).map((tip, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span>{tip}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <span>Book restaurants 2-3 days in advance</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <span>Use public transport for city center</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

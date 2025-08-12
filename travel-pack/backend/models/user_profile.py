@@ -3,7 +3,7 @@ User Profile and Preferences Model
 Centralized user profile management with saveable preferences
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -127,7 +127,7 @@ class TravelPreferences(BaseModel):
         "late_night": False      # 9pm+
     })
     
-    accommodation_preferences: Dict[str, any] = Field(default_factory=lambda: {
+    accommodation_preferences: Dict[str, Any] = Field(default_factory=lambda: {
         "hotel_class": "3-4 star",
         "location_preference": "central",  # "central", "quiet", "near_transit"
         "amenities": ["wifi", "breakfast"],

@@ -201,6 +201,10 @@ class EnhancedRecommendationsService:
     
     async def enhance_hotel(self, hotel: Dict) -> Dict:
         """Enhance a hotel with booking URLs"""
+        # Handle case where hotel might not be a dict
+        if not isinstance(hotel, dict):
+            return {"name": str(hotel), "error": "Invalid hotel data"}
+            
         enhanced = hotel.copy()
         
         # Generate all booking URLs
@@ -230,10 +234,14 @@ class EnhancedRecommendationsService:
     
     async def enhance_all_recommendations(self, guide: Dict) -> Dict:
         """Enhance all recommendations in a guide with URLs"""
+        # Handle None or invalid guide
+        if not guide or not isinstance(guide, dict):
+            return guide or {}
+            
         enhanced_guide = guide.copy()
         
         # Enhance restaurants
-        if "restaurants" in enhanced_guide:
+        if "restaurants" in enhanced_guide and enhanced_guide["restaurants"]:
             enhanced_restaurants = []
             for restaurant in enhanced_guide["restaurants"]:
                 enhanced = await self.enhance_restaurant(restaurant)
@@ -241,7 +249,7 @@ class EnhancedRecommendationsService:
             enhanced_guide["restaurants"] = enhanced_restaurants
         
         # Enhance attractions
-        if "attractions" in enhanced_guide:
+        if "attractions" in enhanced_guide and enhanced_guide["attractions"]:
             enhanced_attractions = []
             for attraction in enhanced_guide["attractions"]:
                 enhanced = await self.enhance_attraction(attraction)
@@ -249,7 +257,7 @@ class EnhancedRecommendationsService:
             enhanced_guide["attractions"] = enhanced_attractions
         
         # Enhance hotels
-        if "hotels" in enhanced_guide:
+        if "hotels" in enhanced_guide and enhanced_guide["hotels"]:
             enhanced_hotels = []
             for hotel in enhanced_guide["hotels"]:
                 enhanced = await self.enhance_hotel(hotel)
@@ -257,7 +265,7 @@ class EnhancedRecommendationsService:
             enhanced_guide["hotels"] = enhanced_hotels
         
         # Enhance events
-        if "events" in enhanced_guide:
+        if "events" in enhanced_guide and enhanced_guide["events"]:
             enhanced_events = []
             for event in enhanced_guide["events"]:
                 enhanced = await self.enhance_event(event)
