@@ -86,11 +86,11 @@ export async function POST(
       });
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
+    const respContentType = response.headers.get('content-type') || '';
+    if (!respContentType.includes('application/json')) {
       // Non-JSON response (rare for POST) – stream it
       const headers = new Headers(response.headers);
-      if (contentType) headers.set('Content-Type', contentType);
+      if (respContentType) headers.set('Content-Type', respContentType);
       return new Response(response.body, { status: response.status, headers });
     }
 
