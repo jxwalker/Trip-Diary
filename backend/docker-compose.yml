@@ -1,0 +1,200 @@
+# Docker Compose for TripCraft AI Backend
+# Production and development configurations
+
+version: '3.8'
+
+services:
+  # Main application service
+  tripcraft-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        BUILD_ENV: production
+        BUILD_VERSION: ${VERSION:-latest}
+    container_name: tripcraft-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DATABASE_PATH=/app/data
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+    volumes:
+      - tripcraft-data:/app/data
+      - tripcraft-logs:/app/logs
+      - tripcraft-uploads:/app/uploads
+      - tripcraft-outputs:/app/outputs
+      - tripcraft-backups:/app/backups
+    networks:
+      - tripcraft-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      - redis
+      - postgres
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: tripcraft-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-tripcraft123}
+    volumes:
+      - tripcraft-redis:/data
+    networks:
+      - tripcraft-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # PostgreSQL for advanced data storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: tripcraft-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-tripcraft}
+      - POSTGRES_USER=${POSTGRES_USER:-tripcraft}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tripcraft123}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - tripcraft-postgres:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - tripcraft-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tripcraft} -d ${POSTGRES_DB:-tripcraft}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Nginx reverse proxy and load balancer
+  nginx:
+    image: nginx:alpine
+    container_name: tripcraft-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - tripcraft-logs:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - tripcraft-network
+    depends_on:
+      - tripcraft-api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring with Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tripcraft-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - tripcraft-prometheus:/prometheus
+    networks:
+      - tripcraft-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring
+
+  # Grafana for dashboards (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tripcraft-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - tripcraft-grafana:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - tripcraft-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+# Named volumes for data persistence
+volumes:
+  tripcraft-data:
+    driver: local
+  tripcraft-logs:
+    driver: local
+  tripcraft-uploads:
+    driver: local
+  tripcraft-outputs:
+    driver: local
+  tripcraft-backups:
+    driver: local
+  tripcraft-redis:
+    driver: local
+  tripcraft-postgres:
+    driver: local
+  tripcraft-prometheus:
+    driver: local
+  tripcraft-grafana:
+    driver: local
+
+# Network for service communication
+networks:
+  tripcraft-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,165 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// Use BACKEND_URL from environment, with fallback for development
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathArray } = await params;
+  const path = pathArray.join('/');
+  const url = `${BACKEND_URL}/api/${path}${request.nextUrl.search}`;
+  
+  try {
+    const response = await fetch(url, {
+      headers: Object.fromEntries(request.headers),
+    });
+    const respType = response.headers.get('content-type') || '';
+
+    // Stream Server-Sent Events directly
+    if (respType.includes('text/event-stream') || path.includes('generation-stream')) {
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'text/event-stream');
+      headers.set('Cache-Control', 'no-cache');
+      headers.set('Connection', 'keep-alive');
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    // Stream file downloads (e.g., PDFs)
+    if (respType.includes('application/pdf')) {
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'application/pdf');
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    // Default: JSON pass-through
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: 'Backend connection failed' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathArray } = await params;
+  const path = pathArray.join('/');
+  const url = `${BACKEND_URL}/api/${path}`;
+  
+  try {
+    // Get the body - handle both FormData and JSON
+    const reqContentType = request.headers.get('content-type');
+    let response;
+    
+    if (reqContentType?.includes('multipart/form-data')) {
+      // For file uploads, get the FormData and forward it
+      const formData = await request.formData();
+      
+      // Create a new FormData to send to backend
+      const backendFormData = new FormData();
+      
+      // Copy all fields from the incoming FormData
+      for (const [key, value] of formData.entries()) {
+        backendFormData.append(key, value);
+      }
+      
+      // Send to backend without setting Content-Type (let fetch set it with boundary)
+      response = await fetch(url, {
+        method: 'POST',
+        body: backendFormData,
+      });
+    } else {
+      // For JSON requests
+      const body = await request.text();
+      response = await fetch(url, {
+        method: 'POST',
+        body: body,
+        headers: {
+          'Content-Type': reqContentType || 'application/json',
+        },
+      });
+    }
+
+    const respContentType = response.headers.get('content-type') || '';
+    if (!respContentType.includes('application/json')) {
+      // Non-JSON response (rare for POST) – stream it
+      const headers = new Headers(response.headers);
+      if (respContentType) headers.set('Content-Type', respContentType);
+      return new Response(response.body, { status: response.status, headers });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Proxy error:', error);
+    console.error('Failed URL:', url);
+    return NextResponse.json(
+      { error: 'Backend connection failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathArray } = await params;
+  const path = pathArray.join('/');
+  const url = `${BACKEND_URL}/api/${path}`;
+  
+  try {
+    const body = await request.json();
+    const response = await fetch(url, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: 'Backend connection failed' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathArray } = await params;
+  const path = pathArray.join('/');
+  const url = `${BACKEND_URL}/api/${path}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+    });
+    
+    if (response.ok) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    } else {
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    }
+  } catch (error) {
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: 'Backend connection failed' },
+      { status: 500 }
+    );
+  }
+}
