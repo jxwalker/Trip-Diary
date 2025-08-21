@@ -343,8 +343,8 @@ class EnhancedGooglePlacesService:
                 fields=[
                     'name', 'formatted_address', 'formatted_phone_number',
                     'rating', 'user_ratings_total', 'price_level', 'website',
-                    'opening_hours', 'photos', 'reviews', 'url', 'geometry',
-                    'types', 'business_status'
+                    'opening_hours', 'photo', 'reviews', 'url', 'geometry',
+                    'type', 'business_status'
                 ]
             )['result']
 
