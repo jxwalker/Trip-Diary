@@ -174,8 +174,8 @@ class EnhancedGooglePlacesService:
                         fields=[
                             'name', 'formatted_address', 'formatted_phone_number',
                             'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photos', 'reviews', 'url', 'geometry',
-                            'types', 'business_status'
+                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
+                            'type', 'business_status'
                         ]
                     )['result']
                     
@@ -212,7 +212,7 @@ class EnhancedGooglePlacesService:
         
         # Extract cuisine types from Google Places types
         cuisine_types = []
-        place_types = details.get('types', [])
+        place_types = details.get('type') or details.get('types', [])
         cuisine_mapping = {
             'bakery': 'Bakery',
             'bar': 'Bar',
@@ -228,8 +228,15 @@ class EnhancedGooglePlacesService:
         
         # Format photos
         photos = []
-        if details.get('photos'):
-            for photo in details['photos'][:5]:  # Get up to 5 photos
+        photo_data = details.get('photo') or details.get('photos', [])
+        if photo_data:
+            # Handle both single photo and photos array
+            if isinstance(photo_data, list):
+                photo_list = photo_data[:5]  # Get up to 5 photos
+            else:
+                photo_list = [photo_data]  # Single photo
+
+            for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
                     photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
@@ -377,8 +384,8 @@ class EnhancedGooglePlacesService:
                         fields=[
                             'name', 'formatted_address', 'formatted_phone_number',
                             'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photos', 'reviews', 'url', 'geometry',
-                            'types', 'business_status'
+                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
+                            'type', 'business_status'
                         ]
                     )['result']
 
@@ -483,8 +490,8 @@ class EnhancedGooglePlacesService:
                             place_id,
                             fields=[
                                 'name', 'formatted_address', 'rating', 'user_ratings_total',
-                                'website', 'opening_hours', 'photos', 'url', 'geometry',
-                                'types', 'business_status'
+                                'website', 'opening_hours', 'photo', 'url', 'geometry',
+                                'type', 'business_status'
                             ]
                         )['result']
 
@@ -519,8 +526,15 @@ class EnhancedGooglePlacesService:
 
         # Format photos
         photos = []
-        if details.get('photos'):
-            for photo in details['photos'][:3]:  # Get up to 3 photos
+        photo_data = details.get('photo') or details.get('photos', [])
+        if photo_data:
+            # Handle both single photo and photos array
+            if isinstance(photo_data, list):
+                photo_list = photo_data[:3]  # Get up to 3 photos
+            else:
+                photo_list = [photo_data]  # Single photo
+
+            for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
                     photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
