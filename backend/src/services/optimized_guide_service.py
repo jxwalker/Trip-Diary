@@ -14,6 +14,7 @@ import logging
 from .optimized_perplexity_service import OptimizedPerplexityService
 from .weather_service import WeatherService
 from .guide_validator import GuideValidator
+from .enhanced_google_places_service import EnhancedGooglePlacesService
 
 # Load environment
 root_dir = Path(__file__).parent.parent.parent.parent
@@ -36,7 +37,8 @@ class OptimizedGuideService:
     def __init__(self):
         self.perplexity_service = OptimizedPerplexityService()
         self.weather_service = WeatherService()
-        
+        self.google_places_service = EnhancedGooglePlacesService()
+
         # Performance tracking
         self.generation_stats = {
             "total_requests": 0,
@@ -164,28 +166,32 @@ class OptimizedGuideService:
         # Create concurrent tasks
         tasks = []
         
-        # Task 1: Perplexity guide data (restaurants, attractions, events, practical info, daily suggestions)
+        # Task 1: Google Places restaurants (high-quality real data)
+        google_places_task = self._fetch_google_places_restaurants(destination, preferences)
+        tasks.append(google_places_task)
+
+        # Task 2: Perplexity guide data (attractions, events, practical info, daily suggestions)
         # Create async callback wrapper if progress_callback exists
         perplexity_callback = None
         if progress_callback:
             async def perplexity_progress(p, m):
                 if progress_callback:  # Double check it's still not None
                     try:
-                        await progress_callback(15 + p * 0.6, m)
+                        await progress_callback(15 + p * 0.4, m)
                     except Exception as e:
                         logger.error(f"Error in perplexity_progress callback: {e}")
                         raise
             perplexity_callback = perplexity_progress
-        
+
         logger.debug(f"Created perplexity_callback: {perplexity_callback}")
-        
+
         perplexity_task = self.perplexity_service.generate_complete_guide_data(
             destination, start_date, end_date, preferences,
             progress_callback=perplexity_callback
         )
         tasks.append(perplexity_task)
-        
-        # Task 2: Weather data
+
+        # Task 3: Weather data
         weather_task = self.weather_service.get_weather_forecast(
             destination, start_date, end_date
         )
@@ -197,26 +203,35 @@ class OptimizedGuideService:
                 asyncio.gather(*tasks, return_exceptions=True),
                 timeout=45  # 45 second total timeout
             )
-            
-            perplexity_data, weather_data = results
-            
+
+            google_places_data, perplexity_data, weather_data = results
+
+            # Handle Google Places data
+            if isinstance(google_places_data, Exception):
+                logger.warning(f"Google Places data fetch failed: {google_places_data}")
+                google_places_data = []  # Fallback to empty list
+
             # Handle Perplexity data
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
                 return self._create_error_response(f"Failed to fetch guide data: {str(perplexity_data)}")
-            
+
             if perplexity_data.get("error"):
                 return perplexity_data  # Return Perplexity error
-            
+
             # Handle weather data (non-critical)
             if isinstance(weather_data, Exception):
                 logger.warning(f"Weather data fetch failed: {weather_data}")
                 weather_data = {"error": str(weather_data)}
-            
-            # Combine data
+
+            # Combine data - Replace Perplexity restaurants with Google Places restaurants
             combined_data = perplexity_data.copy()
+            combined_data["restaurants"] = google_places_data  # Use Google Places restaurants
             combined_data["weather_data"] = weather_data
-            
+
+            logger.info(f"Combined data: {len(google_places_data)} Google Places restaurants, "
+                       f"{len(perplexity_data.get('attractions', []))} attractions")
+
             return combined_data
             
         except asyncio.TimeoutError:
@@ -225,7 +240,58 @@ class OptimizedGuideService:
         except Exception as e:
             logger.error(f"Error in concurrent data fetching: {e}")
             return self._create_error_response(f"Error fetching data: {str(e)}")
-    
+
+    async def _fetch_google_places_restaurants(self, destination: str, preferences: Dict) -> List[Dict]:
+        """Fetch restaurants using Google Places API"""
+        try:
+            # Initialize Google Places service if not already done
+            await self.google_places_service.initialize()
+
+            # Get cuisine preferences
+            cuisine_preferences = preferences.get("dining", {}).get("cuisineTypes", [])
+
+            # Search for restaurants
+            restaurants = []
+
+            # If specific cuisines requested, search for each
+            if cuisine_preferences:
+                for cuisine in cuisine_preferences[:3]:  # Limit to top 3 cuisines
+                    try:
+                        cuisine_restaurants = await self.google_places_service.search_restaurants(
+                            location=destination,
+                            cuisine_type=cuisine,
+                            limit=5
+                        )
+                        restaurants.extend(cuisine_restaurants)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch {cuisine} restaurants: {e}")
+
+            # Always do a general search for top restaurants
+            try:
+                general_restaurants = await self.google_places_service.search_restaurants(
+                    location=destination,
+                    limit=10
+                )
+                restaurants.extend(general_restaurants)
+            except Exception as e:
+                logger.warning(f"Failed to fetch general restaurants: {e}")
+
+            # Remove duplicates based on place ID
+            seen_ids = set()
+            unique_restaurants = []
+            for restaurant in restaurants:
+                place_id = restaurant.get("id")
+                if place_id and place_id not in seen_ids:
+                    seen_ids.add(place_id)
+                    unique_restaurants.append(restaurant)
+
+            logger.info(f"Fetched {len(unique_restaurants)} unique restaurants from Google Places")
+            return unique_restaurants[:15]  # Return top 15
+
+        except Exception as e:
+            logger.error(f"Google Places restaurant fetch failed: {e}")
+            return []  # Return empty list on error
+
     async def _assemble_complete_guide(
         self,
         guide_data: Dict,
