@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import ProcessingStatus from "@/app/components/ProcessingStatus";
 import { Card } from "@/components/ui/card";
 import { 
   Loader2,
@@ -181,17 +182,17 @@ function GenerateItineraryContent() {
           </div>
 
           {/* Current Status */}
-          {statusMessage && (
-            <motion.div
-              key={statusMessage}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-blue-50 rounded-lg flex items-center gap-3"
-            >
-              <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-              <span className="text-blue-900 font-medium">{statusMessage}</span>
-            </motion.div>
-          )}
+          <motion.div
+            key={statusMessage || String(progress)}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-blue-50 rounded-lg flex items-center gap-3"
+          >
+            <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+            <span className="text-blue-900 font-medium">
+              <ProcessingStatus phase="generation" progress={progress} explicitMessage={statusMessage || undefined} />
+            </span>
+          </motion.div>
 
 
           {/* Info Box */}

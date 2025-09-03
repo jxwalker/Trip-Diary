@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
+import ProcessingStatus from "@/app/components/ProcessingStatus";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -123,6 +124,15 @@ export default function SimplifiedUploadPage() {
           message,
           extractedData: statusData.extracted_data
         });
+
+        // Persist destination for smart defaults if available
+        try {
+          const dest = statusData?.extracted_data?.destination;
+          if (dest) {
+            const key = `tripcraft.trip.${tripId}.destination`;
+            sessionStorage.setItem(key, dest);
+          }
+        } catch (e) {}
 
         try {
           const raw = localStorage.getItem(UPLOAD_PERSIST_KEY);
@@ -380,7 +390,7 @@ export default function SimplifiedUploadPage() {
                       <span className="text-sm text-gray-500">{processingStatus.progress}%</span>
                     </div>
                     <Progress value={processingStatus.progress} className="h-2" />
-                    <p className="text-sm text-gray-600">{processingStatus.message}</p>
+                    <ProcessingStatus phase="upload" progress={processingStatus.progress} explicitMessage={processingStatus.message} />
                     
                     {processingStatus.extractedData && (
                       <div className="p-3 bg-blue-50 rounded-lg space-y-2">

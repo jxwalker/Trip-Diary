@@ -59,6 +59,7 @@ import {
   Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { inferDefaultsFromDestination } from "@/utils/smartDefaults";
 
 // Quick template configurations
 const QUICK_TEMPLATES = {
@@ -328,6 +329,31 @@ function ModernPreferencesPageContent() {
     }
   };
 
+  // Apply destination-based smart defaults (Quick Start)
+  const applyDestinationDefaultsFromSession = () => {
+    try {
+      if (!tripId) return;
+      const key = `tripcraft.trip.${tripId}.destination`;
+      const dest = sessionStorage.getItem(key);
+      if (!dest) return;
+      const patch = inferDefaultsFromDestination(dest);
+      setPreferences((prev: any) => ({
+        ...prev,
+        ...(patch.dining ? { dining: { ...prev.dining, ...patch.dining } } : {}),
+        ...(patch.interests ? { interests: deepMerge(prev.interests, patch.interests) } : {}),
+        ...(patch.travelStyle ? { travelStyle: { ...prev.travelStyle, ...patch.travelStyle } } : {}),
+      }));
+    } catch (e) {}
+  };
+
+  const deepMerge = (a: any, b: any) => {
+    const out = { ...a };
+    for (const k of Object.keys(b || {})) {
+      out[k] = typeof b[k] === 'object' && b[k] !== null ? deepMerge(a?.[k] || {}, b[k]) : b[k];
+    }
+    return out;
+  };
+
   // Save profile
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -427,13 +453,20 @@ function ModernPreferencesPageContent() {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-              >
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={applyDestinationDefaultsFromSession}
+                >
+                  Quick Start
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -573,11 +606,13 @@ function ModernPreferencesPageContent() {
                     {priceRanges.map((range) => {
                       const isSelected = preferences.dining.priceRanges.includes(range.value);
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={range.value}
                           onClick={() => togglePriceRange(range.value)}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "p-4 rounded-lg border-2 cursor-pointer transition-all",
+                            "p-4 rounded-lg border-2 transition-all text-left touch-target w-full",
                             isSelected
                               ? "border-green-500 bg-green-50"
                               : "border-gray-200 hover:border-gray-300 bg-white"
@@ -593,7 +628,7 @@ function ModernPreferencesPageContent() {
                               <Check className="h-4 w-4 text-green-600 mx-auto mt-2" />
                             )}
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -611,11 +646,13 @@ function ModernPreferencesPageContent() {
                       const Icon = cuisine.icon;
                       const isSelected = preferences.dining.cuisineTypes.includes(cuisine.name);
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={cuisine.name}
                           onClick={() => toggleCuisine(cuisine.name)}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-2",
+                            "p-3 rounded-lg border-2 transition-all flex items-center gap-2 touch-target w-full text-left",
                             isSelected
                               ? "border-orange-500 bg-orange-50"
                               : "border-gray-200 hover:border-gray-300 bg-white"
@@ -634,7 +671,7 @@ function ModernPreferencesPageContent() {
                           {isSelected && (
                             <Check className="h-3 w-3 text-orange-600 ml-auto" />
                           )}
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -659,7 +696,8 @@ function ModernPreferencesPageContent() {
                     }).map(([key, label]) => {
                       const isSelected = preferences.dining.mealPreferences[key as keyof typeof preferences.dining.mealPreferences];
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={key}
                           onClick={() => setPreferences(prev => ({
                             ...prev,
@@ -671,8 +709,9 @@ function ModernPreferencesPageContent() {
                               }
                             }
                           }))}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "p-3 rounded-lg border cursor-pointer transition-all",
+                            "p-3 rounded-lg border transition-all touch-target text-left",
                             isSelected
                               ? "border-sky-500 bg-sky-50"
                               : "border-gray-200 hover:border-gray-300"
@@ -684,7 +723,7 @@ function ModernPreferencesPageContent() {
                           )}>
                             {label}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -755,11 +794,13 @@ function ModernPreferencesPageContent() {
                           {Object.entries(interests).map(([key, value]) => {
                             const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                             return (
-                              <div
+                              <button
+                                type="button"
                                 key={key}
                                 onClick={() => toggleInterest(category, key)}
+                                aria-pressed={value}
                                 className={cn(
-                                  "p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                                  "p-2.5 rounded-lg border transition-all text-sm touch-target text-left w-full",
                                   value
                                     ? `border-${config.color}-500 bg-${config.color}-50`
                                     : "border-gray-200 hover:border-gray-300"
@@ -769,7 +810,7 @@ function ModernPreferencesPageContent() {
                                   <span>{label}</span>
                                   {value && <Check className="h-3 w-3 ml-2" />}
                                 </div>
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
