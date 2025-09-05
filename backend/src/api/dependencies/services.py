@@ -12,7 +12,7 @@ from ...services.fast_guide_service import FastGuideService
 from ...services.optimized_guide_service import OptimizedGuideService
 from ...services.immediate_guide_generator import ImmediateGuideGenerator
 from ...services.cleanup_service import CleanupService
-from ...services.database_service import DatabaseService
+from ...services.enhanced_database_service import EnhancedDatabaseService
 from ...services.luxury_guide_service import LuxuryGuideService
 from ...database import TripDatabase
 
@@ -52,7 +52,7 @@ def get_cleanup_service() -> CleanupService:
     return container.get_cleanup_service()
 
 
-def get_database_service() -> DatabaseService:
+def get_database_service() -> EnhancedDatabaseService:
     """Dependency function for database service"""
     return container.get_database_service()
 
@@ -75,6 +75,6 @@ FastGuideServiceDep = Annotated[FastGuideService, Depends(get_fast_guide_service
 OptimizedGuideServiceDep = Annotated[OptimizedGuideService, Depends(get_optimized_guide_service)]
 ImmediateGuideGeneratorDep = Annotated[ImmediateGuideGenerator, Depends(get_immediate_guide_generator)]
 CleanupServiceDep = Annotated[CleanupService, Depends(get_cleanup_service)]
-DatabaseServiceDep = Annotated[DatabaseService, Depends(get_database_service)]
+DatabaseServiceDep = Annotated[EnhancedDatabaseService, Depends(get_database_service)]
 TripDatabaseDep = Annotated[TripDatabase, Depends(get_trip_database)]
 LuxuryGuideServiceDep = Annotated[LuxuryGuideService, Depends(get_luxury_guide_service)]

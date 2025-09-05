@@ -47,17 +47,10 @@ class ImmediateGuideGenerator:
             
             # Get hotel info
             hotels = itinerary.get("accommodations", [])
-            hotel_address = hotels[0]["address"] if hotels else "city center"
+            hotel_address = hotels[0]["address"] if hotels else ""
             
-            # Default preferences for immediate generation
-            default_preferences = {
-                "cuisineTypes": ["Local", "International", "Popular"],
-                "priceRange": "$$",
-                "specialInterests": ["museums", "landmarks", "food", "culture"],
-                "walkingTolerance": 3,
-                "adventureLevel": 3,
-                "groupType": "flexible"
-            }
+            # Use provided preferences or minimal defaults
+            default_preferences = preferences or {}
             
             dates_dict = {
                 "start": start_date,

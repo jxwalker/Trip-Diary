@@ -19,7 +19,7 @@ from .interfaces import (
     QueryOperator,
     ServiceConfig
 )
-from ..models.database_models import TripData, ProcessingState, TripMetadata
+from ..models.database_models import TripData, ProcessingState, ProcessingStatus, TripMetadata
 from ..core.exceptions import DatabaseError, NotFoundError, ValidationError
 from ..config import get_settings
 
@@ -109,8 +109,15 @@ class EnhancedDatabaseService(StorageServiceInterface):
         self._processing_cache.clear()
         self._metadata_cache.clear()
         self._cache_loaded = False
-        
+
         logger.info("Database service cleanup completed")
+
+    async def clear_trip_cache(self, trip_id: str) -> None:
+        """Clear cache for a specific trip"""
+        self._trip_cache.pop(trip_id, None)
+        self._processing_cache.pop(trip_id, None)
+        self._metadata_cache.pop(trip_id, None)
+        logger.info(f"Cleared cache for trip {trip_id}")
     
     async def initialize_storage(self) -> StorageResult:
         """Initialize storage backend"""
@@ -442,11 +449,16 @@ class EnhancedDatabaseService(StorageServiceInterface):
     ) -> StorageResult:
         """Create a new processing state"""
         try:
+            from datetime import datetime
+            from ..models.database_models import ProcessingStatus
+            now = datetime.utcnow()
             processing_state = ProcessingState(
                 trip_id=trip_id,
-                status="processing",
+                status=ProcessingStatus.PROCESSING,
+                progress=progress,
                 message=message,
-                progress=progress
+                created_at=now,
+                updated_at=now
             )
             
             # Save to file
@@ -467,7 +479,7 @@ class EnhancedDatabaseService(StorageServiceInterface):
     async def update_processing_state(
         self,
         trip_id: str,
-        status: Optional[str] = None,
+        status: Optional[ProcessingStatus] = None,
         message: Optional[str] = None,
         progress: Optional[int] = None,
         **kwargs
@@ -486,6 +498,10 @@ class EnhancedDatabaseService(StorageServiceInterface):
                 state.message = message
             if progress is not None:
                 state.progress = progress
+
+            # Always update the timestamp
+            from datetime import datetime
+            state.updated_at = datetime.utcnow()
             
             # Save to file
             state_file = self.processing_path / f"{trip_id}.json"

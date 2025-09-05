@@ -12,7 +12,7 @@ from ...services.fast_guide_service import FastGuideService
 from ...services.optimized_guide_service import OptimizedGuideService
 from ...services.immediate_guide_generator import ImmediateGuideGenerator
 from ...services.cleanup_service import CleanupService
-from ...services.database_service import db_service
+from ...services.enhanced_database_service import EnhancedDatabaseService
 from ...services.luxury_guide_service import LuxuryGuideService
 from ...database import TripDatabase
 from ...utils.environment import load_project_env
@@ -51,7 +51,7 @@ class ServiceContainer:
             self._services['fast_guide_service'] = FastGuideService()
             self._services['optimized_guide_service'] = OptimizedGuideService()
             self._services['immediate_guide_generator'] = ImmediateGuideGenerator()
-            self._services['database_service'] = db_service
+            self._services['database_service'] = EnhancedDatabaseService()
             self._services['trip_database'] = TripDatabase()
             self._services['luxury_guide_service'] = LuxuryGuideService()
 

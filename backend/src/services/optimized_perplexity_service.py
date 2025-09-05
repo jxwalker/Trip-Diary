@@ -169,8 +169,8 @@ class OptimizedPerplexityService:
     
     async def _fetch_restaurants(self, destination: str, preferences: Dict) -> List[Dict]:
         """Fetch restaurant recommendations"""
-        cuisine_types = preferences.get("cuisineTypes", ["local", "popular"])
-        price_range = preferences.get("priceRange", "$$")
+        cuisine_types = preferences.get("cuisineTypes", [])
+        price_range = preferences.get("priceRange", "")
         
         prompt = f"""Find the top 8 restaurants in {destination} for these preferences:
 - Cuisine types: {', '.join(cuisine_types)}

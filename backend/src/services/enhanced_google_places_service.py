@@ -147,22 +147,24 @@ class EnhancedGooglePlacesService:
         
         try:
             restaurants = []
-            
-            # Search for restaurants
-            if radius:
-                # Use nearby search with radius
-                places_result = self.client.places_nearby(
-                    location=location,
-                    radius=radius,
-                    type='restaurant',
-                    keyword=cuisine_type
-                )
-            else:
-                # Use text search
-                places_result = self.client.places(
-                    query=query,
-                    type='restaurant'
-                )
+
+            # First geocode the location to get coordinates
+            geocode_result = self.client.geocode(location)
+            if not geocode_result:
+                logger.error(f"Could not geocode location: {location}")
+                return []
+
+            lat_lng = geocode_result[0]['geometry']['location']
+            coordinates = (lat_lng['lat'], lat_lng['lng'])
+
+            # Use nearby search with coordinates for better location accuracy
+            search_radius = radius if radius else 5000  # Default 5km radius
+            places_result = self.client.places_nearby(
+                location=coordinates,
+                radius=search_radius,
+                type='restaurant',
+                keyword=cuisine_type
+            )
             
             # Process results
             for place in places_result.get('results', [])[:limit]:
@@ -267,7 +269,7 @@ class EnhancedGooglePlacesService:
         return {
             "id": place_id,
             "name": details.get('name', ''),
-            "cuisine": ', '.join(cuisine_types) if cuisine_types else 'Restaurant',
+            "cuisine": ', '.join(cuisine_types) if cuisine_types else '',
             "address": details.get('formatted_address', ''),
             "phone": details.get('formatted_phone_number', ''),
             "rating": details.get('rating', 0),
@@ -285,7 +287,7 @@ class EnhancedGooglePlacesService:
                 "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
                 "longitude": details.get('geometry', {}).get('location', {}).get('lng')
             },
-            "business_status": details.get('business_status', 'OPERATIONAL'),
+            "business_status": details.get('business_status', ''),
             "booking_urls": booking_urls,
             "primary_booking_url": booking_urls.get('opentable') or booking_urls.get('google_maps'),
             "source": "google_places"
@@ -294,8 +296,8 @@ class EnhancedGooglePlacesService:
     def _format_price_level(self, price_level: Optional[int]) -> str:
         """Convert Google price level to $ symbols"""
         if price_level is None:
-            return "$$"
-        return "$" * (price_level + 1) if price_level >= 0 else "$$"
+            return ""  # No fallback - return empty string if no price data
+        return "$" * (price_level + 1) if price_level >= 0 else ""
     
     def _convert_price_range_to_numeric(self, price_range: str) -> Optional[int]:
         """Convert price range string to Google's numeric format"""
@@ -469,19 +471,37 @@ class EnhancedGooglePlacesService:
         # Default attraction types
         if not attraction_types:
             attraction_types = [
-                'tourist_attraction', 'museum', 'art_gallery', 'park',
-                'amusement_park', 'zoo', 'aquarium', 'church', 'monument'
+                'tourist_attraction', 'museum', 'art_gallery', 'park'
             ]
 
         try:
+            # First geocode the location to get coordinates
+            geocode_result = self.client.geocode(location)
+            if not geocode_result:
+                logger.error(f"Could not geocode location: {location}")
+                return []
+
+            lat_lng = geocode_result[0]['geometry']['location']
+            coordinates = (lat_lng['lat'], lat_lng['lng'])
+
             attractions = []
 
             for attraction_type in attraction_types:
-                places_result = self.client.places_nearby(
-                    location=location,
-                    type=attraction_type,
-                    rank_by='prominence'
-                )
+                try:
+                    logger.info(f"Searching for {attraction_type} near {coordinates}")
+                    places_result = self.client.places_nearby(
+                        location=coordinates,
+                        radius=5000,  # 5km radius
+                        type=attraction_type
+                    )
+
+                    if places_result.get('status') != 'OK':
+                        logger.warning(f"Places nearby search failed for {attraction_type}: {places_result.get('status')}")
+                        continue
+
+                except Exception as e:
+                    logger.error(f"Error searching for {attraction_type}: {e}")
+                    continue
 
                 for place in places_result.get('results', [])[:5]:  # Top 5 per type
                     try:
@@ -489,9 +509,9 @@ class EnhancedGooglePlacesService:
                         details = self.client.place(
                             place_id,
                             fields=[
-                                'name', 'formatted_address', 'rating', 'user_ratings_total',
-                                'website', 'opening_hours', 'photo', 'url', 'geometry',
-                                'type', 'business_status'
+                                'name', 'formatted_address', 'formatted_phone_number',
+                                'rating', 'user_ratings_total', 'website', 'opening_hours',
+                                'photo', 'url', 'geometry', 'type', 'business_status'
                             ]
                         )['result']
 
@@ -552,6 +572,7 @@ class EnhancedGooglePlacesService:
             "name": details.get('name', ''),
             "type": attraction_type.replace('_', ' ').title(),
             "address": details.get('formatted_address', ''),
+            "phone": details.get('formatted_phone_number', ''),
             "rating": details.get('rating', 0),
             "review_count": details.get('user_ratings_total', 0),
             "website": details.get('website', ''),
@@ -564,7 +585,7 @@ class EnhancedGooglePlacesService:
                 "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
                 "longitude": details.get('geometry', {}).get('location', {}).get('lng')
             },
-            "business_status": details.get('business_status', 'OPERATIONAL'),
+            "business_status": details.get('business_status', ''),
             "estimated_duration": self._estimate_visit_duration(attraction_type),
             "best_time_to_visit": self._suggest_visit_time(attraction_type),
             "source": "google_places"
@@ -583,7 +604,7 @@ class EnhancedGooglePlacesService:
             'monument': '15-30 minutes',
             'tourist_attraction': '1-2 hours'
         }
-        return duration_map.get(attraction_type, '1-2 hours')
+        return duration_map.get(attraction_type, '')
 
     def _suggest_visit_time(self, attraction_type: str) -> str:
         """Suggest best time to visit for attraction type"""
@@ -598,4 +619,4 @@ class EnhancedGooglePlacesService:
             'monument': 'Golden hour for photos',
             'tourist_attraction': 'Morning (fewer crowds)'
         }
-        return time_map.get(attraction_type, 'Morning recommended')
+        return time_map.get(attraction_type, '')

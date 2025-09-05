@@ -19,7 +19,7 @@ from .interfaces import (
 )
 from .enhanced_database_service import EnhancedDatabaseService
 from .enhanced_llm_service import EnhancedLLMService
-from .enhanced_weather_service import EnhancedWeatherService
+from .google_weather_service import GoogleWeatherService
 from .enhanced_pdf_processor import EnhancedPDFProcessor
 from ..core.exceptions import ConfigurationError, ServiceError
 from ..config import get_settings
@@ -135,7 +135,7 @@ class ServiceFactory:
             if not self.settings.services.weather_enabled:
                 raise ConfigurationError("Weather service is not enabled")
 
-            service = EnhancedWeatherService(config)
+            service = GoogleWeatherService()
 
             # Register the service
             service_registry.register(f"weather_{service_name}", service, config)

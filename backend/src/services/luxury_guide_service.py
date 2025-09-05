@@ -324,12 +324,8 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                 neighborhoods = await self._get_neighborhoods_from_perplexity(destination)
                 basic_map_data["neighborhoods"] = neighborhoods
                 
-                # Generate photo placeholders for top neighborhoods
-                if neighborhoods:
-                    basic_map_data["photos"] = [
-                        f"https://source.unsplash.com/800x600/?{destination},{n['name']}"
-                        for n in neighborhoods[:3]
-                    ]
+                # No placeholder photos - only use real photos from Google Places API
+                basic_map_data["photos"] = []
             except Exception as e:
                 logger.error(f"Failed to get neighborhoods: {e}")
         

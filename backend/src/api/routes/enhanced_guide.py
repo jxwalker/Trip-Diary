@@ -253,16 +253,39 @@ async def regenerate_enhanced_guide(
         # Extract required data from existing trip
         extracted_data = trip_data.itinerary or {}
         
-        # Try to extract destination and dates from existing data
-        destination = extracted_data.get("destination") if isinstance(extracted_data, dict) else "Paris"
-        
-        # Get dates from flights if available
+        # Extract destination from trip data - NO HARDCODED FALLBACKS
+        destination = None
+        if isinstance(extracted_data, dict):
+            destination = extracted_data.get("destination")
+
+        # Try to get destination from hotel city if not found
+        if not destination and isinstance(extracted_data, dict) and extracted_data.get("hotels"):
+            hotel_info = extracted_data["hotels"][0]
+            destination = hotel_info.get("city")
+
+        # Try to get destination from flight arrival location
+        if not destination and isinstance(extracted_data, dict) and extracted_data.get("flights"):
+            flight_info = extracted_data["flights"][0]
+            destination = flight_info.get("arrival_location")
+
+        if not destination:
+            raise HTTPException(
+                status_code=400,
+                detail="No destination found in trip data. Please ensure your trip includes destination information."
+            )
+
+        # Get dates from flights if available - NO HARDCODED FALLBACKS
+        start_date = None
+        end_date = None
         if isinstance(extracted_data, dict) and extracted_data.get("flights"):
-            start_date = extracted_data["flights"][0].get("departure_date", "2025-03-15")
-            end_date = extracted_data["flights"][-1].get("arrival_date", "2025-03-22")
-        else:
-            start_date = "2025-03-15"
-            end_date = "2025-03-22"
+            start_date = extracted_data["flights"][0].get("departure_date")
+            end_date = extracted_data["flights"][-1].get("arrival_date")
+
+        if not start_date or not end_date:
+            raise HTTPException(
+                status_code=400,
+                detail="No travel dates found in trip data. Please ensure your trip includes flight information with dates."
+            )
             
         # Get hotel info if available
         if isinstance(extracted_data, dict) and extracted_data.get("hotels"):
@@ -379,23 +402,47 @@ async def generate_luxury_guide(
         # Extract required data
         extracted_data = trip_data.itinerary or {}
         
-        # Get destination and dates
-        destination = extracted_data.get("destination", "Paris")
-        
+        # Extract destination from trip data - NO HARDCODED FALLBACKS
+        destination = None
+        if isinstance(extracted_data, dict):
+            destination = extracted_data.get("destination")
+
+        # Try to get destination from hotel city if not found
+        if not destination and isinstance(extracted_data, dict) and extracted_data.get("hotels"):
+            hotel_info = extracted_data["hotels"][0]
+            destination = hotel_info.get("city")
+
+        # Try to get destination from flight arrival location
+        if not destination and isinstance(extracted_data, dict) and extracted_data.get("flights"):
+            flight_info = extracted_data["flights"][0]
+            destination = flight_info.get("arrival_location")
+
+        if not destination:
+            raise HTTPException(
+                status_code=400,
+                detail="No destination found in trip data. Please ensure your trip includes destination information."
+            )
+
+        # Get dates from flights if available - NO HARDCODED FALLBACKS
+        start_date = None
+        end_date = None
         if isinstance(extracted_data, dict) and extracted_data.get("flights"):
-            start_date = extracted_data["flights"][0].get("departure_date", "2025-03-15")
-            end_date = extracted_data["flights"][-1].get("arrival_date", "2025-03-22")
-        else:
-            start_date = "2025-03-15"
-            end_date = "2025-03-22"
+            start_date = extracted_data["flights"][0].get("departure_date")
+            end_date = extracted_data["flights"][-1].get("arrival_date")
+
+        if not start_date or not end_date:
+            raise HTTPException(
+                status_code=400,
+                detail="No travel dates found in trip data. Please ensure your trip includes flight information with dates."
+            )
         
-        # Get hotel info
+        # Get hotel info - NO HARDCODED FALLBACKS
+        hotel_info = {}
         if isinstance(extracted_data, dict) and extracted_data.get("hotels"):
             hotel_info = extracted_data["hotels"][0]
-            if not destination and hotel_info.get("city"):
-                destination = hotel_info["city"]
         else:
-            hotel_info = {"name": "Luxury Hotel", "address": "City Center"}
+            # If no hotel info, create minimal structure but don't hardcode values
+            hotel_info = {}
         
         preferences = trip_data.preferences or {}
         

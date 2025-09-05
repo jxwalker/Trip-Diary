@@ -32,26 +32,11 @@ def extract_trip_info(itinerary: Dict) -> Tuple[str, str, str]:
     if not destination:
         flights = itinerary.get('flights', [])
         if flights:
-            # For a trip TO Paris, the first flight should arrive in Paris
             first_flight = flights[0]
-            
-            # Check if we have "to Paris" in the flight data
-            if 'Paris' in str(first_flight):
-                destination = "Paris, France"
-                logger.info(f"Inferred destination from flight: {destination}")
-            
+
             # Try arrival city from structured data
-            elif first_flight.get('arrival_city'):
-                city = first_flight['arrival_city']
-                # Add country if known
-                if city.lower() == 'paris':
-                    destination = "Paris, France"
-                elif city.lower() == 'london':
-                    destination = "London, UK"
-                elif city.lower() == 'tokyo':
-                    destination = "Tokyo, Japan"
-                else:
-                    destination = city
+            if first_flight.get('arrival_city'):
+                destination = first_flight['arrival_city']
                 logger.info(f"Got destination from arrival_city: {destination}")
     
     # If still no destination, try hotels
@@ -59,17 +44,9 @@ def extract_trip_info(itinerary: Dict) -> Tuple[str, str, str]:
         hotels = itinerary.get('hotels', [])
         if hotels:
             first_hotel = hotels[0]
-            
-            # Check hotel name for city hints
-            hotel_name = first_hotel.get('name', '').lower()
-            if 'paris' in hotel_name:
-                destination = "Paris, France"
-                logger.info(f"Inferred destination from hotel name: {destination}")
-            elif 'bristol' in hotel_name:
-                # Hotel Bristol is famous in Paris
-                destination = "Paris, France"
-                logger.info(f"Inferred destination from Hotel Bristol: {destination}")
-            elif first_hotel.get('city'):
+
+            # Use hotel city if available
+            if first_hotel.get('city'):
                 destination = first_hotel['city']
                 logger.info(f"Got destination from hotel city: {destination}")
     
@@ -153,16 +130,32 @@ def extract_hotel_info(itinerary: Dict, destination: str) -> Dict:
     """
     Extract hotel information with smart defaults
     """
+    # Try trip_details first
+    trip_details = itinerary.get('trip_details', {})
+    hotel_name = trip_details.get('hotel', '')
+
+    if hotel_name:
+        # Create hotel info from trip_details
+        city = destination.split(',')[0].strip() if destination != "Unknown Destination" else "City"
+        return {
+            'name': hotel_name,
+            'city': city,
+            'address': f'{city}',  # Basic address
+            'description': f'Your accommodation in {city}',
+            'source': 'trip_details'
+        }
+
+    # Fallback to hotels array
     hotels = itinerary.get('hotels', [])
-    
+
     if hotels:
         hotel = hotels[0]
-        
+
         # Fill in missing city from destination
         if not hotel.get('city') and destination != "Unknown Destination":
             city = destination.split(',')[0].strip()
             hotel['city'] = city
-            
+
         return hotel
     else:
         # Create default hotel info
@@ -170,5 +163,7 @@ def extract_hotel_info(itinerary: Dict, destination: str) -> Dict:
         return {
             'name': f'Hotel in {city}',
             'city': city,
-            'address': ''
+            'address': '',
+            'description': f'Accommodation in {city}',
+            'source': 'default'
         }

@@ -265,9 +265,26 @@ function GlossyGuideContent() {
                 className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
               >
                 <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Utensils className="h-16 w-16 text-orange-300" />
-                  </div>
+                  {restaurant.main_photo || (restaurant.photos && restaurant.photos[0]) ? (
+                    <>
+                      <img
+                        src={restaurant.main_photo || restaurant.photos[0]}
+                        alt={restaurant.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-red-100 hidden items-center justify-center">
+                        <Utensils className="h-16 w-16 text-orange-300" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Utensils className="h-16 w-16 text-orange-300" />
+                    </div>
+                  )}
                   <div className="absolute top-4 right-4">
                     <Badge className="bg-white/90">{restaurant.price_range}</Badge>
                   </div>

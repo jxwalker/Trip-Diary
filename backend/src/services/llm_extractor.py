@@ -158,6 +158,14 @@ Return ONLY the JSON object, no markdown, no explanations."""
 
                 parsed_data = json.loads(result.strip())
 
+                # Normalize null values to empty lists
+                if parsed_data.get('flights') is None:
+                    parsed_data['flights'] = []
+                if parsed_data.get('hotels') is None:
+                    parsed_data['hotels'] = []
+                if parsed_data.get('passengers') is None:
+                    parsed_data['passengers'] = []
+
                 # Log extracted data summary
                 print(f"[EXTRACTION] ✅ Extraction successful!")
                 print(f"[EXTRACTION] 📊 Summary:")
