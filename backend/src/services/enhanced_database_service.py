@@ -631,3 +631,36 @@ class EnhancedDatabaseService(StorageServiceInterface):
         except Exception as e:
             logger.error(f"Failed to update preference progress for {trip_id}: {e}")
             return StorageResult.error_result(str(e))
+    
+    async def save_enhanced_guide_data(self, trip_id: str, guide_data: Dict[str, Any]) -> StorageResult:
+        """Save enhanced guide data for a trip - renamed method to avoid caching issues"""
+        logger.info(f"DEBUG: save_enhanced_guide_data called for trip {trip_id}")
+        try:
+            # Get trip data
+            trip_data = await self.get_trip_data(trip_id)
+            if not trip_data:
+                return StorageResult.error_result(f"Trip {trip_id} not found")
+            
+            # Add enhanced guide data to trip
+            trip_data.enhanced_guide = guide_data
+            trip_data.enhanced_guide_created_at = datetime.utcnow()
+            
+            # Save updated trip data
+            return await self.save_trip_data(trip_data)
+            
+        except Exception as e:
+            logger.error(f"Failed to save enhanced guide for {trip_id}: {e}")
+            return StorageResult.error_result(str(e))
+    
+    async def get_enhanced_guide(self, trip_id: str) -> Optional[Dict[str, Any]]:
+        """Get enhanced guide data for a trip"""
+        try:
+            trip_data = await self.get_trip_data(trip_id)
+            if not trip_data:
+                return None
+            
+            return getattr(trip_data, 'enhanced_guide', None)
+            
+        except Exception as e:
+            logger.error(f"Failed to get enhanced guide for {trip_id}: {e}")
+            return None

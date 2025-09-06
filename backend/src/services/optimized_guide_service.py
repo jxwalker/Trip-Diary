@@ -201,6 +201,18 @@ class OptimizedGuideService:
         )
         tasks.append(weather_task)
         
+        # Task 4: Transportation data
+        transport_task = self._fetch_transportation_data(destination, preferences)
+        tasks.append(transport_task)
+        
+        # Task 5: Accessibility data
+        accessibility_task = self._fetch_accessibility_data(destination, preferences)
+        tasks.append(accessibility_task)
+        
+        # Task 6: Budget and emergency data
+        practical_task = self._fetch_practical_info(destination, preferences)
+        tasks.append(practical_task)
+        
         try:
             # Execute all tasks concurrently with timeout
             results = await asyncio.wait_for(
@@ -208,7 +220,7 @@ class OptimizedGuideService:
                 timeout=45  # 45 second total timeout
             )
 
-            google_places_restaurants, google_places_attractions, perplexity_data, weather_data = results
+            google_places_restaurants, google_places_attractions, perplexity_data, weather_data, transport_data, accessibility_data, practical_data = results
 
             # Handle Google Places restaurants data
             if isinstance(google_places_restaurants, Exception):
@@ -232,6 +244,21 @@ class OptimizedGuideService:
             if isinstance(weather_data, Exception):
                 logger.warning(f"Weather data fetch failed: {weather_data}")
                 weather_data = {"error": str(weather_data)}
+            
+            # Handle transportation data (non-critical)
+            if isinstance(transport_data, Exception):
+                logger.warning(f"Transportation data fetch failed: {transport_data}")
+                transport_data = {"error": str(transport_data)}
+            
+            # Handle accessibility data (non-critical)
+            if isinstance(accessibility_data, Exception):
+                logger.warning(f"Accessibility data fetch failed: {accessibility_data}")
+                accessibility_data = {"error": str(accessibility_data)}
+            
+            # Handle practical data (non-critical)
+            if isinstance(practical_data, Exception):
+                logger.warning(f"Practical data fetch failed: {practical_data}")
+                practical_data = {"error": str(practical_data)}
 
             # Combine data - Replace Perplexity restaurants with Google Places restaurants
             combined_data = perplexity_data.copy()
@@ -252,6 +279,9 @@ class OptimizedGuideService:
 
             combined_data["attractions"] = unique_attractions[:8]  # Top 8 attractions
             combined_data["weather_data"] = weather_data
+            combined_data["transportation"] = transport_data
+            combined_data["accessibility"] = accessibility_data
+            combined_data["practical_info"] = practical_data
 
             logger.info(f"Combined data: {len(google_places_restaurants)} Google Places restaurants, "
                        f"{len(google_places_attractions)} Google Places attractions, "
@@ -936,3 +966,154 @@ class OptimizedGuideService:
     def get_performance_stats(self) -> Dict:
         """Get service performance statistics"""
         return self.generation_stats.copy()
+    
+    async def _fetch_transportation_data(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch transportation information for the destination"""
+        try:
+            # Use Perplexity to get comprehensive transportation data
+            transport_query = f"""
+            Provide comprehensive transportation information for {destination}:
+            
+            1. Public Transportation:
+            - Metro/subway system details, lines, and key stations
+            - Bus system information and major routes
+            - Train connections and stations
+            - Fares and ticket options
+            
+            2. Taxi and Ride-sharing:
+            - Local taxi services and apps
+            - Uber/Lyft availability
+            - Typical fares and tipping customs
+            
+            3. Airport Transportation:
+            - Airport connections and transfer options
+            - Shuttle services and costs
+            - Taxi/ride-share from airport
+            
+            4. Walking and Cycling:
+            - Walkability of the city
+            - Bike rental options
+            - Pedestrian-friendly areas
+            
+            5. Car Rental:
+            - Major rental companies
+            - Driving requirements and tips
+            - Parking information
+            
+            Format as JSON with sections for each transportation type.
+            """
+            
+            transport_data = await self.perplexity_service.search(transport_query)
+            
+            return {
+                "public_transport": transport_data.get("public_transport", {}),
+                "taxi_rideshare": transport_data.get("taxi_rideshare", {}),
+                "airport_transport": transport_data.get("airport_transport", {}),
+                "walking_cycling": transport_data.get("walking_cycling", {}),
+                "car_rental": transport_data.get("car_rental", {}),
+                "tips": transport_data.get("tips", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch transportation data: {e}")
+            return {"error": str(e)}
+    
+    async def _fetch_accessibility_data(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch accessibility information for the destination"""
+        try:
+            accessibility_query = f"""
+            Provide comprehensive accessibility information for {destination}:
+            
+            1. Wheelchair Accessibility:
+            - Public transportation accessibility
+            - Major attractions and museums accessibility
+            - Restaurant accessibility
+            - Hotel accessibility features
+            
+            2. Medical Facilities:
+            - Hospitals and emergency services
+            - Pharmacies and medical supplies
+            - English-speaking doctors
+            - Medical insurance information
+            
+            3. Special Needs Services:
+            - Accessible tours and services
+            - Equipment rental options
+            - Support organizations
+            - Emergency assistance
+            
+            4. Communication:
+            - Language barriers and solutions
+            - Translation services
+            - Emergency communication
+            
+            Format as JSON with detailed information for each category.
+            """
+            
+            accessibility_data = await self.perplexity_service.search(accessibility_query)
+            
+            return {
+                "wheelchair_access": accessibility_data.get("wheelchair_access", {}),
+                "medical_facilities": accessibility_data.get("medical_facilities", {}),
+                "special_services": accessibility_data.get("special_services", {}),
+                "communication": accessibility_data.get("communication", {}),
+                "emergency_contacts": accessibility_data.get("emergency_contacts", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch accessibility data: {e}")
+            return {"error": str(e)}
+    
+    async def _fetch_practical_info(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch practical information including budget and emergency contacts"""
+        try:
+            practical_query = f"""
+            Provide comprehensive practical information for {destination}:
+            
+            1. Budget Information:
+            - Daily budget estimates for different travel styles
+            - Cost of meals, transportation, attractions
+            - Money-saving tips and free activities
+            - Currency and payment methods
+            
+            2. Emergency Contacts:
+            - Local emergency numbers (police, fire, medical)
+            - Tourist police and assistance
+            - Embassy and consulate information
+            - 24/7 helplines
+            
+            3. Safety Information:
+            - Safe and unsafe areas
+            - Common scams and how to avoid them
+            - Safety tips for tourists
+            - Emergency procedures
+            
+            4. Cultural Etiquette:
+            - Local customs and traditions
+            - Dress codes and behavior expectations
+            - Tipping customs
+            - Business hours and holidays
+            
+            5. Communication:
+            - Local language basics
+            - Internet and phone services
+            - Postal services
+            - Time zone information
+            
+            Format as JSON with detailed information for each category.
+            """
+            
+            practical_data = await self.perplexity_service.search(practical_query)
+            
+            return {
+                "budget_info": practical_data.get("budget_info", {}),
+                "emergency_contacts": practical_data.get("emergency_contacts", {}),
+                "safety_info": practical_data.get("safety_info", {}),
+                "cultural_etiquette": practical_data.get("cultural_etiquette", {}),
+                "communication": practical_data.get("communication", {}),
+                "money_saving_tips": practical_data.get("money_saving_tips", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch practical information: {e}")
+            return {"error": str(e)}

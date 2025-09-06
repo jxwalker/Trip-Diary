@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,10 @@ import {
   Globe,
   Heart,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  Download,
+  FileText,
+  Image
 } from "lucide-react";
 
 interface EnhancedGuideDisplayProps {
@@ -38,6 +42,47 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
 
   // Parse raw content if it exists
   const hasRawContent = guide.raw_content && typeof guide.raw_content === 'string';
+  
+  // PDF generation state
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfGenerated, setPdfGenerated] = useState(false);
+  
+  const generateMagazinePDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const response = await fetch(`/api/proxy/generate-magazine-pdf/${tripId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setPdfGenerated(true);
+        
+        // Download the PDF
+        const downloadResponse = await fetch(`/api/proxy/download/${tripId}`);
+        if (downloadResponse.ok) {
+          const blob = await downloadResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `travel_guide_${tripId}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+      } else {
+        console.error('Failed to generate PDF');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -63,6 +108,49 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
           </Card>
         </motion.div>
       )}
+
+      {/* Magazine PDF Generation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl">
+              <Image className="h-6 w-6 mr-2 text-purple-500" />
+              Magazine-Quality PDF Guide
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Download your personalized travel guide as a beautiful, magazine-style PDF with stunning photographs and professional layouts.
+            </p>
+            <button
+              onClick={generateMagazinePDF}
+              disabled={isGeneratingPDF}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating Your Magazine...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Magazine PDF
+                </>
+              )}
+            </button>
+            {pdfGenerated && (
+              <p className="text-green-600 text-sm mt-2">
+                ✓ Magazine PDF generated successfully! Check your downloads.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Main Content Tabs */}
       <motion.div
