@@ -145,7 +145,7 @@ Return ONLY the JSON array, no markdown, no explanations."""
         
         # Build dynamic search query based on actual preferences
         cuisine_types = preferences.get("cuisineTypes", ["Local cuisine"])
-        price_range = preferences.get("priceRange", "$$")
+        price_range = preferences.get("priceRange", "")
         dietary = preferences.get("dietaryRestrictions", [])
         group_type = preferences.get("groupType", "couple")
         

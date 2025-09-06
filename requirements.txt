@@ -26,3 +26,10 @@ pytest==8.3.3
 pytest-asyncio==0.23.8
 aiohttp==3.10.10
 googlemaps==4.10.0
+
+# PDF generation dependencies
+reportlab==4.0.4
+Pillow==10.2.0
+
+# Additional dependencies
+aiofiles==24.1.0

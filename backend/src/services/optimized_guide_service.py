@@ -12,10 +12,11 @@ from dotenv import load_dotenv
 import logging
 
 from .optimized_perplexity_service import OptimizedPerplexityService
-from .weather_service import WeatherService
+from .google_weather_service import GoogleWeatherService
 from .guide_validator import GuideValidator
 from .google_places_enhancer import GooglePlacesEnhancer
 from .real_events_service import RealEventsService
+from .enhanced_google_places_service import EnhancedGooglePlacesService
 
 # Load environment
 root_dir = Path(__file__).parent.parent.parent.parent
@@ -37,10 +38,10 @@ class OptimizedGuideService:
     
     def __init__(self):
         self.perplexity_service = OptimizedPerplexityService()
-        self.weather_service = WeatherService()
+        self.weather_service = GoogleWeatherService()
         self.places_enhancer = GooglePlacesEnhancer()
         self.events_service = RealEventsService()
-        
+        self.google_places_service = EnhancedGooglePlacesService()
         # Performance tracking
         self.generation_stats = {
             "total_requests": 0,
@@ -168,28 +169,36 @@ class OptimizedGuideService:
         # Create concurrent tasks
         tasks = []
         
-        # Task 1: Perplexity guide data (restaurants, attractions, events, practical info, daily suggestions)
+        # Task 1: Google Places restaurants (high-quality real data)
+        google_places_restaurants_task = self._fetch_google_places_restaurants(destination, preferences)
+        tasks.append(google_places_restaurants_task)
+
+        # Task 1b: Google Places attractions (high-quality real data with photos)
+        google_places_attractions_task = self._fetch_google_places_attractions(destination, preferences)
+        tasks.append(google_places_attractions_task)
+
+        # Task 2: Perplexity guide data (attractions, events, practical info, daily suggestions)
         # Create async callback wrapper if progress_callback exists
         perplexity_callback = None
         if progress_callback:
             async def perplexity_progress(p, m):
                 if progress_callback:  # Double check it's still not None
                     try:
-                        await progress_callback(15 + p * 0.6, m)
+                        await progress_callback(15 + p * 0.4, m)
                     except Exception as e:
                         logger.error(f"Error in perplexity_progress callback: {e}")
                         raise
             perplexity_callback = perplexity_progress
-        
+
         logger.debug(f"Created perplexity_callback: {perplexity_callback}")
-        
+
         perplexity_task = self.perplexity_service.generate_complete_guide_data(
             destination, start_date, end_date, preferences,
             progress_callback=perplexity_callback
         )
         tasks.append(perplexity_task)
-        
-        # Task 2: Weather data
+
+        # Task 3: Weather data
         weather_task = self.weather_service.get_weather_forecast(
             destination, start_date, end_date
         )
@@ -201,6 +210,18 @@ class OptimizedGuideService:
         )
         tasks.append(events_task)
         
+        # Task 4: Transportation data
+        transport_task = self._fetch_transportation_data(destination, preferences)
+        tasks.append(transport_task)
+        
+        # Task 5: Accessibility data
+        accessibility_task = self._fetch_accessibility_data(destination, preferences)
+        tasks.append(accessibility_task)
+        
+        # Task 6: Budget and emergency data
+        practical_task = self._fetch_practical_info(destination, preferences)
+        tasks.append(practical_task)
+        
         try:
             # Execute all tasks concurrently with timeout
             results = await asyncio.wait_for(
@@ -208,16 +229,26 @@ class OptimizedGuideService:
                 timeout=45  # 45 second total timeout
             )
             
-            perplexity_data, weather_data, real_events = results
-            
+            # Unpack results - we have 7 tasks now
+            google_places_restaurants, google_places_attractions, perplexity_data, weather_data, real_events, transport_data, accessibility_data, practical_data = results
+
+            # Handle Google Places restaurants data
+            if isinstance(google_places_restaurants, Exception):
+                logger.warning(f"Google Places restaurants fetch failed: {google_places_restaurants}")
+                google_places_restaurants = []  # Fallback to empty list
+
+            # Handle Google Places attractions data
+            if isinstance(google_places_attractions, Exception):
+                logger.warning(f"Google Places attractions fetch failed: {google_places_attractions}")
+                google_places_attractions = []  # Fallback to empty list
             # Handle Perplexity data
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
                 return self._create_error_response(f"Failed to fetch guide data: {str(perplexity_data)}")
-            
+
             if perplexity_data.get("error"):
                 return perplexity_data  # Return Perplexity error
-            
+
             # Handle weather data (non-critical)
             if isinstance(weather_data, Exception):
                 logger.warning(f"Weather data fetch failed: {weather_data}")
@@ -228,11 +259,55 @@ class OptimizedGuideService:
                 logger.warning(f"Real events fetch failed: {real_events}")
                 real_events = []
             
+            # Handle transportation data (non-critical)
+            if isinstance(transport_data, Exception):
+                logger.warning(f"Transportation data fetch failed: {transport_data}")
+                transport_data = {"error": str(transport_data)}
+            
             # Combine data
             combined_data = perplexity_data.copy()
             combined_data["weather_data"] = weather_data
             combined_data["real_events"] = real_events
+            combined_data["transport_data"] = transport_data
             
+            # Handle accessibility data (non-critical)
+            if isinstance(accessibility_data, Exception):
+                logger.warning(f"Accessibility data fetch failed: {accessibility_data}")
+                accessibility_data = {"error": str(accessibility_data)}
+            
+            # Handle practical data (non-critical)
+            if isinstance(practical_data, Exception):
+                logger.warning(f"Practical data fetch failed: {practical_data}")
+                practical_data = {"error": str(practical_data)}
+
+            # Combine data - Replace Perplexity restaurants with Google Places restaurants
+            combined_data = perplexity_data.copy()
+            combined_data["restaurants"] = google_places_restaurants  # Use Google Places restaurants
+
+            # Combine Google Places attractions with Perplexity attractions
+            perplexity_attractions = perplexity_data.get('attractions', [])
+            all_attractions = google_places_attractions + perplexity_attractions
+
+            # Remove duplicates by name and limit to top attractions
+            seen_names = set()
+            unique_attractions = []
+            for attraction in all_attractions:
+                name = attraction.get('name', '')
+                if name and name not in seen_names:
+                    seen_names.add(name)
+                    unique_attractions.append(attraction)
+
+            combined_data["attractions"] = unique_attractions[:8]  # Top 8 attractions
+            combined_data["weather_data"] = weather_data
+            combined_data["transportation"] = transport_data
+            combined_data["accessibility"] = accessibility_data
+            combined_data["practical_info"] = practical_data
+
+            logger.info(f"Combined data: {len(google_places_restaurants)} Google Places restaurants, "
+                       f"{len(google_places_attractions)} Google Places attractions, "
+                       f"{len(perplexity_attractions)} Perplexity attractions, "
+                       f"{len(unique_attractions)} total unique attractions")
+
             return combined_data
             
         except asyncio.TimeoutError:
@@ -241,7 +316,448 @@ class OptimizedGuideService:
         except Exception as e:
             logger.error(f"Error in concurrent data fetching: {e}")
             return self._create_error_response(f"Error fetching data: {str(e)}")
-    
+
+    async def _fetch_google_places_restaurants(self, destination: str, preferences: Dict) -> List[Dict]:
+        """Fetch restaurants using Google Places API"""
+        try:
+            # Initialize Google Places service if not already done
+            await self.google_places_service.initialize()
+
+            # Get cuisine preferences
+            cuisine_preferences = preferences.get("dining", {}).get("cuisineTypes", [])
+
+            # Search for restaurants
+            restaurants = []
+
+            # If specific cuisines requested, search for each
+            if cuisine_preferences:
+                for cuisine in cuisine_preferences[:3]:  # Limit to top 3 cuisines
+                    try:
+                        cuisine_restaurants = await self.google_places_service.search_restaurants(
+                            location=destination,
+                            cuisine_type=cuisine,
+                            limit=5
+                        )
+                        restaurants.extend(cuisine_restaurants)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch {cuisine} restaurants: {e}")
+
+            # Always do a general search for top restaurants
+            try:
+                general_restaurants = await self.google_places_service.search_restaurants(
+                    location=destination,
+                    limit=10
+                )
+                restaurants.extend(general_restaurants)
+            except Exception as e:
+                logger.warning(f"Failed to fetch general restaurants: {e}")
+
+            # Remove duplicates based on place ID
+            seen_ids = set()
+            unique_restaurants = []
+            for restaurant in restaurants:
+                place_id = restaurant.get("id")
+                if place_id and place_id not in seen_ids:
+                    seen_ids.add(place_id)
+                    unique_restaurants.append(restaurant)
+
+            logger.info(f"Fetched {len(unique_restaurants)} unique restaurants from Google Places")
+            return unique_restaurants[:15]  # Return top 15
+
+        except Exception as e:
+            logger.error(f"Google Places restaurant fetch failed: {e}")
+            return []  # Return empty list on error
+
+    async def _fetch_google_places_attractions(self, destination: str, preferences: Dict) -> List[Dict]:
+        """Fetch attractions using Google Places API"""
+        try:
+            # Initialize Google Places service if not already done
+            await self.google_places_service.initialize()
+
+            # Search for attractions
+            attractions = await self.google_places_service.search_attractions(
+                location=destination,
+                limit=8  # Get top 8 attractions with photos
+            )
+
+            logger.info(f"Fetched {len(attractions)} unique attractions from Google Places")
+            return attractions
+
+        except Exception as e:
+            logger.error(f"Error fetching Google Places attractions: {e}")
+            return []  # Return empty list on error
+
+    def _format_restaurants_for_frontend(self, restaurants: List[Dict]) -> List[Dict]:
+        """Format restaurant data for frontend display"""
+        formatted_restaurants = []
+
+        for restaurant in restaurants:
+            # Create generalized description from restaurant data and reviews
+            description = self._generate_restaurant_description(restaurant)
+
+            # Format for frontend
+            formatted_restaurant = {
+                "name": restaurant.get("name", ""),
+                "cuisine": restaurant.get("cuisine", ""),
+                "description": description,
+                "address": restaurant.get("address", ""),
+                "rating": restaurant.get("rating"),
+                "review_count": restaurant.get("review_count"),
+                "price_range": restaurant.get("price_level", ""),
+                "price_level_numeric": restaurant.get("price_level_numeric"),
+                "phone": restaurant.get("phone", ""),
+                "website": restaurant.get("website", ""),
+                "map_url": restaurant.get("google_maps_url", ""),
+                "photos": restaurant.get("photos", []),
+                "main_photo": restaurant.get("main_photo", ""),
+                "booking_urls": {
+                    "google_maps": restaurant.get("google_maps_url", ""),
+                    "opentable": restaurant.get("booking_urls", {}).get("opentable", ""),
+                    "website": restaurant.get("website", "")
+                },
+                "primary_booking_url": restaurant.get("google_maps_url", ""),
+                "reviews": restaurant.get("reviews", []),
+                "source": restaurant.get("source", "google_places"),
+                # Additional fields for enhanced display
+                "why_recommended": self._generate_recommendation_reason(restaurant),
+                "best_dishes": self._extract_best_dishes(restaurant),
+                "visit_tips": self._generate_visit_tips(restaurant)
+            }
+
+            formatted_restaurants.append(formatted_restaurant)
+
+        return formatted_restaurants
+
+    def _format_attractions_for_frontend(self, attractions: List[Dict]) -> List[Dict]:
+        """Format attraction data for frontend display with all required details"""
+        formatted_attractions = []
+
+        for attraction in attractions:
+            # Ensure all required fields are present
+            formatted_attraction = {
+                "name": attraction.get("name", ""),
+                "description": attraction.get("description", ""),
+                "address": attraction.get("address", ""),
+                "rating": attraction.get("rating"),
+                "review_count": attraction.get("review_count"),
+                "phone": attraction.get("phone", ""),
+                "website": attraction.get("website", ""),
+                "google_maps_url": attraction.get("google_maps_url", ""),
+                "photos": attraction.get("photos", []),
+                "main_photo": attraction.get("main_photo", ""),
+                "hours": attraction.get("hours", []),
+                "open_now": attraction.get("open_now"),
+                "price_level": attraction.get("price_level", ""),
+                "types": attraction.get("types", []),
+                "source": attraction.get("source", "google_places"),
+
+                # Enhanced fields
+                "category": self._determine_attraction_category(attraction),
+                "visit_duration": self._suggest_visit_duration(attraction),
+                "best_time_to_visit": self._suggest_best_time(attraction),
+                "ticket_info": self._get_ticket_info(attraction),
+                "accessibility": attraction.get("accessibility", ""),
+
+                # Booking and info URLs
+                "booking_urls": {
+                    "google_maps": attraction.get("google_maps_url", ""),
+                    "website": attraction.get("website", ""),
+                    "tripadvisor": self._generate_tripadvisor_url(attraction),
+                    "viator": self._generate_viator_url(attraction)
+                },
+                "primary_booking_url": attraction.get("website", "") or attraction.get("google_maps_url", "")
+            }
+
+            formatted_attractions.append(formatted_attraction)
+
+        return formatted_attractions
+
+    def _determine_attraction_category(self, attraction: Dict) -> str:
+        """Determine the category of an attraction"""
+        types = attraction.get("types", [])
+        name = attraction.get("name", "").lower()
+
+        if any(t in types for t in ["museum", "art_gallery"]):
+            return "Museum & Culture"
+        elif any(t in types for t in ["park", "natural_feature"]):
+            return "Parks & Nature"
+        elif any(t in types for t in ["church", "place_of_worship"]):
+            return "Religious Sites"
+        elif any(t in types for t in ["tourist_attraction", "point_of_interest"]):
+            return "Tourist Attraction"
+        elif "market" in name or "shopping" in name:
+            return "Shopping & Markets"
+        else:
+            return "Attraction"
+
+    def _suggest_visit_duration(self, attraction: Dict) -> str:
+        """Suggest how long to spend at an attraction"""
+        types = attraction.get("types", [])
+        name = attraction.get("name", "").lower()
+
+        if any(t in types for t in ["museum", "art_gallery"]):
+            return "2-3 hours"
+        elif any(t in types for t in ["park", "natural_feature"]):
+            return "1-2 hours"
+        elif any(t in types for t in ["church", "place_of_worship"]):
+            return "30-60 minutes"
+        elif "market" in name:
+            return "1-2 hours"
+        else:
+            return "1-2 hours"
+
+    def _suggest_best_time(self, attraction: Dict) -> str:
+        """Suggest the best time to visit"""
+        types = attraction.get("types", [])
+        name = attraction.get("name", "").lower()
+
+        if any(t in types for t in ["museum", "art_gallery"]):
+            return "Morning (less crowded)"
+        elif any(t in types for t in ["park", "natural_feature"]):
+            return "Early morning or late afternoon"
+        elif any(t in types for t in ["church", "place_of_worship"]):
+            return "Morning or early afternoon"
+        elif "market" in name:
+            return "Morning (best selection)"
+        else:
+            return "Morning or afternoon"
+
+    def _get_ticket_info(self, attraction: Dict) -> str:
+        """Get ticket information for attraction"""
+        types = attraction.get("types", [])
+
+        if any(t in types for t in ["museum", "art_gallery"]):
+            return "Tickets usually required - check website for prices"
+        elif any(t in types for t in ["park", "natural_feature"]):
+            return "Usually free entry"
+        elif any(t in types for t in ["church", "place_of_worship"]):
+            return "Usually free entry, donations welcome"
+        else:
+            return "Check website for entry requirements"
+
+    def _generate_tripadvisor_url(self, attraction: Dict) -> str:
+        """Generate TripAdvisor search URL"""
+        name = attraction.get("name", "")
+        if name:
+            # Simple search URL - in production you'd want proper URL encoding
+            search_name = name.replace(" ", "%20")
+            return f"https://www.tripadvisor.com/Search?q={search_name}"
+        return ""
+
+    def _generate_viator_url(self, attraction: Dict) -> str:
+        """Generate Viator booking URL"""
+        name = attraction.get("name", "")
+        if name:
+            # Simple search URL - in production you'd want proper URL encoding
+            search_name = name.replace(" ", "%20")
+            return f"https://www.viator.com/searchResults/all?text={search_name}"
+        return ""
+
+    def _generate_restaurant_description(self, restaurant: Dict) -> str:
+        """Generate a generalized restaurant description from data and reviews"""
+        name = restaurant.get("name", "")
+        cuisine = restaurant.get("cuisine", "")
+        rating = restaurant.get("rating")
+        review_count = restaurant.get("review_count")
+        price_level = restaurant.get("price_level_numeric")
+        reviews = restaurant.get("reviews", [])
+
+        # Start with basic info
+        description_parts = []
+
+        # Cuisine and style description
+        if cuisine and cuisine.lower() != "restaurant":
+            if price_level and price_level >= 4:
+                description_parts.append(f"An upscale {cuisine.lower()} restaurant")
+            elif price_level and price_level >= 3:
+                description_parts.append(f"A refined {cuisine.lower()} establishment")
+            else:
+                description_parts.append(f"A popular {cuisine.lower()} restaurant")
+        else:
+            if price_level and price_level >= 4:
+                description_parts.append("An upscale dining establishment")
+            elif price_level and price_level >= 3:
+                description_parts.append("A refined restaurant")
+            else:
+                description_parts.append("A popular local restaurant")
+
+        # Add location context based on actual destination - NO HARDCODED LOCATIONS
+        address = restaurant.get("address", "")
+        if address:
+            # Extract the city/area from the address
+            address_parts = address.split(',')
+            if len(address_parts) >= 2:
+                area = address_parts[-2].strip()  # Usually the city/area before country
+                description_parts.append(f"located in {area}")
+            else:
+                # Just use the destination city name
+                destination_city = destination.split(',')[0].strip() if destination else ""
+                if destination_city:
+                    description_parts.append(f"in {destination_city}")
+
+        # Add reputation and quality indicators
+        if rating and review_count and rating >= 4.7 and review_count >= 1000:
+            description_parts.append(f"Known for exceptional quality with an outstanding {rating}/5 rating from over {review_count:,} diners")
+        elif rating and review_count and rating >= 4.5 and review_count >= 500:
+            description_parts.append(f"Highly acclaimed with a {rating}/5 rating from {review_count:,} satisfied customers")
+        elif rating and review_count and rating >= 4.0 and review_count >= 100:
+            description_parts.append(f"Well-regarded with a solid {rating}/5 rating")
+        elif review_count and review_count >= 500:
+            description_parts.append(f"A popular choice among locals and visitors with {review_count:,} reviews")
+
+        # Extract common themes from reviews for specialties
+        specialties = self._extract_restaurant_specialties(reviews, cuisine)
+        if specialties:
+            description_parts.append(f"Particularly noted for {', '.join(specialties)}")
+
+        # Add atmosphere description based on price level and reviews
+        atmosphere = self._determine_restaurant_atmosphere(restaurant, reviews)
+        if atmosphere:
+            description_parts.append(atmosphere)
+
+        # Join all parts into a coherent description
+        description = ". ".join(description_parts) + "."
+
+        # Clean up any double periods or awkward phrasing
+        description = description.replace("..", ".").replace(". .", ".")
+
+        return description
+
+    def _extract_restaurant_specialties(self, reviews: List[Dict], cuisine: str) -> List[str]:
+        """Extract what the restaurant is known for from reviews"""
+        specialties = []
+
+        # Common food keywords to look for in reviews
+        food_keywords = {
+            "pasta": "pasta dishes",
+            "pizza": "pizza",
+            "steak": "steaks",
+            "seafood": "seafood",
+            "fish": "fresh fish",
+            "wine": "wine selection",
+            "dessert": "desserts",
+            "cheese": "cheese selection",
+            "bread": "fresh bread",
+            "soup": "soups",
+            "salad": "salads",
+            "truffle": "truffle dishes",
+            "foie gras": "foie gras",
+            "oyster": "oysters",
+            "chocolate": "chocolate desserts",
+            "tasting menu": "tasting menus",
+            "seasonal": "seasonal ingredients"
+        }
+
+        # Count mentions in reviews
+        keyword_counts = {}
+        for review in reviews[:5]:  # Check first 5 reviews
+            text = review.get("text", "").lower()
+            for keyword, description in food_keywords.items():
+                if keyword in text:
+                    keyword_counts[description] = keyword_counts.get(description, 0) + 1
+
+        # Get top 2-3 most mentioned specialties
+        sorted_specialties = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)
+        specialties = [specialty for specialty, count in sorted_specialties[:3] if count >= 2]
+
+        # No fallback specialties - only use what's found in reviews
+
+        return specialties[:2]  # Limit to 2 specialties
+
+    def _determine_restaurant_atmosphere(self, restaurant: Dict, reviews: List[Dict]) -> str:
+        """Determine restaurant atmosphere from data and reviews"""
+        price_level = restaurant.get("price_level_numeric")
+        rating = restaurant.get("rating")
+
+        # Analyze review text for atmosphere keywords
+        atmosphere_keywords = {
+            "romantic": ["romantic", "intimate", "cozy", "candlelit"],
+            "casual": ["casual", "relaxed", "friendly", "laid-back"],
+            "elegant": ["elegant", "sophisticated", "upscale", "refined"],
+            "lively": ["lively", "bustling", "energetic", "vibrant"],
+            "quiet": ["quiet", "peaceful", "calm", "serene"]
+        }
+
+        atmosphere_scores = {}
+        for review in reviews[:3]:  # Check first 3 reviews
+            text = review.get("text", "").lower()
+            for atmosphere, keywords in atmosphere_keywords.items():
+                score = sum(1 for keyword in keywords if keyword in text)
+                atmosphere_scores[atmosphere] = atmosphere_scores.get(atmosphere, 0) + score
+
+        # Determine atmosphere based on price level and review analysis
+        if price_level and price_level >= 4:
+            if atmosphere_scores.get("elegant", 0) > 0 or atmosphere_scores.get("romantic", 0) > 0:
+                return "The atmosphere is elegant and sophisticated, perfect for special occasions"
+            else:
+                return "Offers an upscale dining experience with refined service"
+        elif price_level and price_level >= 3:
+            if atmosphere_scores.get("romantic", 0) > 0:
+                return "Features a romantic and intimate setting"
+            elif atmosphere_scores.get("lively", 0) > 0:
+                return "Boasts a lively and welcoming atmosphere"
+            else:
+                return "Provides a comfortable and refined dining environment"
+        else:
+            if atmosphere_scores.get("casual", 0) > 0:
+                return "Offers a casual and friendly atmosphere"
+            elif atmosphere_scores.get("lively", 0) > 0:
+                return "Known for its vibrant and energetic ambiance"
+            else:
+                return "Provides a welcoming local dining experience"
+
+    def _generate_recommendation_reason(self, restaurant: Dict) -> str:
+        """Generate why this restaurant is recommended"""
+        rating = restaurant.get("rating")
+        review_count = restaurant.get("review_count")
+        cuisine = restaurant.get("cuisine", "restaurant")
+
+        if rating and review_count and rating >= 4.7 and review_count >= 1000:
+            return f"Exceptional {cuisine.lower()} with outstanding {rating}/5 rating from {review_count:,} diners"
+        elif rating and rating >= 4.5:
+            return f"Highly rated {cuisine.lower()} with {rating}/5 stars"
+        elif review_count and review_count >= 500:
+            return f"Popular local {cuisine.lower()} with {review_count:,} reviews"
+        else:
+            return f"Quality {cuisine.lower()} worth visiting"
+
+    def _extract_best_dishes(self, restaurant: Dict) -> List[str]:
+        """Extract best dishes from reviews"""
+        dishes = []
+        reviews = restaurant.get("reviews", [])
+
+        # Simple keyword extraction from reviews
+        dish_keywords = ["pasta", "pizza", "steak", "fish", "chicken", "dessert", "wine", "salad", "soup"]
+
+        for review in reviews[:3]:  # Check first 3 reviews
+            text = review.get("text", "").lower()
+            for keyword in dish_keywords:
+                if keyword in text and keyword not in dishes:
+                    dishes.append(keyword.title())
+                    if len(dishes) >= 3:
+                        break
+            if len(dishes) >= 3:
+                break
+
+        return dishes
+
+    def _generate_visit_tips(self, restaurant: Dict) -> str:
+        """Generate visit tips for the restaurant"""
+        rating = restaurant.get("rating")
+        price_level = restaurant.get("price_level_numeric")
+
+        tips = []
+
+        if price_level and price_level >= 4:
+            tips.append("Reservations highly recommended")
+        elif rating and rating >= 4.5:
+            tips.append("Popular spot - consider booking ahead")
+
+        if "lunch" in restaurant.get("name", "").lower():
+            tips.append("Great for lunch")
+
+        return "; ".join(tips) if tips else ""
+
     async def _assemble_complete_guide(
         self,
         guide_data: Dict,
@@ -279,8 +795,8 @@ class OptimizedGuideService:
             "summary": self._generate_summary(context, restaurants, attractions),
             "destination_insights": self._generate_destination_insights(context, practical_info),
             "daily_itinerary": self._format_daily_itinerary(daily_suggestions, context),
-            "restaurants": restaurants[:8],  # Top 8 restaurants
-            "attractions": attractions[:8],   # Top 8 attractions
+            "restaurants": self._format_restaurants_for_frontend(restaurants[:8]),  # Top 8 restaurants
+            "attractions": self._format_attractions_for_frontend(attractions[:8]),  # Top 8 attractions
             "practical_info": practical_info,
             
             # Additional content
@@ -521,3 +1037,155 @@ class OptimizedGuideService:
                 "sources": ["Perplexity"],
                 "note": "No real events found - using fallback data"
             }
+    
+    async def _fetch_transportation_data(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch transportation information for the destination"""
+        try:
+            # Use Perplexity to get comprehensive transportation data
+            transport_query = f"""
+            Provide comprehensive transportation information for {destination}:
+            
+            1. Public Transportation:
+            - Metro/subway system details, lines, and key stations
+            - Bus system information and major routes
+            - Train connections and stations
+            - Fares and ticket options
+            
+            2. Taxi and Ride-sharing:
+            - Local taxi services and apps
+            - Uber/Lyft availability
+            - Typical fares and tipping customs
+            
+            3. Airport Transportation:
+            - Airport connections and transfer options
+            - Shuttle services and costs
+            - Taxi/ride-share from airport
+            
+            4. Walking and Cycling:
+            - Walkability of the city
+            - Bike rental options
+            - Pedestrian-friendly areas
+            
+            5. Car Rental:
+            - Major rental companies
+            - Driving requirements and tips
+            - Parking information
+            
+            Format as JSON with sections for each transportation type.
+            """
+            
+            transport_data = await self.perplexity_service.search(transport_query)
+            
+            return {
+                "public_transport": transport_data.get("public_transport", {}),
+                "taxi_rideshare": transport_data.get("taxi_rideshare", {}),
+                "airport_transport": transport_data.get("airport_transport", {}),
+                "walking_cycling": transport_data.get("walking_cycling", {}),
+                "car_rental": transport_data.get("car_rental", {}),
+                "tips": transport_data.get("tips", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch transportation data: {e}")
+            return {"error": str(e)}
+    
+    async def _fetch_accessibility_data(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch accessibility information for the destination"""
+        try:
+            accessibility_query = f"""
+            Provide comprehensive accessibility information for {destination}:
+            
+            1. Wheelchair Accessibility:
+            - Public transportation accessibility
+            - Major attractions and museums accessibility
+            - Restaurant accessibility
+            - Hotel accessibility features
+            
+            2. Medical Facilities:
+            - Hospitals and emergency services
+            - Pharmacies and medical supplies
+            - English-speaking doctors
+            - Medical insurance information
+            
+            3. Special Needs Services:
+            - Accessible tours and services
+            - Equipment rental options
+            - Support organizations
+            - Emergency assistance
+            
+            4. Communication:
+            - Language barriers and solutions
+            - Translation services
+            - Emergency communication
+            
+            Format as JSON with detailed information for each category.
+            """
+            
+            accessibility_data = await self.perplexity_service.search(accessibility_query)
+            
+            return {
+                "wheelchair_access": accessibility_data.get("wheelchair_access", {}),
+                "medical_facilities": accessibility_data.get("medical_facilities", {}),
+                "special_services": accessibility_data.get("special_services", {}),
+                "communication": accessibility_data.get("communication", {}),
+                "emergency_contacts": accessibility_data.get("emergency_contacts", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch accessibility data: {e}")
+            return {"error": str(e)}
+    
+    async def _fetch_practical_info(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch practical information including budget and emergency contacts"""
+        try:
+            practical_query = f"""
+            Provide comprehensive practical information for {destination}:
+            
+            1. Budget Information:
+            - Daily budget estimates for different travel styles
+            - Cost of meals, transportation, attractions
+            - Money-saving tips and free activities
+            - Currency and payment methods
+            
+            2. Emergency Contacts:
+            - Local emergency numbers (police, fire, medical)
+            - Tourist police and assistance
+            - Embassy and consulate information
+            - 24/7 helplines
+            
+            3. Safety Information:
+            - Safe and unsafe areas
+            - Common scams and how to avoid them
+            - Safety tips for tourists
+            - Emergency procedures
+            
+            4. Cultural Etiquette:
+            - Local customs and traditions
+            - Dress codes and behavior expectations
+            - Tipping customs
+            - Business hours and holidays
+            
+            5. Communication:
+            - Local language basics
+            - Internet and phone services
+            - Postal services
+            - Time zone information
+            
+            Format as JSON with detailed information for each category.
+            """
+            
+            practical_data = await self.perplexity_service.search(practical_query)
+            
+            return {
+                "budget_info": practical_data.get("budget_info", {}),
+                "emergency_contacts": practical_data.get("emergency_contacts", {}),
+                "safety_info": practical_data.get("safety_info", {}),
+                "cultural_etiquette": practical_data.get("cultural_etiquette", {}),
+                "communication": practical_data.get("communication", {}),
+                "money_saving_tips": practical_data.get("money_saving_tips", [])
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch practical information: {e}")
+            return {"error": str(e)}
+>>>>>>> origin/main

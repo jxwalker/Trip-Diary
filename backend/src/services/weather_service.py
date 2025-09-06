@@ -31,12 +31,12 @@ class WeatherService:
     async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
         """
         Get weather forecast for a destination during trip dates
-        
+
         Args:
             destination: City name or location
             start_date: Trip start date (YYYY-MM-DD)
             end_date: Trip end date (YYYY-MM-DD)
-            
+
         Returns:
             Weather forecast data with daily conditions
         """
@@ -89,6 +89,15 @@ class WeatherService:
             }
         
         try:
+            # Check if dates are within 5-day forecast range (OpenWeather free tier limitation)
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            today = datetime.now()
+            days_ahead = (start_dt - today).days
+
+            if days_ahead > 5:
+                # For dates beyond 5 days, provide seasonal weather estimates
+                return await self._get_seasonal_weather_estimate(destination, start_date, end_date)
+
             # Get coordinates for the destination
             coords = await self._get_coordinates(destination)
             if not coords:
@@ -141,6 +150,133 @@ class WeatherService:
         except:
             pass
         return None
+
+    async def _get_seasonal_weather_estimate(self, destination: str, start_date: str, end_date: str) -> Dict:
+        """
+        Provide seasonal weather estimates for dates beyond 5-day forecast
+        Based on historical climate data for major destinations
+        """
+        # Parse dates
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+
+        # Generate daily forecasts based on seasonal patterns
+        daily_forecasts = []
+        current_date = start_dt
+
+        while current_date <= end_dt:
+            month = current_date.month
+            day_name = current_date.strftime("%A")
+
+            # Get seasonal weather for this destination and month
+            seasonal_data = self._get_seasonal_data(destination.lower(), month)
+
+            daily_forecast = {
+                "date": current_date.strftime("%Y-%m-%d"),
+                "day_name": day_name,
+                "temperature": {
+                    "high": seasonal_data["temp_high"],
+                    "low": seasonal_data["temp_low"],
+                    "unit": "°C"
+                },
+                "condition": seasonal_data["condition"],
+                "description": seasonal_data["description"],
+                "precipitation_chance": seasonal_data["precipitation"],
+                "humidity": seasonal_data["humidity"],
+                "wind_speed": seasonal_data["wind_speed"],
+                "source": "seasonal_estimate"
+            }
+            daily_forecasts.append(daily_forecast)
+            current_date += timedelta(days=1)
+
+        # Create summary
+        avg_high = sum(d["temperature"]["high"] for d in daily_forecasts) / len(daily_forecasts)
+        avg_low = sum(d["temperature"]["low"] for d in daily_forecasts) / len(daily_forecasts)
+
+        condition = daily_forecasts[0]["condition"] if daily_forecasts else ""
+        summary = {
+            "average_high": round(avg_high, 1),
+            "average_low": round(avg_low, 1),
+            "general_conditions": condition,
+            "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
+            "note": "Weather estimates based on seasonal patterns"
+        }
+
+        return {
+            "destination": destination,
+            "forecast_period": {"start": start_date, "end": end_date},
+            "daily_forecasts": daily_forecasts,
+            "summary": summary
+        }
+
+    def _get_seasonal_data(self, destination: str, month: int) -> Dict:
+        """Get seasonal weather data for destination and month"""
+
+        # Seasonal patterns for major destinations
+        seasonal_patterns = {
+            "paris": {
+                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 70, "humidity": 80, "wind_speed": 15},
+                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", "description": "Cool with occasional rain", "precipitation": 60, "humidity": 75, "wind_speed": 12},
+                3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", "description": "Mild spring weather", "precipitation": 50, "humidity": 70, "wind_speed": 10},
+                4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", "description": "Pleasant spring weather", "precipitation": 45, "humidity": 65, "wind_speed": 8},
+                5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", "description": "Warm and pleasant", "precipitation": 40, "humidity": 60, "wind_speed": 8},
+                6: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
+                7: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm and dry", "precipitation": 30, "humidity": 50, "wind_speed": 7},
+                8: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
+                9: {"temp_high": 22, "temp_low": 13, "condition": "Partly Cloudy", "description": "Pleasant autumn weather", "precipitation": 45, "humidity": 65, "wind_speed": 9},
+                10: {"temp_high": 17, "temp_low": 9, "condition": "Cloudy", "description": "Cool autumn weather", "precipitation": 55, "humidity": 75, "wind_speed": 12},
+                11: {"temp_high": 11, "temp_low": 5, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 65, "humidity": 80, "wind_speed": 14},
+                12: {"temp_high": 8, "temp_low": 3, "condition": "Cloudy", "description": "Cold winter weather", "precipitation": 70, "humidity": 85, "wind_speed": 15}
+            }
+        }
+
+        # Default pattern for unknown destinations (temperate climate)
+        default_pattern = {
+            1: {"temp_high": 5, "temp_low": 0, "condition": "Cloudy", "description": "Cool winter weather", "precipitation": 60, "humidity": 75, "wind_speed": 12},
+            2: {"temp_high": 7, "temp_low": 1, "condition": "Partly Cloudy", "description": "Cool late winter", "precipitation": 55, "humidity": 70, "wind_speed": 10},
+            3: {"temp_high": 12, "temp_low": 4, "condition": "Partly Cloudy", "description": "Mild spring weather", "precipitation": 50, "humidity": 65, "wind_speed": 8},
+            4: {"temp_high": 16, "temp_low": 7, "condition": "Partly Cloudy", "description": "Pleasant spring", "precipitation": 45, "humidity": 60, "wind_speed": 7},
+            5: {"temp_high": 20, "temp_low": 11, "condition": "Sunny", "description": "Warm late spring", "precipitation": 40, "humidity": 55, "wind_speed": 6},
+            6: {"temp_high": 23, "temp_low": 14, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 50, "wind_speed": 5},
+            7: {"temp_high": 25, "temp_low": 16, "condition": "Sunny", "description": "Warm and pleasant", "precipitation": 30, "humidity": 45, "wind_speed": 5},
+            8: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", "description": "Late summer warmth", "precipitation": 35, "humidity": 50, "wind_speed": 6},
+            9: {"temp_high": 20, "temp_low": 11, "condition": "Partly Cloudy", "description": "Pleasant autumn", "precipitation": 45, "humidity": 60, "wind_speed": 7},
+            10: {"temp_high": 15, "temp_low": 7, "condition": "Cloudy", "description": "Cool autumn weather", "precipitation": 55, "humidity": 70, "wind_speed": 9},
+            11: {"temp_high": 9, "temp_low": 3, "condition": "Cloudy", "description": "Cool late autumn", "precipitation": 60, "humidity": 75, "wind_speed": 11},
+            12: {"temp_high": 6, "temp_low": 1, "condition": "Cloudy", "description": "Cold winter weather", "precipitation": 65, "humidity": 80, "wind_speed": 12}
+        }
+
+        # Check for specific destination patterns
+        for dest_key in seasonal_patterns:
+            if dest_key in destination:
+                return seasonal_patterns[dest_key].get(month, default_pattern[month])
+
+        return default_pattern[month]
+
+    def _get_packing_suggestions(self, avg_high: float, avg_low: float, condition: str) -> List[str]:
+        """Generate packing suggestions based on weather"""
+        suggestions = []
+
+        # Temperature-based suggestions
+        if avg_high >= 25:
+            suggestions.extend(["Light, breathable clothing", "Sunscreen", "Hat", "Sunglasses"])
+        elif avg_high >= 20:
+            suggestions.extend(["Light layers", "Comfortable walking shoes", "Light jacket for evenings"])
+        elif avg_high >= 15:
+            suggestions.extend(["Layers for varying temperatures", "Light sweater", "Comfortable jacket"])
+        elif avg_high >= 10:
+            suggestions.extend(["Warm layers", "Jacket or coat", "Long pants"])
+        else:
+            suggestions.extend(["Warm clothing", "Heavy coat", "Warm accessories"])
+
+        # Condition-based suggestions
+        if "cloudy" in condition.lower() or "rain" in condition.lower():
+            suggestions.extend(["Umbrella or rain jacket", "Waterproof shoes"])
+
+        if avg_low <= 5:
+            suggestions.extend(["Warm sleepwear", "Extra layers for cold mornings"])
+
+        return suggestions
     
     def _format_forecast(self, data: Dict, destination: str, start_date: str, end_date: str) -> Dict:
         """Format OpenWeatherMap data into our structure"""
@@ -214,7 +350,11 @@ class WeatherService:
             "avg_high": round(sum(temps) / len(temps)),
             "avg_low": round(sum([f["temp_low"] for f in forecasts]) / len(forecasts)),
             "predominant_condition": max(set(conditions), key=conditions.count),
-            "packing_suggestions": self._get_packing_suggestions(forecasts)
+            "packing_suggestions": self._get_packing_suggestions(
+                round(sum(temps) / len(temps)),
+                round(sum([f["temp_low"] for f in forecasts]) / len(forecasts)),
+                max(set(conditions), key=conditions.count)
+            )
         }
     
     def _get_packing_suggestions(self, forecasts: List[Dict]) -> List[str]:

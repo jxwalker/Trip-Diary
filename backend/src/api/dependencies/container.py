@@ -12,7 +12,7 @@ from ...services.fast_guide_service import FastGuideService
 from ...services.optimized_guide_service import OptimizedGuideService
 from ...services.immediate_guide_generator import ImmediateGuideGenerator
 from ...services.cleanup_service import CleanupService
-from ...services.database_service import db_service
+from ...services.enhanced_database_service import EnhancedDatabaseService
 from ...services.luxury_guide_service import LuxuryGuideService
 from ...database import TripDatabase
 from ...utils.environment import load_project_env
@@ -60,7 +60,8 @@ class ServiceContainer:
                 logger.warning(f"Immediate guide generator not available: {e}")
                 self._services['immediate_guide_generator'] = None
             
-            self._services['database_service'] = db_service
+            # Use enhanced database service but keep legacy for compatibility
+            self._services['database_service'] = EnhancedDatabaseService()
             # Lock the database service to prevent override
             self._locked_services = {'database_service'}
             self._services['trip_database'] = TripDatabase()

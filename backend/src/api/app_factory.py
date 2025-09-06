@@ -139,7 +139,7 @@ def _configure_routes(app: FastAPI) -> None:
     """Configure application routes"""
 
     # Import route modules
-    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug
+    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug, test_guide, test_quality
 
     # Add route modules
     app.include_router(upload.router)
@@ -151,6 +151,8 @@ def _configure_routes(app: FastAPI) -> None:
     app.include_router(pdf_html.router)
     app.include_router(health.router)
     app.include_router(debug.router)
+    app.include_router(test_guide.router)
+    app.include_router(test_quality.router)
 
     # Add root endpoint
     @app.get("/")
@@ -269,3 +271,7 @@ def _configure_events(app: FastAPI, config: object) -> None:
         logger.info("Legacy application shutdown complete")
 
     logger.info("Legacy event handlers configured")
+
+
+# Create the app instance for uvicorn
+app = create_app()

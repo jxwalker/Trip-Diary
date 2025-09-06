@@ -487,15 +487,9 @@ Return as JSON arrays: restaurants, attractions"""
         return []
     
     def _generate_photo_urls(self, destination: str, neighborhoods: List[Dict]) -> List[str]:
-        """Generate photo URLs"""
-        photos = [f"https://source.unsplash.com/800x600/?{destination},travel"]
-        
-        if isinstance(neighborhoods, list):
-            for n in neighborhoods[:2]:
-                if isinstance(n, dict) and n.get("name"):
-                    photos.append(f"https://source.unsplash.com/800x600/?{destination},{n['name']}")
-        
-        return photos[:3]
+        """Generate photo URLs - NO PLACEHOLDER IMAGES"""
+        # Return empty list - only use real photos from Google Places API
+        return []
     
     def _generate_fast_itinerary(self, num_days: int, content: Dict, destination: str) -> List[Dict]:
         """Generate quick itinerary"""

@@ -32,8 +32,18 @@ class ProcessingState:
         """Convert to dictionary for JSON serialization"""
         data = asdict(self)
         data['status'] = self.status.value
-        data['created_at'] = self.created_at.isoformat()
-        data['updated_at'] = self.updated_at.isoformat()
+
+        # Handle datetime fields safely
+        if isinstance(self.created_at, datetime):
+            data['created_at'] = self.created_at.isoformat()
+        else:
+            data['created_at'] = str(self.created_at)
+
+        if isinstance(self.updated_at, datetime):
+            data['updated_at'] = self.updated_at.isoformat()
+        else:
+            data['updated_at'] = str(self.updated_at)
+
         return data
     
     @classmethod

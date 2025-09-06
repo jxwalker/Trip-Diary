@@ -131,11 +131,16 @@ async def upload_files(
             trip_data = TripData(
                 trip_id=trip_id,
                 user_id="default",  # Default user for now
+                extracted_data=extracted_data,
                 itinerary=extracted_data,
                 preferences={},
                 enhanced_guide=None
             )
             await database_service.save_trip_data(trip_data)
+
+            # Clear any cached data for this trip to ensure fresh extraction
+            await database_service.clear_trip_cache(trip_id)
+
             logger.info(f"Saved trip data for {trip_id}")
 
         return {

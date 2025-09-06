@@ -1,18 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  MapPin, 
+import {
+  MapPin,
   Calendar,
   Utensils,
   Camera,
   Music,
   Info,
   Star,
+  Sun,
   Clock,
   DollarSign,
   Navigation,
@@ -24,7 +26,10 @@ import {
   Globe,
   Heart,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  Download,
+  FileText,
+  Image
 } from "lucide-react";
 
 interface EnhancedGuideDisplayProps {
@@ -37,6 +42,47 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
 
   // Parse raw content if it exists
   const hasRawContent = guide.raw_content && typeof guide.raw_content === 'string';
+  
+  // PDF generation state
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfGenerated, setPdfGenerated] = useState(false);
+  
+  const generateMagazinePDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const response = await fetch(`/api/proxy/generate-magazine-pdf/${tripId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setPdfGenerated(true);
+        
+        // Download the PDF
+        const downloadResponse = await fetch(`/api/proxy/download/${tripId}`);
+        if (downloadResponse.ok) {
+          const blob = await downloadResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `travel_guide_${tripId}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+      } else {
+        console.error('Failed to generate PDF');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -63,6 +109,49 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
         </motion.div>
       )}
 
+      {/* Magazine PDF Generation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl">
+              <Image className="h-6 w-6 mr-2 text-purple-500" />
+              Magazine-Quality PDF Guide
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Download your personalized travel guide as a beautiful, magazine-style PDF with stunning photographs and professional layouts.
+            </p>
+            <button
+              onClick={generateMagazinePDF}
+              disabled={isGeneratingPDF}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating Your Magazine...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Magazine PDF
+                </>
+              )}
+            </button>
+            {pdfGenerated && (
+              <p className="text-green-600 text-sm mt-2">
+                ✓ Magazine PDF generated successfully! Check your downloads.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Main Content Tabs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -70,11 +159,12 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <Tabs defaultValue="itinerary" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
             <TabsTrigger value="dining">Dining</TabsTrigger>
             <TabsTrigger value="attractions">Attractions</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="weather">Weather</TabsTrigger>
             <TabsTrigger value="insights">Local Insights</TabsTrigger>
           </TabsList>
 
@@ -129,7 +219,39 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
             {guide.restaurants && guide.restaurants.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {guide.restaurants.map((restaurant: any, index: number) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                  <Card key={index} className="hover:shadow-lg transition-shadow overflow-hidden">
+                    {/* Restaurant Photo */}
+                    {restaurant.main_photo || (restaurant.photos && restaurant.photos[0]) ? (
+                      <div className="h-48 bg-gray-200 relative overflow-hidden">
+                        <img
+                          src={restaurant.main_photo || restaurant.photos[0]}
+                          alt={restaurant.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-red-100 hidden items-center justify-center">
+                          <Utensils className="h-16 w-16 text-orange-300" />
+                        </div>
+                        {restaurant.price_range && (
+                          <div className="absolute top-4 right-4">
+                            <Badge className="bg-white/90 text-black">{restaurant.price_range}</Badge>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center relative">
+                        <Utensils className="h-16 w-16 text-orange-300" />
+                        {restaurant.price_range && (
+                          <div className="absolute top-4 right-4">
+                            <Badge className="bg-white/90 text-black">{restaurant.price_range}</Badge>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span className="flex items-center">
@@ -140,19 +262,50 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
                           <Badge variant="outline" className="ml-2">
                             <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
                             {restaurant.rating}
+                            {restaurant.review_count && (
+                              <span className="ml-1 text-xs">({restaurant.review_count.toLocaleString()})</span>
+                            )}
                           </Badge>
                         )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600 mb-3">{restaurant.description}</p>
-                      {restaurant.details && restaurant.details.length > 0 && (
-                        <div className="space-y-1">
-                          {restaurant.details.map((detail: string, idx: number) => (
-                            <p key={idx} className="text-xs text-gray-500">• {detail}</p>
-                          ))}
-                        </div>
-                      )}
+                      <div className="space-y-3">
+                        <Badge variant="outline">{restaurant.cuisine}</Badge>
+                        <p className="text-sm text-gray-600 line-clamp-3">{restaurant.description}</p>
+
+                        {/* Address and Contact */}
+                        {restaurant.address && (
+                          <p className="text-xs text-gray-500 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {restaurant.address}
+                          </p>
+                        )}
+
+                        {/* Booking Options */}
+                        {restaurant.map_url && (
+                          <div className="flex gap-2">
+                            <a
+                              href={restaurant.map_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                            >
+                              View on Maps
+                            </a>
+                            {restaurant.website && (
+                              <a
+                                href={restaurant.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                              >
+                                Website
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -185,16 +338,82 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
             {guide.attractions && guide.attractions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {guide.attractions.map((attraction: any, index: number) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                  <Card key={index} className="hover:shadow-lg transition-shadow overflow-hidden">
+                    {/* Attraction Photo */}
+                    {attraction.main_photo || (attraction.photos && attraction.photos[0]) ? (
+                      <div className="h-48 bg-gray-200 relative overflow-hidden">
+                        <img
+                          src={attraction.main_photo || attraction.photos[0]}
+                          alt={attraction.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-blue-100 hidden items-center justify-center">
+                          <Camera className="h-16 w-16 text-purple-300" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-48 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                        <Camera className="h-16 w-16 text-purple-300" />
+                      </div>
+                    )}
+
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Camera className="h-4 w-4 mr-2 text-purple-500" />
-                        {attraction.name}
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <Camera className="h-4 w-4 mr-2 text-purple-500" />
+                          {attraction.name}
+                        </span>
+                        {attraction.rating && (
+                          <Badge variant="outline">
+                            <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
+                            {attraction.rating}
+                          </Badge>
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <Badge variant="outline" className="mb-2">{attraction.type}</Badge>
-                      <p className="text-sm text-gray-600">{attraction.description}</p>
+                      <div className="space-y-3">
+                        <Badge variant="outline">{attraction.type}</Badge>
+                        <p className="text-sm text-gray-600">{attraction.description}</p>
+
+                        {/* Address */}
+                        {attraction.address && (
+                          <p className="text-xs text-gray-500 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {attraction.address}
+                          </p>
+                        )}
+
+                        {/* Map and Website Links */}
+                        {(attraction.map_url || attraction.google_maps_url || attraction.website) && (
+                          <div className="flex gap-2">
+                            {(attraction.map_url || attraction.google_maps_url) && (
+                              <a
+                                href={attraction.map_url || attraction.google_maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                              >
+                                View on Maps
+                              </a>
+                            )}
+                            {attraction.website && (
+                              <a
+                                href={attraction.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                              >
+                                Website
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -259,6 +478,54 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
             )}
           </TabsContent>
 
+          {/* Weather Tab */}
+          <TabsContent value="weather" className="space-y-4 mt-4">
+            {guide.weather && guide.weather.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {guide.weather.map((day: any, index: number) => (
+                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <Sun className="h-4 w-4 mr-2 text-yellow-500" />
+                          {day.day_name}
+                        </span>
+                        <Badge variant="outline">{day.date}</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-bold">
+                            {day.temperature?.high}°{day.temperature?.unit || 'C'}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            Low: {day.temperature?.low}°{day.temperature?.unit || 'C'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{day.condition}</p>
+                          <p className="text-xs text-gray-600">{day.description}</p>
+                        </div>
+                        {day.precipitation_chance && (
+                          <div className="text-xs text-gray-500">
+                            Rain: {day.precipitation_chance}% | Humidity: {day.humidity}%
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-gray-500 text-center">No weather information available.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Local Insights Tab */}
           <TabsContent value="insights" className="space-y-4 mt-4">
             <Card>
@@ -288,6 +555,37 @@ export default function EnhancedGuideDisplay({ guide, tripId }: EnhancedGuideDis
                 )}
               </CardContent>
             </Card>
+
+            {/* Hotel Information */}
+            {guide.hotel_info && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="h-5 w-5 mr-2 text-green-500" />
+                    Your Accommodation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-medium text-lg">{guide.hotel_info.name}</h4>
+                      {guide.hotel_info.address && (
+                        <p className="text-sm text-gray-600 flex items-center mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {guide.hotel_info.address}
+                        </p>
+                      )}
+                    </div>
+                    {guide.hotel_info.description && (
+                      <p className="text-sm text-gray-700">{guide.hotel_info.description}</p>
+                    )}
+                    {guide.hotel_info.city && (
+                      <Badge variant="outline">{guide.hotel_info.city}</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Practical Information */}
             {guide.practical_info && Object.keys(guide.practical_info).length > 0 && (
