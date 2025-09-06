@@ -241,7 +241,8 @@ class EnhancedGooglePlacesService:
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
+                    # Store photo reference instead of full URL to avoid exposing API key
+                    photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
         
         # Format reviews
@@ -422,7 +423,8 @@ class EnhancedGooglePlacesService:
                 for photo in details['photos'][:max_photos]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
+                        # Store photo reference instead of full URL to avoid exposing API key
+                        photo_url = f"/api/places/photo/{photo_ref}"
                         photos.append(photo_url)
 
             return photos
@@ -557,7 +559,8 @@ class EnhancedGooglePlacesService:
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
+                    # Store photo reference instead of full URL to avoid exposing API key
+                    photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
 
         # Format opening hours

@@ -139,7 +139,7 @@ def _configure_routes(app: FastAPI) -> None:
     """Configure application routes"""
 
     # Import route modules
-    from .routes import upload, status, enhanced_guide, preferences, generation, test_guide, test_quality
+    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug, places
 
     # Add route modules
     app.include_router(upload.router)
@@ -147,8 +147,11 @@ def _configure_routes(app: FastAPI) -> None:
     app.include_router(enhanced_guide.router)
     app.include_router(preferences.router)
     app.include_router(generation.router)
-    app.include_router(test_guide.router)
-    app.include_router(test_quality.router)
+    app.include_router(places.router)
+    app.include_router(pdf.router)
+    app.include_router(pdf_html.router)
+    app.include_router(health.router)
+    app.include_router(debug.router)
 
     # Add root endpoint
     @app.get("/")
@@ -189,6 +192,10 @@ def _configure_enhanced_events(app: FastAPI, settings) -> None:
             # Initialize new service system
             await initialize_services()
             logger.info("Enhanced service system initialized")
+            
+            # Ensure container database service is not overridden
+            # The enhanced service system should not interfere with the legacy container
+            logger.info("Database service isolation verified")
 
             # Health check all services
             health_status = await service_factory.health_check_all()

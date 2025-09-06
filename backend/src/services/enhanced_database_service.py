@@ -226,6 +226,26 @@ class EnhancedDatabaseService(StorageServiceInterface):
             logger.error(f"Failed to save trip data {trip_data.trip_id}: {e}")
             return StorageResult.error_result(f"Save failed: {e}")
     
+    async def save_enhanced_guide(self, trip_id: str, guide: Dict[str, Any]) -> bool:
+        """Save enhanced guide for a trip"""
+        try:
+            # Get existing trip data
+            trip_data = await self.get_trip_data(trip_id)
+            if not trip_data:
+                logger.warning(f"Trip not found for saving guide: {trip_id}")
+                return False
+            
+            # Update with enhanced guide
+            trip_data.enhanced_guide = guide
+            trip_data.updated_at = datetime.now().isoformat()
+            
+            # Save updated trip data
+            result = await self.save_trip_data(trip_data)
+            return result.success if result else False
+        except Exception as e:
+            logger.error(f"Failed to save enhanced guide for {trip_id}: {e}")
+            return False
+
     async def get_trip_data(self, trip_id: str) -> Optional[TripData]:
         """Get trip data by ID"""
         try:

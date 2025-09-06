@@ -5,9 +5,10 @@ export async function GET(
   { params }: { params: { tripId: string } }
 ) {
   const tripId = params.tripId;
+  const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
   try {
-    const response = await fetch(`http://localhost:8000/api/generation-status/${tripId}`);
+    const response = await fetch(`${BACKEND_URL}/api/generation-status/${tripId}`);
     
     if (!response.ok) {
       return NextResponse.json(

@@ -81,6 +81,7 @@ class Flight(BaseModel):
     arrival: Location
     travel_class: Optional[str] = "Economy"
     baggage_allowance: Optional[BaggageAllowance] = None
+    passengers: List['Passenger'] = Field(default_factory=list)
 
     @classmethod
     def parse(cls, data: Dict[str, Any]) -> Optional['Flight']:
@@ -95,6 +96,18 @@ class Flight(BaseModel):
                 data['departure'] = Location.parse(data['departure'])
             if 'arrival' in data and isinstance(data['arrival'], dict):
                 data['arrival'] = Location.parse(data['arrival'])
+            
+            # Parse passengers if present
+            if 'passengers' in data and isinstance(data['passengers'], list):
+                passengers = []
+                for passenger_data in data['passengers']:
+                    if isinstance(passenger_data, dict):
+                        passenger = Passenger.parse(passenger_data)
+                        if passenger:
+                            passengers.append(passenger)
+                data['passengers'] = passengers
+            else:
+                data['passengers'] = []
                 
             return cls(**data)
         except ValidationError as e:
@@ -195,6 +208,23 @@ class Passenger(BaseModel):
     first_name: str
     last_name: str
     frequent_flyer: Optional[str] = None
+
+    @classmethod
+    def parse(cls, data: Dict[str, Any]) -> Optional['Passenger']:
+        """Safely parse passenger data with validation."""
+        try:
+            if not data.get('first_name') or not data.get('last_name'):
+                return None
+                
+            return cls(
+                title=data.get('title', '').upper().strip(),
+                first_name=data.get('first_name', '').strip(),
+                last_name=data.get('last_name', '').upper().strip(),
+                frequent_flyer=data.get('frequent_flyer')
+            )
+        except Exception as e:
+            logger.error(f"Error parsing passenger: {str(e)}")
+            return None
 
     def __hash__(self) -> int:
         return hash((self.title.upper(), self.first_name.upper(), self.last_name.upper()))

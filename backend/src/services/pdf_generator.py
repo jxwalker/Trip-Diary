@@ -9,31 +9,101 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.graphics.barcode import qr
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics import renderPDF
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import os
 from datetime import datetime
 import html
 import tempfile
 import urllib.request
+import hashlib
 
 from .maps_service import MapsService
 
 class TravelPackGenerator:
     def __init__(self):
         self.styles = getSampleStyleSheet()
+        self._image_cache: Dict[str, str] = {}
+        self.theme = {
+            "primary": colors.HexColor('#0ea5e9'),
+            "secondary": colors.HexColor('#0284c7'),
+            "accent": colors.HexColor('#0369a1')
+        }
+        self._register_fonts()
         self._create_custom_styles()
         
     def _create_custom_styles(self):
         """Create custom paragraph styles"""
+        title_font = 'Helvetica-Bold'
+        body_font = 'Helvetica'
+        if 'PlayfairDisplay' in pdfmetrics.getRegisteredFontNames():
+            title_font = 'PlayfairDisplay'
+        if 'Inter' in pdfmetrics.getRegisteredFontNames():
+            body_font = 'Inter'
+
         self.styles.add(ParagraphStyle(
             name='CustomTitle',
             parent=self.styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#0ea5e9'),
+            fontSize=28,
+            leading=32,
+            textColor=self.theme['primary'],
             spaceAfter=30,
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
+            fontName=title_font
+        ))
+        
+        self.styles.add(ParagraphStyle(
+            name='SectionHeader',
+            parent=self.styles['Heading2'],
+            fontSize=18,
+            textColor=self.theme['secondary'],
+            spaceAfter=12,
+            spaceBefore=20,
+            fontName=title_font
+        ))
+        
+        self.styles.add(ParagraphStyle(
+            name='SubHeader',
+            parent=self.styles['Heading3'],
+            fontSize=14,
+            textColor=self.theme['accent'],
+            spaceAfter=8,
+            spaceBefore=12,
+            fontName=title_font
+        ))
+        
+        self.styles.add(ParagraphStyle(
+            name='InfoText',
+            parent=self.styles['BodyText'],
+            fontSize=11,
+            alignment=TA_LEFT,
+            spaceAfter=6,
+            fontName=body_font
+        ))
+        
+        self.styles.add(ParagraphStyle(
+            name='SmallText',
+            parent=self.styles['BodyText'],
+            fontSize=9,
+            alignment=TA_LEFT,
+            spaceAfter=4,
+            textColor=colors.HexColor('#666666'),
+            fontName=body_font
+        ))
+        
+        self.styles.add(ParagraphStyle(
+            name='Caption',
+            parent=self.styles['BodyText'],
+            fontSize=8,
+            textColor=colors.HexColor('#64748b'),
+            alignment=TA_LEFT,
+            spaceAfter=4,
+            fontName=body_font
         ))
         
         self.styles.add(ParagraphStyle(
@@ -95,8 +165,8 @@ class TravelPackGenerator:
         # Build content
         story = []
         
-        # Cover page
-        story.extend(self._create_cover_page(itinerary))
+        # Cover page (use hero image if available)
+        story.extend(await self._create_cover_page(itinerary, enhanced_guide))
         story.append(PageBreak())
         
         # Trip overview
@@ -131,7 +201,7 @@ class TravelPackGenerator:
 
         # Daily Itinerary (from enhanced guide or basic schedule)
         if enhanced_guide and enhanced_guide.get("daily_itinerary"):
-            story.extend(self._create_enhanced_itinerary(enhanced_guide["daily_itinerary"]))
+            story.extend(await self._create_enhanced_itinerary(enhanced_guide["daily_itinerary"], enhanced_guide))
             story.append(PageBreak())
         elif itinerary.get("daily_schedule"):
             story.extend(self._create_daily_schedule(itinerary["daily_schedule"]))
@@ -190,24 +260,36 @@ class TravelPackGenerator:
         text_str = ''.join(char for char in text_str if ord(char) >= 32 or char == '\n')
         return text_str
     
-    def _create_cover_page(self, itinerary: Dict) -> List:
-        """Create cover page"""
+    async def _create_cover_page(self, itinerary: Dict, enhanced_guide: Optional[Dict]) -> List:
+        """Create cover page with optional hero image and persona."""
+        story: List[Any] = []
         trip_summary = itinerary.get("trip_summary", {})
         destination = trip_summary.get("destination", "Your Trip")
-        
-        return [
-            Spacer(1, 2*inch),
+        persona = (enhanced_guide or {}).get("persona") or "Personalized Guide"
+
+        # Choose hero image
+        hero_url = self._choose_hero_image(enhanced_guide)
+        if hero_url:
+            hero_path = await self._download_image(hero_url)
+            if hero_path:
+                img = Image(hero_path, width=6.5*inch, height=3.8*inch)
+                story.append(img)
+                story.append(Spacer(1, 0.2*inch))
+
+        story.extend([
             Paragraph("TRAVEL PACK", self.styles['CustomTitle']),
-            Spacer(1, 0.5*inch),
+            Spacer(1, 0.15*inch),
             Paragraph(f"<b>{destination}</b>", self.styles['CustomTitle']),
-            Spacer(1, 0.3*inch),
+            Spacer(1, 0.15*inch),
             Paragraph(
                 f"{trip_summary.get('start_date', '')} - {trip_summary.get('end_date', '')}",
                 self.styles['InfoText']
             ),
-            Spacer(1, 2*inch),
+            Paragraph(f"{persona}", self.styles['SmallText']),
+            Spacer(1, 0.6*inch),
             Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y')}", self.styles['SmallText'])
-        ]
+        ])
+        return story
     
     def _create_trip_overview(self, itinerary: Dict) -> List:
         """Create trip overview section"""
@@ -355,23 +437,59 @@ class TravelPackGenerator:
         
         return story
     
-    def _create_enhanced_itinerary(self, daily_itinerary: List[Dict]) -> List:
-        """Create enhanced daily itinerary section"""
-        story = []
+    async def _create_enhanced_itinerary(self, daily_itinerary: List[Dict], enhanced_guide: Dict) -> List:
+        """Create enhanced daily itinerary section with hero images and collages"""
+        story: List[Any] = []
         story.append(Paragraph("Daily Itinerary", self.styles['SectionHeader']))
         story.append(Spacer(1, 0.2*inch))
-        
-        for day in daily_itinerary:
+
+        used_photos: set[str] = set()
+        all_images: List[str] = []
+        for section in ("attractions", "restaurants"):
+            for item in enhanced_guide.get(section, []) or []:
+                photo = item.get("photo") or (item.get("photos") or [None])[0]
+                if photo:
+                    all_images.append(photo)
+
+        for idx, day in enumerate(daily_itinerary):
             # Day header
-            day_title = self._safe_text(day.get("title", f"Day {day.get('day', '')}"))
+            day_title = self._safe_text(day.get("title", f"Day {day.get('day', idx+1)}"))
             story.append(Paragraph(f"<b>{day_title}</b>", self.styles['SubHeader']))
-            
-            # Activities
+
+            # Hero for day
+            day_images = self._pick_day_images(all_images, used_photos, max_count=3)
+            if day_images:
+                # First image as hero
+                hero_path = await self._download_image(day_images[0])
+                if hero_path:
+                    story.append(Image(hero_path, width=6*inch, height=3.2*inch))
+                    story.append(Spacer(1, 0.1*inch))
+                # Remaining as collage
+                if len(day_images) > 1:
+                    row_imgs: List[Image] = []
+                    for url in day_images[1:3]:
+                        img_path = await self._download_image(url)
+                        if img_path:
+                            row_imgs.append(Image(img_path, width=2.9*inch, height=1.9*inch))
+                    if row_imgs:
+                        # Place images vertically with small gap
+                        for img in row_imgs:
+                            story.append(img)
+                            story.append(Spacer(1, 0.05*inch))
+
+            # Activities block
+            # Support either activities array (simple) or morning/afternoon/evening keys
             if day.get("activities"):
                 for activity in day["activities"]:
                     story.append(Paragraph(f"• {self._safe_text(activity)}", self.styles['InfoText']))
-            
-            story.append(Spacer(1, 0.2*inch))
+            else:
+                for part in ("morning", "afternoon", "evening"):
+                    if day.get(part):
+                        story.append(Paragraph(part.title(), self.styles['SmallText']))
+                        for act in day[part]:
+                            story.append(Paragraph(f"• {self._safe_text(act)}", self.styles['InfoText']))
+
+            story.append(Spacer(1, 0.25*inch))
         
         return story
     
@@ -398,7 +516,7 @@ class TravelPackGenerator:
         return story
     
     def _create_restaurant_section(self, restaurants: List[Dict]) -> List:
-        """Create restaurant recommendations section"""
+        """Create restaurant recommendations section with photos and QR codes"""
         story = []
         story.append(Paragraph("Recommended Restaurants", self.styles['SectionHeader']))
         story.append(Spacer(1, 0.2*inch))
@@ -406,6 +524,22 @@ class TravelPackGenerator:
         for restaurant in restaurants[:10]:  # Limit to 10 for PDF size
             name = self._safe_text(restaurant.get("name", "Restaurant"))
             story.append(Paragraph(f"<b>{name}</b>", self.styles['SubHeader']))
+
+            # Photo if available
+            photo = restaurant.get("photo") or (restaurant.get("photos") or [None])[0]
+            if photo:
+                try:
+                    # Use synchronous helper to avoid complicating flow
+                    img_path = self._image_cache.get(photo)
+                    if not img_path:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                            urllib.request.urlretrieve(photo, tmp.name)
+                            img_path = tmp.name
+                            self._image_cache[photo] = img_path
+                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                    story.append(Spacer(1, 0.1*inch))
+                except Exception:
+                    pass
             
             if restaurant.get("description"):
                 story.append(Paragraph(self._safe_text(restaurant["description"]), self.styles['InfoText']))
@@ -414,13 +548,24 @@ class TravelPackGenerator:
             if restaurant.get("details"):
                 for detail in restaurant["details"][:5]:  # Limit details
                     story.append(Paragraph(f"• {self._safe_text(detail)}", self.styles['SmallText']))
+
+            # Booking QR
+            booking = (
+                restaurant.get("booking_url")
+                or (restaurant.get("booking_urls") or {}).get("opentable")
+                or restaurant.get("website")
+            )
+            if booking:
+                story.append(Spacer(1, 0.05*inch))
+                story.append(Paragraph("Reserve / View Menu:", self.styles['SmallText']))
+                story.append(self._qr_flowable(booking))
             
-            story.append(Spacer(1, 0.15*inch))
+            story.append(Spacer(1, 0.2*inch))
         
         return story
     
     def _create_attractions_section(self, attractions: List[Dict]) -> List:
-        """Create attractions section"""
+        """Create attractions section with photos and QR codes"""
         story = []
         story.append(Paragraph("Must-See Attractions", self.styles['SectionHeader']))
         story.append(Spacer(1, 0.2*inch))
@@ -428,14 +573,35 @@ class TravelPackGenerator:
         for attraction in attractions[:10]:  # Limit to 10 for PDF size
             name = self._safe_text(attraction.get("name", "Attraction"))
             story.append(Paragraph(f"<b>{name}</b>", self.styles['SubHeader']))
+
+            photo = attraction.get("photo") or (attraction.get("photos") or [None])[0]
+            if photo:
+                try:
+                    img_path = self._image_cache.get(photo)
+                    if not img_path:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                            urllib.request.urlretrieve(photo, tmp.name)
+                            img_path = tmp.name
+                            self._image_cache[photo] = img_path
+                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                    story.append(Spacer(1, 0.1*inch))
+                except Exception:
+                    pass
             
             if attraction.get("type"):
                 story.append(Paragraph(f"Type: {self._safe_text(attraction['type'])}", self.styles['SmallText']))
             
             if attraction.get("description"):
                 story.append(Paragraph(self._safe_text(attraction["description"]), self.styles['InfoText']))
+
+            # Map QR
+            map_url = attraction.get("google_maps_url") or attraction.get("website")
+            if map_url:
+                story.append(Spacer(1, 0.05*inch))
+                story.append(Paragraph("Open in Maps:", self.styles['SmallText']))
+                story.append(self._qr_flowable(map_url))
             
-            story.append(Spacer(1, 0.15*inch))
+            story.append(Spacer(1, 0.2*inch))
         
         return story
     
@@ -583,3 +749,64 @@ class TravelPackGenerator:
         except Exception as e:
             print(f"Static map generation failed: {e}")
             return []
+
+    def _register_fonts(self) -> None:
+        """Attempt to register custom fonts if available (PlayfairDisplay, Inter)."""
+        try:
+            base = Path(__file__).parent.parent.parent / "assets" / "fonts"
+            playfair = base / "PlayfairDisplay-Regular.ttf"
+            inter = base / "Inter-Regular.ttf"
+            if playfair.exists():
+                pdfmetrics.registerFont(TTFont('PlayfairDisplay', str(playfair)))
+            if inter.exists():
+                pdfmetrics.registerFont(TTFont('Inter', str(inter)))
+        except Exception:
+            pass
+
+    async def _download_image(self, url: str) -> Optional[str]:
+        """Download and cache image, return local path."""
+        if not url:
+            return None
+        if url in self._image_cache:
+            return self._image_cache[url]
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                urllib.request.urlretrieve(url, tmp.name)
+                self._image_cache[url] = tmp.name
+                return tmp.name
+        except Exception:
+            return None
+
+    def _qr_flowable(self, url: str) -> Drawing:
+        """Create a QR code flowable for a URL."""
+        code = qr.QrCodeWidget(url)
+        bounds = code.getBounds()
+        size = 72  # 1 inch square
+        w = bounds[2] - bounds[0]
+        h = bounds[3] - bounds[1]
+        d = Drawing(size, size, transform=[size/w, 0, 0, size/h, 0, 0])
+        d.add(code)
+        return d
+
+    def _choose_hero_image(self, enhanced_guide: Optional[Dict]) -> Optional[str]:
+        """Pick a hero image from attractions or restaurants."""
+        if not enhanced_guide:
+            return None
+        for section in ("attractions", "restaurants"):
+            items = enhanced_guide.get(section) or []
+            for it in items:
+                photo = it.get("photo") or (it.get("photos") or [None])[0]
+                if photo:
+                    return photo
+        return None
+
+    def _pick_day_images(self, all_images: List[str], used: set, max_count: int = 3) -> List[str]:
+        picks: List[str] = []
+        for url in all_images:
+            if url in used:
+                continue
+            picks.append(url)
+            used.add(url)
+            if len(picks) >= max_count:
+                break
+        return picks

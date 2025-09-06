@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
+import ProcessingStatus from "@/app/components/ProcessingStatus";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +33,19 @@ interface UploadedFile {
   file: File;
 }
 
+const UPLOAD_PERSIST_KEY = "tripcraft.upload.progress";
+
+interface PersistedUpload {
+  tripId: string;
+  startedAt: number;
+  status: 'processing' | 'completed' | 'error';
+  progress: number;
+  message: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+}
+
 export default function SimplifiedUploadPage() {
   const router = useRouter();
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
@@ -42,6 +56,7 @@ export default function SimplifiedUploadPage() {
     extractedData?: any;
   }>({ progress: 0, message: "" });
   const [error, setError] = useState<string | null>(null);
+  const [resumeData, setResumeData] = useState<PersistedUpload | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -76,6 +91,124 @@ export default function SimplifiedUploadPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
   };
 
+  // Progress persistence and resume logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(UPLOAD_PERSIST_KEY);
+      if (raw) {
+        const saved: PersistedUpload = JSON.parse(raw);
+        if (saved && saved.status === 'processing') {
+          setResumeData(saved);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const startPolling = (tripId: string) => {
+    let attempts = 0;
+    const maxAttempts = 180; // allow up to ~3 minutes
+
+    const checkStatus = async () => {
+      try {
+        const statusResponse = await fetch(`/api/proxy/status/${tripId}`);
+        const statusData = await statusResponse.json();
+
+        const progress = statusData.progress || 0;
+        const message = statusData.message || "Processing...";
+
+        setProcessingStatus({
+          progress,
+          message,
+          extractedData: statusData.extracted_data
+        });
+
+        // Persist destination for smart defaults if available
+        try {
+          const dest = statusData?.extracted_data?.destination;
+          if (dest) {
+            const key = `tripcraft.trip.${tripId}.destination`;
+            sessionStorage.setItem(key, dest);
+          }
+        } catch (e) {}
+
+        try {
+          const raw = localStorage.getItem(UPLOAD_PERSIST_KEY);
+          const saved = raw ? JSON.parse(raw) : {};
+          localStorage.setItem(UPLOAD_PERSIST_KEY, JSON.stringify({
+            ...saved,
+            tripId,
+            status: "processing",
+            progress,
+            message
+          }));
+        } catch (e) {}
+
+        if (statusData.status === "completed") {
+          try { localStorage.removeItem(UPLOAD_PERSIST_KEY); } catch (e) {}
+          setTimeout(() => {
+            router.push(`/preferences-modern?tripId=${tripId}`);
+          }, 500);
+        } else if (statusData.status === "error") {
+          throw new Error(statusData.message || "Processing failed");
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkStatus, 1000);
+        } else {
+          throw new Error("Processing timeout");
+        }
+      } catch (err) {
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkStatus, 2000);
+        } else {
+          try {
+            const raw = localStorage.getItem(UPLOAD_PERSIST_KEY);
+            const saved = raw ? JSON.parse(raw) : {};
+            localStorage.setItem(UPLOAD_PERSIST_KEY, JSON.stringify({
+              ...saved,
+              status: "error",
+              message: (err as Error)?.message || "Error"
+            }));
+          } catch (e) {}
+          console.error("Error:", err);
+          setError((err as Error)?.message || "Something went wrong");
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    setTimeout(checkStatus, 2000);
+  };
+
+  const handleResume = () => {
+    if (!resumeData) return;
+    const dummyFile = new File([""], resumeData.fileName, { type: resumeData.fileType });
+    const stubUploaded: UploadedFile = {
+      id: "resumed-" + Math.random().toString(36).substr(2, 9),
+      name: resumeData.fileName,
+      size: resumeData.fileSize,
+      type: resumeData.fileType,
+      file: dummyFile
+    };
+    setUploadedFile(stubUploaded);
+    setError(null);
+    setIsProcessing(true);
+    setProcessingStatus({
+      progress: resumeData.progress || 0,
+      message: resumeData.message || "Processing...",
+    });
+    startPolling(resumeData.tripId);
+    setResumeData(null);
+  };
+
+  const discardResume = () => {
+    try { localStorage.removeItem(UPLOAD_PERSIST_KEY); } catch (e) {}
+    setResumeData(null);
+  };
+
   const handleProcess = async () => {
     if (!uploadedFile) return;
     
@@ -98,49 +231,35 @@ export default function SimplifiedUploadPage() {
       
       const data = await response.json();
       const tripId = data.trip_id;
-      
-      // Poll for completion
-      let attempts = 0;
-      const maxAttempts = 180; // allow up to ~3 minutes
-      
-      const checkStatus = async () => {
-        try {
-          const statusResponse = await fetch(`/api/proxy/status/${tripId}`);
-          const statusData = await statusResponse.json();
-          
-          setProcessingStatus({
-            progress: statusData.progress || 0,
-            message: statusData.message || "Processing...",
-            extractedData: statusData.extracted_data
-          });
-          
-          if (statusData.status === "completed") {
-            // Success! Navigate to single-page preferences
-            setTimeout(() => {
-              router.push(`/preferences-modern?tripId=${tripId}`);
-            }, 500);
-          } else if (statusData.status === "error") {
-            throw new Error(statusData.message || "Processing failed");
-          } else if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(checkStatus, 1000);
-          } else {
-            throw new Error("Processing timeout");
-          }
-        } catch (err) {
-          if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(checkStatus, 2000);
-          } else {
-            throw err;
-          }
-        }
-      };
-      
-      setTimeout(checkStatus, 2000);
+
+      try {
+        localStorage.setItem(UPLOAD_PERSIST_KEY, JSON.stringify({
+          tripId,
+          startedAt: Date.now(),
+          status: 'processing',
+          progress: 0,
+          message: 'Uploading...',
+          fileName: uploadedFile.name,
+          fileSize: uploadedFile.size,
+          fileType: uploadedFile.type
+        }));
+      } catch (e) {}
+
+      startPolling(tripId);
       
     } catch (error: any) {
       console.error("Error:", error);
+      try {
+        const raw = localStorage.getItem(UPLOAD_PERSIST_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          localStorage.setItem(UPLOAD_PERSIST_KEY, JSON.stringify({
+            ...saved,
+            status: 'error',
+            message: error?.message || 'Error'
+          }));
+        }
+      } catch (e) {}
       setError(error.message || "Something went wrong");
       setIsProcessing(false);
     }
@@ -149,6 +268,22 @@ export default function SimplifiedUploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-2xl mx-auto">
+        {resumeData && !isProcessing && !uploadedFile && (
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription>
+              You have an in-progress upload. Would you like to resume?
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={handleResume} className="bg-blue-600 text-white">
+                  Resume Upload
+                </Button>
+                <Button size="sm" variant="outline" onClick={discardResume}>
+                  Discard
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -255,7 +390,7 @@ export default function SimplifiedUploadPage() {
                       <span className="text-sm text-gray-500">{processingStatus.progress}%</span>
                     </div>
                     <Progress value={processingStatus.progress} className="h-2" />
-                    <p className="text-sm text-gray-600">{processingStatus.message}</p>
+                    <ProcessingStatus phase="upload" progress={processingStatus.progress} explicitMessage={processingStatus.message} />
                     
                     {processingStatus.extractedData && (
                       <div className="p-3 bg-blue-50 rounded-lg space-y-2">

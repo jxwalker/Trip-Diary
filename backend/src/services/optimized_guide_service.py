@@ -14,6 +14,8 @@ import logging
 from .optimized_perplexity_service import OptimizedPerplexityService
 from .google_weather_service import GoogleWeatherService
 from .guide_validator import GuideValidator
+from .google_places_enhancer import GooglePlacesEnhancer
+from .real_events_service import RealEventsService
 from .enhanced_google_places_service import EnhancedGooglePlacesService
 
 # Load environment
@@ -37,8 +39,9 @@ class OptimizedGuideService:
     def __init__(self):
         self.perplexity_service = OptimizedPerplexityService()
         self.weather_service = GoogleWeatherService()
+        self.places_enhancer = GooglePlacesEnhancer()
+        self.events_service = RealEventsService()
         self.google_places_service = EnhancedGooglePlacesService()
-
         # Performance tracking
         self.generation_stats = {
             "total_requests": 0,
@@ -201,6 +204,12 @@ class OptimizedGuideService:
         )
         tasks.append(weather_task)
         
+        # Task 3: Real events data
+        events_task = self.events_service.get_events_for_dates(
+            destination, start_date, end_date, preferences
+        )
+        tasks.append(events_task)
+        
         # Task 4: Transportation data
         transport_task = self._fetch_transportation_data(destination, preferences)
         tasks.append(transport_task)
@@ -219,8 +228,9 @@ class OptimizedGuideService:
                 asyncio.gather(*tasks, return_exceptions=True),
                 timeout=45  # 45 second total timeout
             )
-
-            google_places_restaurants, google_places_attractions, perplexity_data, weather_data, transport_data, accessibility_data, practical_data = results
+            
+            # Unpack results - we have 7 tasks now
+            google_places_restaurants, google_places_attractions, perplexity_data, weather_data, real_events, transport_data, accessibility_data, practical_data = results
 
             # Handle Google Places restaurants data
             if isinstance(google_places_restaurants, Exception):
@@ -231,7 +241,6 @@ class OptimizedGuideService:
             if isinstance(google_places_attractions, Exception):
                 logger.warning(f"Google Places attractions fetch failed: {google_places_attractions}")
                 google_places_attractions = []  # Fallback to empty list
-
             # Handle Perplexity data
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
@@ -245,10 +254,21 @@ class OptimizedGuideService:
                 logger.warning(f"Weather data fetch failed: {weather_data}")
                 weather_data = {"error": str(weather_data)}
             
+            # Handle real events data (non-critical)
+            if isinstance(real_events, Exception):
+                logger.warning(f"Real events fetch failed: {real_events}")
+                real_events = []
+            
             # Handle transportation data (non-critical)
             if isinstance(transport_data, Exception):
                 logger.warning(f"Transportation data fetch failed: {transport_data}")
                 transport_data = {"error": str(transport_data)}
+            
+            # Combine data
+            combined_data = perplexity_data.copy()
+            combined_data["weather_data"] = weather_data
+            combined_data["real_events"] = real_events
+            combined_data["transport_data"] = transport_data
             
             # Handle accessibility data (non-critical)
             if isinstance(accessibility_data, Exception):
@@ -752,10 +772,22 @@ class OptimizedGuideService:
         # Extract data
         restaurants = guide_data.get("restaurants", [])
         attractions = guide_data.get("attractions", [])
-        events = guide_data.get("events", [])
+        events = guide_data.get("events", [])  # Fallback Perplexity events
+        real_events = guide_data.get("real_events", [])  # Real API events
         practical_info = guide_data.get("practical_info", {})
         daily_suggestions = guide_data.get("daily_suggestions", [])
         weather_data = guide_data.get("weather_data", {})
+        
+        # Enhance restaurants and attractions with Google Places data
+        if restaurants:
+            restaurants = await self.places_enhancer.enhance_restaurants_batch(
+                restaurants, context["destination"]
+            )
+        
+        if attractions:
+            attractions = await self.places_enhancer.enhance_attractions_batch(
+                attractions, context["destination"]
+            )
         
         # Create comprehensive guide structure
         complete_guide = {
@@ -768,7 +800,7 @@ class OptimizedGuideService:
             "practical_info": practical_info,
             
             # Additional content
-            "events": events,
+            "events": self._format_real_events(real_events, events, context["destination"]),  # Use real events with fallback
             "weather": self._format_weather_data(weather_data),
             "weather_summary": weather_data.get("summary", {}),
             "hidden_gems": self._extract_hidden_gems(attractions, restaurants),
@@ -894,9 +926,25 @@ class OptimizedGuideService:
 
     def _format_weather_data(self, weather_data: Dict) -> List[Dict]:
         """Format weather data for guide"""
-        if weather_data.get("error") or not weather_data.get("daily_forecasts"):
+        if weather_data.get("error"):
             return []
 
+        # Handle historical weather data
+        if weather_data.get("historical") or weather_data.get("typical_weather"):
+            typical_weather = weather_data.get("summary", {}).get("typical_weather", {})
+            if typical_weather:
+                return [{
+                    "date": "Typical",
+                    "temp_high": typical_weather.get("temp_high", 20),
+                    "temp_low": typical_weather.get("temp_low", 10),
+                    "condition": typical_weather.get("condition", "Clear"),
+                    "description": typical_weather.get("description", "Mild weather"),
+                    "icon": typical_weather.get("icon", "🌤️"),
+                    "historical": True
+                }]
+            return []
+
+        # Handle regular forecast data
         return weather_data.get("daily_forecasts", [])
 
     def _extract_hidden_gems(self, attractions: List, restaurants: List) -> List[Dict]:
@@ -966,6 +1014,29 @@ class OptimizedGuideService:
     def get_performance_stats(self) -> Dict:
         """Get service performance statistics"""
         return self.generation_stats.copy()
+    
+    def _format_real_events(self, real_events: List[Dict], fallback_events: List[Dict], destination: str = "Unknown") -> Dict:
+        """Format real events data with fallback to Perplexity events - NO HARDCODED DATA"""
+        if real_events:
+            # Use real events from APIs
+            return {
+                "date_range": f"{real_events[0].get('date', '')} to {real_events[-1].get('date', '')}" if real_events else "",
+                "location": destination,  # Dynamic based on actual destination
+                "real_events": real_events,
+                "event_count": len(real_events),
+                "sources": list(set([event.get("source", "Unknown") for event in real_events]))
+            }
+        else:
+            # Fallback to Perplexity events if no real events found
+            logger.warning("No real events found, using fallback events")
+            return {
+                "date_range": "Events not available",
+                "location": destination,  # Dynamic based on actual destination
+                "typical_events": fallback_events,
+                "event_count": len(fallback_events),
+                "sources": ["Perplexity"],
+                "note": "No real events found - using fallback data"
+            }
     
     async def _fetch_transportation_data(self, destination: str, preferences: Dict[str, Any]) -> Dict[str, Any]:
         """Fetch transportation information for the destination"""

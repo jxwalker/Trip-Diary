@@ -32,6 +32,7 @@ class ServiceContainer:
     def __init__(self):
         self._services: Dict[str, Any] = {}
         self._initialized = False
+        self._locked_services: set = set()
 
     def initialize(self, config: Any) -> None:
         """
@@ -50,8 +51,19 @@ class ServiceContainer:
             self._services['enhanced_guide_service'] = EnhancedGuideService()
             self._services['fast_guide_service'] = FastGuideService()
             self._services['optimized_guide_service'] = OptimizedGuideService()
-            self._services['immediate_guide_generator'] = ImmediateGuideGenerator()
+            
+            # Optional services - only initialize if API keys are available
+            try:
+                self._services['immediate_guide_generator'] = ImmediateGuideGenerator()
+                logger.info("Immediate guide generator initialized")
+            except Exception as e:
+                logger.warning(f"Immediate guide generator not available: {e}")
+                self._services['immediate_guide_generator'] = None
+            
+            # Use enhanced database service but keep legacy for compatibility
             self._services['database_service'] = EnhancedDatabaseService()
+            # Lock the database service to prevent override
+            self._locked_services = {'database_service'}
             self._services['trip_database'] = TripDatabase()
             self._services['luxury_guide_service'] = LuxuryGuideService()
 
@@ -90,6 +102,13 @@ class ServiceContainer:
 
         return self._services[service_name]
 
+    def set_service(self, service_name: str, service: Any) -> None:
+        """Set a service (with lock protection)"""
+        if service_name in self._locked_services:
+            logger.warning(f"Attempted to override locked service: {service_name}")
+            return
+        self._services[service_name] = service
+
     def get_pdf_processor(self) -> PDFProcessor:
         """Get PDF processor service"""
         return self.get_service('pdf_processor')
@@ -120,7 +139,14 @@ class ServiceContainer:
 
     def get_database_service(self):
         """Get database service"""
-        return self.get_service('database_service')
+        service = self.get_service('database_service')
+        # Ensure we're getting the correct DatabaseService instance
+        from ...services.database_service import DatabaseService
+        if not isinstance(service, DatabaseService):
+            logger.error(f"Database service type mismatch: expected DatabaseService, got {type(service)}")
+            # Force return the correct service
+            return self._services['database_service']
+        return service
 
     def get_trip_database(self) -> TripDatabase:
         """Get trip database"""

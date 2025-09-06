@@ -55,8 +55,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     scroll-behavior: smooth;
+  }
+  button, [role="button"], .touch-target {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

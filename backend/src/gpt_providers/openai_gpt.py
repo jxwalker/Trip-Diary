@@ -20,6 +20,11 @@ class OpenAIGPT:
             messages.append({
                 "role": "system",
                 "content": """You are a travel itinerary parser. Extract all flight, hotel, and passenger information.
+                
+                For flights, include:
+                - All flight details (number, operator, departure, arrival, class, baggage)
+                - Passengers on each specific flight (who is traveling on which flight)
+                
                 For hotels, always include detailed room information including:
                 - Room type
                 - Bed configuration
@@ -27,6 +32,10 @@ class OpenAIGPT:
                 - Room features
                 - Meal plan
                 - Occupancy
+                
+                For passengers, include:
+                - All passengers mentioned in the document
+                - Assign passengers to the specific flights they are on
                 
                 Format the response as a JSON object with 'flights', 'hotels', and 'passengers' arrays."""
             })
@@ -71,6 +80,19 @@ class OpenAIGPT:
                                         "properties": {
                                             "checked_baggage": {"type": "string", "nullable": True},
                                             "hand_baggage": {"type": "string", "nullable": True}
+                                        }
+                                    },
+                                    "passengers": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "title": {"type": "string", "enum": ["MR", "MRS", "MS", "MISS"]},
+                                                "first_name": {"type": "string"},
+                                                "last_name": {"type": "string"},
+                                                "frequent_flyer": {"type": "string", "nullable": True}
+                                            },
+                                            "required": ["title", "first_name", "last_name"]
                                         }
                                     }
                                 },

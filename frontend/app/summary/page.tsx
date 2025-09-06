@@ -187,6 +187,14 @@ function SummaryPageContent() {
   };
 
   const handleConfirmAndContinue = () => {
+    // Basic validations before moving on
+    const hasDestination = extractedData.destination && extractedData.destination.trim().length > 0;
+    const hasDates = extractedData.startDate && extractedData.endDate;
+    if (!hasDestination || !hasDates) {
+      alert("Please ensure destination and travel dates are filled in before continuing.");
+      return;
+    }
+
     setIsProcessing(true);
     // Store tripId for the next pages
     if (tripId) {
