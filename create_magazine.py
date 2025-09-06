@@ -2,15 +2,87 @@ import json
 import requests
 import os
 from pathlib import Path
+from datetime import datetime
 
-# Get the guide data
-response = requests.get('http://localhost:8000/api/enhanced-guide/7f118583-684b-496b-a43f-d9e2e83fc9eb')
-guide_data = response.json()
+def get_most_recent_guide():
+    """Get the most recent guide from the API"""
+    try:
+        # Try known trip IDs from recent generations
+        known_trip_ids = [
+            "b9e9e107-cd0e-4146-9533-4ee29a63f3de",  # Paris guide we just generated
+            "c29487f9-033f-43c0-ba25-c861dd81078b",  # Tokyo guide
+            "2c299e1d-eb15-4f37-8ca6-291129b39b44"   # Amsterdam guide
+        ]
+        
+        for trip_id in known_trip_ids:
+            try:
+                guide_response = requests.get(f'http://localhost:8000/api/enhanced-guide/{trip_id}')
+                if guide_response.status_code == 200:
+                    guide_data = guide_response.json()
+                    if 'guide' in guide_data:
+                        print(f"Found guide for trip ID: {trip_id}")
+                        return guide_data
+            except Exception as e:
+                print(f"Error fetching guide for {trip_id}: {e}")
+                continue
+        
+        print("No available guides found")
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching guide: {e}")
+        return None
+
+# Get the most recent guide data
+guide_data = get_most_recent_guide()
+
+if not guide_data:
+    print("No guide data available. Please generate a guide first.")
+    exit(1)
 
 # Extract dynamic data
 destination = guide_data.get('guide', {}).get('destination', 'Unknown Destination')
 start_date = guide_data.get('guide', {}).get('start_date', 'Unknown Date')
 end_date = guide_data.get('guide', {}).get('end_date', 'Unknown Date')
+
+print(f"Creating magazine for: {destination} ({start_date} to {end_date})")
+
+# Generate weather cards from guide data
+weather_cards = ""
+weather_data = guide_data.get('guide', {}).get('weather_data', {})
+daily_forecasts = weather_data.get('daily_forecasts', [])
+
+for forecast in daily_forecasts:
+    date = forecast.get('date', '')
+    temp_high = forecast.get('temp_high', 'N/A')
+    temp_low = forecast.get('temp_low', 'N/A')
+    condition = forecast.get('condition', 'Unknown')
+    
+    # Format date (extract day from YYYY-MM-DD)
+    day = date.split('-')[-1] if date else 'N/A'
+    
+    # Add weather emoji based on condition
+    emoji_map = {
+        'Clear': '☀️',
+        'Sunny': '☀️',
+        'Partly Cloudy': '⛅',
+        'Cloudy': '☁️',
+        'Overcast': '☁️',
+        'Rain': '🌧️',
+        'Light Rain': '🌦️',
+        'Heavy Rain': '⛈️',
+        'Snow': '❄️',
+        'Fog': '🌫️'
+    }
+    emoji = emoji_map.get(condition, '🌤️')
+    
+    weather_cards += f'''
+                <div class="weather-card">
+                    <div class="weather-day">{day}</div>
+                    <div class="weather-temp">{temp_high}°C / {temp_low}°C</div>
+                    <div class="weather-condition">{emoji} {condition}</div>
+                    <div class="weather-note">Perfect weather for exploring {destination}</div>
+                </div>'''
 
 # Create HTML magazine
 html_content = '''
@@ -482,30 +554,7 @@ html_content = '''
             </div>
             
             <div class="weather-grid">
-                <div class="weather-card">
-                    <div class="weather-day">Nov 10</div>
-                    <div class="weather-temp">13°C / 6°C</div>
-                    <div class="weather-condition">☁️ Cloudy</div>
-                    <div class="weather-note">Perfect for museum hopping and indoor dining</div>
-                </div>
-                <div class="weather-card">
-                    <div class="weather-day">Nov 11</div>
-                    <div class="weather-temp">15°C / 8°C</div>
-                    <div class="weather-condition">🌧️ Light Rain</div>
-                    <div class="weather-note">Ideal for cozy café culture and shopping</div>
-                </div>
-                <div class="weather-card">
-                    <div class="weather-day">Nov 12</div>
-                    <div class="weather-temp">12°C / 5°C</div>
-                    <div class="weather-condition">☁️ Partly Cloudy</div>
-                    <div class="weather-note">Great for walking tours and outdoor markets</div>
-                </div>
-                <div class="weather-card">
-                    <div class="weather-day">Nov 13</div>
-                    <div class="weather-temp">14°C / 7°C</div>
-                    <div class="weather-condition">☀️ Sunny</div>
-                    <div class="weather-note">Perfect for Central Park and rooftop bars</div>
-                </div>
+                {weather_cards}
             </div>
         </div>
 '''
@@ -919,11 +968,10 @@ html_content += '''
 '''
 
 # Format HTML content with dynamic data
-html_content = html_content.format(
-    destination=destination,
-    start_date=start_date,
-    end_date=end_date
-)
+html_content = html_content.replace('{destination}', destination)
+html_content = html_content.replace('{start_date}', start_date)
+html_content = html_content.replace('{end_date}', end_date)
+html_content = html_content.replace('{weather_cards}', weather_cards)
 
 # Write HTML file
 with open('conde_nast_magazine.html', 'w', encoding='utf-8') as f:

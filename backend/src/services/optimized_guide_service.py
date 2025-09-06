@@ -1188,4 +1188,3 @@ class OptimizedGuideService:
         except Exception as e:
             logger.error(f"Failed to fetch practical information: {e}")
             return {"error": str(e)}
->>>>>>> origin/main
