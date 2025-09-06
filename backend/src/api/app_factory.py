@@ -139,7 +139,7 @@ def _configure_routes(app: FastAPI) -> None:
     """Configure application routes"""
 
     # Import route modules
-    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug, test_guide, test_quality
+    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug, places
 
     # Add route modules
     app.include_router(upload.router)
@@ -147,12 +147,11 @@ def _configure_routes(app: FastAPI) -> None:
     app.include_router(enhanced_guide.router)
     app.include_router(preferences.router)
     app.include_router(generation.router)
+    app.include_router(places.router)
     app.include_router(pdf.router)
     app.include_router(pdf_html.router)
     app.include_router(health.router)
     app.include_router(debug.router)
-    app.include_router(test_guide.router)
-    app.include_router(test_quality.router)
 
     # Add root endpoint
     @app.get("/")

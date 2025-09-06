@@ -365,7 +365,8 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                                 photo_refs = []
                                 if place.get("photos"):
                                     for photo in place["photos"][:3]:
-                                        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference={photo['photo_reference']}&key={self.google_maps_api_key}"
+                                        # Store photo reference instead of full URL to avoid exposing API key
+                                        photo_url = f"/api/places/photo/{photo['photo_reference']}"
                                         photo_refs.append(photo_url)
                                 
                                 return {
@@ -373,7 +374,7 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                                     "neighborhoods": neighborhoods if neighborhoods else basic_map_data["neighborhoods"],
                                     "hotel_location": await self._geocode_hotel_real(session, hotel_info, self.google_maps_api_key),
                                     "map_url": f"https://maps.google.com/maps?q={location.get('lat')},{location.get('lng')}&z=13",
-                                    "interactive_map": f"https://www.google.com/maps/embed/v1/place?key={self.google_maps_api_key}&q=place_id:{place_id}",
+                                    "interactive_map": f"/api/places/embed/{place_id}",
                                     "photos": photo_refs if photo_refs else basic_map_data["photos"],
                                     "place_id": place_id
                                 }

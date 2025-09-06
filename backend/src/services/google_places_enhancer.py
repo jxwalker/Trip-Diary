@@ -83,7 +83,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:  # Get up to 3 photos
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
+                        # Store photo reference instead of full URL to avoid exposing API key
+                        photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
                 enhanced['photo'] = photo_refs[0] if photo_refs else None
@@ -96,7 +97,8 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                static_map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom=15&size=400x300&markers=color:blue%7C{lat},{lng}&key={self.api_key}"
+                # Store coordinates instead of full URL to avoid exposing API key
+                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=restaurant"
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 
@@ -221,7 +223,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference={photo_ref}&key={self.api_key}"
+                        # Store photo reference instead of full URL to avoid exposing API key
+                        photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
                 enhanced['photo'] = photo_refs[0] if photo_refs else None
@@ -234,7 +237,8 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                static_map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom=15&size=400x300&markers=color:red%7C{lat},{lng}&key={self.api_key}"
+                # Store coordinates instead of full URL to avoid exposing API key
+                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=attraction"
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 

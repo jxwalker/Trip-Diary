@@ -632,7 +632,9 @@ if guide_data.get('guide', {}).get('restaurants'):
         '''
         
         if main_photo:
-            html_content += f'<img src="{main_photo}" alt="{name}" class="restaurant-photo" onerror="this.style.display=\'none\'">'
+            # Use secure proxy URL instead of direct Google Maps URL
+            secure_photo_url = main_photo if main_photo.startswith('/api/') else f"/api/places/photo/{main_photo.split('photoreference=')[1].split('&')[0]}" if 'photoreference=' in main_photo else main_photo
+            html_content += f'<img src="{secure_photo_url}" alt="{name}" class="restaurant-photo" onerror="this.style.display=\'none\'">'
         
         html_content += f'''
                     <div class="editorial-content">
@@ -715,7 +717,9 @@ if guide_data.get('guide', {}).get('attractions'):
         '''
         
         if main_photo:
-            html_content += f'<img src="{main_photo}" alt="{name}" class="attraction-photo" onerror="this.style.display=\'none\'">'
+            # Use secure proxy URL instead of direct Google Maps URL
+            secure_photo_url = main_photo if main_photo.startswith('/api/') else f"/api/places/photo/{main_photo.split('photoreference=')[1].split('&')[0]}" if 'photoreference=' in main_photo else main_photo
+            html_content += f'<img src="{secure_photo_url}" alt="{name}" class="attraction-photo" onerror="this.style.display=\'none\'">'
         
         html_content += f'''
                     <div class="editorial-content">
