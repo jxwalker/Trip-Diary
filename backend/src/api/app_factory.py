@@ -263,3 +263,7 @@ def _configure_events(app: FastAPI, config: object) -> None:
         logger.info("Legacy application shutdown complete")
 
     logger.info("Legacy event handlers configured")
+
+
+# Create the app instance for uvicorn
+app = create_app()
