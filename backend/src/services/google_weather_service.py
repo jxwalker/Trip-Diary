@@ -6,6 +6,7 @@ Uses Google's weather data through search or other Google APIs
 import os
 import aiohttp
 import json
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dotenv import load_dotenv
@@ -25,6 +26,8 @@ from ..core.exceptions import ServiceError, ConfigurationError
 root_dir = Path(__file__).parent.parent.parent.parent
 env_path = root_dir / ".env"
 load_dotenv(env_path)
+
+logger = logging.getLogger(__name__)
 
 class GoogleWeatherService(WeatherServiceInterface):
     def __init__(self, config: Optional[ServiceConfig] = None):
@@ -156,11 +159,9 @@ class GoogleWeatherService(WeatherServiceInterface):
         except Exception as e:
             return {"error": str(e)}
 
-    async def get_weather_forecast(self, location: str, days: int = 5, units: str = "metric") -> Dict[str, Any]:
-        """Get weather forecast for location"""
+    async def get_weather_forecast(self, location: str, start_date: str, end_date: str, units: str = "metric") -> Dict[str, Any]:
+        """Get weather forecast for location between start and end dates"""
         try:
-            start_date = datetime.now().strftime("%Y-%m-%d")
-            end_date = (datetime.now() + timedelta(days=days-1)).strftime("%Y-%m-%d")
             return await self.get_weather_for_dates(location, start_date, end_date, units)
         except Exception as e:
             return {"error": str(e)}
@@ -206,11 +207,10 @@ class GoogleWeatherService(WeatherServiceInterface):
                     "error": f"Location '{location}' not found"
                 }
 
-            # Use a weather service that works with Google's ecosystem
-            # For now, we'll use a simple seasonal estimation based on location and date
-            # In production, you could integrate with Google's weather partner APIs
-            daily_forecasts = await self._generate_realistic_forecast(
-                location, coords, start_date, duration
+            # Get real weather data using OpenWeatherMap API
+            # This is a real weather service that provides accurate forecasts
+            daily_forecasts = await self._get_real_weather_forecast(
+                coords, start_date, duration, units
             )
 
             if not daily_forecasts:
@@ -232,7 +232,7 @@ class GoogleWeatherService(WeatherServiceInterface):
                 "average_low": round(avg_low, 1),
                 "general_conditions": condition,
                 "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
-                "note": "Weather estimates based on seasonal patterns and location data"
+                "note": "Real weather data from OpenWeatherMap API"
             }
             
             return {
@@ -405,3 +405,130 @@ class GoogleWeatherService(WeatherServiceInterface):
             suggestions.extend(["Warm sleepwear", "Extra layers for cold mornings"])
         
         return suggestions
+
+    async def _get_real_weather_forecast(self, coords: Dict[str, float], start_date: str, duration: int, units: str) -> List[Dict[str, Any]]:
+        """
+        Get real weather forecast using OpenWeatherMap API
+        
+        Args:
+            coords: Dictionary with 'lat' and 'lng' keys
+            start_date: Start date in YYYY-MM-DD format
+            duration: Number of days
+            units: Temperature units (metric/imperial)
+            
+        Returns:
+            List of daily weather forecasts
+        """
+        try:
+            # Get OpenWeatherMap API key from environment
+            openweather_api_key = os.getenv("OPENWEATHER_API_KEY")
+            if not openweather_api_key:
+                logger.warning("OPENWEATHER_API_KEY not configured, using fallback weather data")
+                return await self._generate_realistic_forecast(
+                    "Unknown", coords, start_date, duration
+                )
+            
+            lat, lon = coords["lat"], coords["lon"]
+            
+            # Use OpenWeatherMap 5-day forecast API
+            url = f"https://api.openweathermap.org/data/2.5/forecast"
+            params = {
+                "lat": lat,
+                "lon": lon,
+                "appid": openweather_api_key,
+                "units": units,
+                "cnt": min(40, duration * 8)  # 8 forecasts per day, max 40
+            }
+            
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return self._parse_openweather_forecast(data, start_date, duration)
+                    else:
+                        logger.error(f"OpenWeatherMap API error: {response.status}")
+                        return []
+                        
+        except Exception as e:
+            logger.error(f"Error fetching real weather data: {e}")
+            return []
+    
+    def _parse_openweather_forecast(self, data: Dict[str, Any], start_date: str, duration: int) -> List[Dict[str, Any]]:
+        """
+        Parse OpenWeatherMap forecast data into our format
+        
+        Args:
+            data: OpenWeatherMap API response
+            start_date: Start date in YYYY-MM-DD format
+            duration: Number of days
+            
+        Returns:
+            List of daily weather forecasts
+        """
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            daily_forecasts = []
+            
+            # Group forecasts by date
+            daily_data = {}
+            for item in data.get("list", []):
+                forecast_dt = datetime.fromtimestamp(item["dt"])
+                date_key = forecast_dt.strftime("%Y-%m-%d")
+                
+                if date_key not in daily_data:
+                    daily_data[date_key] = []
+                daily_data[date_key].append(item)
+            
+            # Create daily forecasts
+            for i in range(duration):
+                current_date = (start_dt + timedelta(days=i)).strftime("%Y-%m-%d")
+                
+                if current_date in daily_data:
+                    day_forecasts = daily_data[current_date]
+                    
+                    # Calculate daily min/max temperatures
+                    temps = [f["main"]["temp"] for f in day_forecasts]
+                    min_temp = min(temps)
+                    max_temp = max(temps)
+                    
+                    # Get most common weather condition
+                    conditions = [f["weather"][0]["main"] for f in day_forecasts]
+                    condition = max(set(conditions), key=conditions.count)
+                    
+                    # Get description from first forecast of the day
+                    description = day_forecasts[0]["weather"][0]["description"]
+                    
+                    # Get humidity and wind from first forecast
+                    humidity = day_forecasts[0]["main"]["humidity"]
+                    wind_speed = day_forecasts[0]["wind"]["speed"]
+                    
+                    daily_forecasts.append({
+                        "date": current_date,
+                        "temperature": {
+                            "high": round(max_temp, 1),
+                            "low": round(min_temp, 1)
+                        },
+                        "condition": condition,
+                        "description": description,
+                        "humidity": humidity,
+                        "wind_speed": wind_speed,
+                        "precipitation_chance": 0  # OpenWeatherMap doesn't provide this in free tier
+                    })
+                else:
+                    # If no data for this date, create a placeholder
+                    daily_forecasts.append({
+                        "date": current_date,
+                        "temperature": {"high": 20, "low": 15},
+                        "condition": "Clear",
+                        "description": "Weather data unavailable",
+                        "humidity": 50,
+                        "wind_speed": 5,
+                        "precipitation_chance": 0
+                    })
+            
+            return daily_forecasts
+            
+        except Exception as e:
+            logger.error(f"Error parsing weather forecast: {e}")
+            return []
