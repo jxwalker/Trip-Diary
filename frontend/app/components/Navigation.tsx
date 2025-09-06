@@ -11,6 +11,7 @@ export default function Navigation() {
     { href: "/upload", label: "📤 Upload", name: "Upload" },
     { href: "/trips", label: "📚 My Trips", name: "My Trips" },
     { href: "/guide-modern", label: "📖 Guide", name: "Travel Guide" },
+    { href: "/health", label: "🩺 Health", name: "Health" },
   ];
 
   return (

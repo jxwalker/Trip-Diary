@@ -55,14 +55,76 @@ class EnhancedGuideService:
             raise APIError("At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)")
 
     def _load_prompts(self) -> Dict[str, Any]:
-        """Load prompts configuration from JSON file"""
+        """Load prompts configuration from JSON file, with a safe default fallback.
+        Returns a dict that contains the keys expected by _construct_master_prompt
+        so single-pass generation never crashes if the file is missing.
+        """
+        def default_prompts() -> Dict[str, Any]:
+            return {
+                "travel_guide": {
+                    "base_prompt": (
+                        "You are a seasoned travel editor crafting a glossy magazine-style, personalized guide. "
+                        "Use rich, specific details, real addresses, times, booking links, and actionable tips."
+                    ),
+                    "components": {
+                        "destination_overview": (
+                            "Provide a vivid destination overview for {destination} during {month_year}, "
+                            "considering the travel pace ({pace}), group ({group_type}), and interests."
+                        ),
+                        "weather_analysis": (
+                            "Summarize the likely weather for {destination} from {start_date} to {end_date}, "
+                            "including packing and what-to-wear guidance."
+                        ),
+                        "personalized_recommendations": {
+                            "template": (
+                                "Curate recommendations tailored to this traveler. Reflect preferences: {preferences_summary}."
+                            )
+                        },
+                        "daily_itinerary": {
+                            "template": (
+                                "Build a detailed day-by-day itinerary ({duration} total) with specific times and places; "
+                                "balance walking level ({walking_level}) and interests."
+                            )
+                        },
+                        "events_search": (
+                            "Include real events that align with dates ({dates}) and interests, with ticket links."
+                        ),
+                        "restaurant_guide": {
+                            "template": (
+                                "List restaurants with address, phone, cuisine, price, booking link, hours, and why it fits."
+                            )
+                        },
+                        "local_insights": (
+                            "Add insider tips, transport guidance, money matters, safety notes, and cultural etiquette."
+                        ),
+                        "hidden_gems": (
+                            "Highlight lesser-known gems and photo spots, avoiding over-touristed cliches."
+                        ),
+                        "shopping_guide": (
+                            "If relevant to preferences, suggest neighborhoods or streets and what to buy."
+                        ),
+                        "evening_entertainment": (
+                            "Offer nightlife/theater/music options based on the traveler's nightlife level."
+                        )
+                    },
+                    "output_format": (
+                        "Structure with sections: Summary, Destination Insights, Weather, Daily Itinerary, "
+                        "Restaurants, Attractions, Events, Neighborhoods (if relevant), Practical Info, Hidden Gems."
+                    )
+                }
+            }
         try:
             prompts_path = Path(__file__).parent.parent / "prompts.json"
             with open(prompts_path, 'r') as f:
-                return json.load(f)
+                loaded = json.load(f)
+                # Ensure essential structure exists; otherwise, fallback
+                if not isinstance(loaded, dict) or "travel_guide" not in loaded:
+                    self.logger.warning("prompts.json missing expected keys; using defaults")
+                    return default_prompts()
+                return loaded
         except Exception as e:
             self.logger.warning(f"Could not load prompts.json: {e}")
-            return {}
+            return default_prompts()
         
     async def generate_enhanced_guide(
         self,
@@ -151,6 +213,7 @@ class EnhancedGuideService:
         if hotel_info:
             hotel_address = hotel_info.get("address", "")
         
+        persona = self._detect_persona(preferences)
         return {
             "destination": destination,
             "start_date": start_date,
@@ -174,7 +237,10 @@ class EnhancedGuideService:
             "price_range": preferences.get("priceRange", "$$"),
             "cuisines": ", ".join(preferences.get("cuisineTypes", ["Local Cuisine"])),
             "dietary": ", ".join(preferences.get("dietaryRestrictions", [])) or "None",
-            "preferred_times": self._format_preferred_times(preferences.get("preferredTimes", {}))
+            "preferred_times": self._format_preferred_times(preferences.get("preferredTimes", {})),
+            "persona": persona["label"],
+            "persona_style": persona["style"],
+            "persona_description": persona["description"]
         }
     
     def _build_preferences_summary(self, preferences: Dict) -> str:
@@ -246,8 +312,13 @@ class EnhancedGuideService:
     def _construct_master_prompt(self, context: Dict) -> str:
         """Construct the master prompt using templates and context"""
         
-        # Get base prompt
+        # Get base prompt and inject persona
         base = self.prompts["travel_guide"]["base_prompt"]
+        persona_blurb = (
+            f"Persona: {context.get('persona', 'Traveler')} — {context.get('persona_description','')}\n"
+            f"Style: {context.get('persona_style','Refined, visual, concierge tone')}\n"
+            f"Tailor voice, recommendations, pacing, and budget to this persona."
+        )
         
         # Build component prompts
         components = []
@@ -299,7 +370,7 @@ class EnhancedGuideService:
         components.append(output.format(**context))
         
         # Combine all components
-        master_prompt = f"{base}\n\n" + "\n\n".join(components)
+        master_prompt = f"{base}\n\n{persona_blurb}\n\n" + "\n\n".join(components)
         
         return master_prompt
     
@@ -699,6 +770,28 @@ Make it feel like a personalized concierge service, not a generic guide."""
         
         return base_parse
     
+    def _detect_persona(self, preferences: Dict) -> Dict[str, str]:
+        """Infer a persona label/style from preferences."""
+        # Simple heuristic mapping
+        cuisines = ", ".join(preferences.get("cuisineTypes", [])).lower()
+        nightlife = preferences.get("nightlife", 2)
+        walking = preferences.get("walkingTolerance", 3)
+        pace = preferences.get("travelStyle", "balanced").lower()
+        interests = ",".join(preferences.get("specialInterests", [])).lower()
+        price = str(preferences.get("priceRange", "$$"))
+        
+        if "fine" in cuisines or price.count("$") >= 3 or "luxury" in interests:
+            return {"label": "Luxury Epicurean", "style": "Conde Nast Traveler tone, refined and aspirational", "description": "High-end dining, design hotels, art and fashion, elevated experiences."}
+        if "museums" in interests or "architecture" in interests:
+            return {"label": "Culture Connoisseur", "style": "Sophisticated cultural editorial", "description": "Museums, galleries, historic districts, guided walks."}
+        if nightlife >= 4:
+            return {"label": "Nightlife Maven", "style": "Trendy, energetic, insider bar/club scene", "description": "Cocktail bars, live music, late-night eats, sleek venues."}
+        if walking >= 4 and ("hiking" in interests or pace == "active"):
+            return {"label": "Active Explorer", "style": "Adventurous, outdoorsy, energetic", "description": "Parks, waterfronts, scenic routes, active days."}
+        if "family" in preferences.get("groupType", "").lower():
+            return {"label": "Family Adventurer", "style": "Warm, practical, family-friendly", "description": "Kid-friendly museums, easy dining, logistics-first."}
+        return {"label": "Balanced Traveler", "style": "Refined yet approachable editorial", "description": "Blend of iconic highlights and insider finds."}
+
     def _extract_weather_from_content(self, content: str) -> List[Dict]:
         """Extract weather information from content"""
         weather_data = []
@@ -826,7 +919,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             )
             
             # Execute all searches in parallel with error handling
-            print(f"[GUIDE] 🚀 Starting parallel searches for {destination}...")
+            print(f"[GUIDE] 🚀 Starting parallel searches for {context.get('destination', 'unknown')}...")
             try:
                 weather, restaurants, attractions, events, insights = await asyncio.gather(
                     weather_task,

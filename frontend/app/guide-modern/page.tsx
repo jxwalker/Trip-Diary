@@ -206,20 +206,18 @@ function ModernGuidePageContent() {
 
   const handleDownloadPDF = async () => {
     try {
-      // First generate the PDF via proxy
-      const generateResponse = await fetch(`/api/proxy/generate-pdf/${tripId}`, {
-        method: 'POST',
-      });
-      
-      if (!generateResponse.ok) {
-        throw new Error('Failed to generate PDF');
-      }
-      
-      const { pdf_url } = await generateResponse.json();
-      
-      // Then download it through the proxy
-      const proxied = `/api/proxy${String(pdf_url).replace('/api', '')}`;
-      window.open(proxied, '_blank');
+      if (!tripId) throw new Error('Missing tripId');
+      const res = await fetch(`/api/proxy/generate-pdf/${tripId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to generate/download PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `travel_pack_${tripId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('PDF download error:', error);
       alert('Failed to download PDF. Please try again.');

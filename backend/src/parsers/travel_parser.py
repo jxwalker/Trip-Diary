@@ -33,42 +33,25 @@ class TravelDataParser:
             logger.error(f"Error parsing flight: {str(e)}")
             return None
 
-    @classmethod
-    def parse_passenger(cls, passenger_data: Dict) -> Optional[Tuple[Passenger, tuple]]:
-        """Parse passenger data with improved name handling across multiple bookings."""
+    @staticmethod
+    def parse_passenger(passenger_data: Dict) -> Optional[Passenger]:
+        """Parse passenger data into Passenger object."""
         try:
-            # If already a Passenger object, convert back to dict
+            # If already a Passenger object, return as-is
             if isinstance(passenger_data, Passenger):
-                passenger_data = passenger_data.dict()
+                return passenger_data
             
-            # Initialize class-level storage for passenger names if not exists
-            if not hasattr(cls, '_passenger_names'):
-                cls._passenger_names = {}
-                cls._passenger_full_names = {}  # Store the longest version of names
+            # Clean up names
+            title = passenger_data.get('title', '').upper().strip()
+            first_name = passenger_data.get('first_name', '').strip()
+            last_name = passenger_data.get('last_name', '').upper().strip()
             
-            # Clean up names and create deduplication key
-            if 'first_name' in passenger_data:
-                current_names = passenger_data['first_name'].split()
-                title = passenger_data.get('title', '').upper()
-                last_name = passenger_data.get('last_name', '').upper().strip()
-                
-                # Create deduplication key using only title, first name, and last name
-                dedup_key = (title, current_names[0].upper(), last_name)
-                
-                # Update the stored full name if this version is longer
-                if dedup_key not in cls._passenger_full_names or \
-                   len(passenger_data['first_name']) > len(cls._passenger_full_names[dedup_key]):
-                    cls._passenger_full_names[dedup_key] = passenger_data['first_name']
-                
-                # Always use the longest version of the name we've seen
-                passenger_data['first_name'] = cls._passenger_full_names[dedup_key]
-                
-                # Store the passenger data with the longest name version
-                if dedup_key not in cls._passenger_names or \
-                   len(passenger_data['first_name']) > len(cls._passenger_names[dedup_key].first_name):
-                    cls._passenger_names[dedup_key] = Passenger(**passenger_data)
-                
-                return cls._passenger_names[dedup_key], dedup_key
+            return Passenger(
+                title=title,
+                first_name=first_name,
+                last_name=last_name,
+                frequent_flyer=passenger_data.get('frequent_flyer')
+            )
                 
         except Exception as e:
             logger.error(f"Error parsing passenger data: {str(e)}")
@@ -119,10 +102,21 @@ class TravelDataParser:
             # Process passengers with improved deduplication
             seen_passengers = {}
             for passenger_data in data.get('passengers', []):
-                parsed = cls.parse_passenger(passenger_data)
-                if parsed:
-                    passenger, dedup_key = parsed
-                    seen_passengers[dedup_key] = passenger
+                passenger = cls.parse_passenger(passenger_data)
+                if passenger:
+                    # Create deduplication key using normalized names
+                    # Use the first part of first name and full last name for matching
+                    first_name_parts = passenger.first_name.split()
+                    first_name_key = first_name_parts[0].upper() if first_name_parts else ""
+                    dedup_key = (passenger.title.upper(), first_name_key, passenger.last_name.upper())
+                    
+                    # If we already have this passenger, keep the version with the longer first name
+                    if dedup_key in seen_passengers:
+                        existing = seen_passengers[dedup_key]
+                        if len(passenger.first_name) > len(existing.first_name):
+                            seen_passengers[dedup_key] = passenger
+                    else:
+                        seen_passengers[dedup_key] = passenger
 
             # Sort passengers by last name, first name
             result['passengers'] = sorted(

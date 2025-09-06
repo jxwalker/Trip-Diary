@@ -72,7 +72,7 @@ class SummaryFormatter:
     @staticmethod
     def format_passenger_details(passenger: Passenger) -> str:
         """Format passenger details."""
-        details = [f"  {passenger.full_name}"]
+        details = [f"  {passenger.title} {passenger.first_name} {passenger.last_name}"]
         if passenger.frequent_flyer:
             details.append(f"    Frequent Flyer: {passenger.frequent_flyer}")
         return "\n".join(details)
@@ -100,6 +100,12 @@ class SummaryFormatter:
                 baggage.append(f"Hand: {flight.baggage_allowance.hand_baggage}")
             if baggage:
                 details.append("  " + ", ".join(baggage))
+        
+        # Add passengers for this flight
+        if flight.passengers:
+            details.append("  Passengers:")
+            for passenger in sorted(flight.passengers, key=lambda p: (p.last_name, p.first_name)):
+                details.append(f"    {passenger.title} {passenger.first_name} {passenger.last_name}")
         
         return "\n".join(details)
 

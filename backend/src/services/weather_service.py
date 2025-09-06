@@ -22,6 +22,12 @@ class WeatherService:
         self.api_key = os.getenv("OPENWEATHER_API_KEY", "")
         self.base_url = "https://api.openweathermap.org/data/2.5"
         
+        # If no API key, provide helpful error message
+        if not self.api_key:
+            print("[WARNING] OPENWEATHER_API_KEY not found in environment variables")
+            print("[INFO] To enable weather forecasts, get a free API key from: https://openweathermap.org/api")
+            print("[INFO] Then set OPENWEATHER_API_KEY in your environment or .env file")
+        
     async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
         """
         Get weather forecast for a destination during trip dates
@@ -35,14 +41,51 @@ class WeatherService:
             Weather forecast data with daily conditions
         """
         
-        # If no API key, return empty with error (no mocks)
+        # If no API key, return helpful information with setup instructions
         if not self.api_key:
             return {
                 "destination": destination,
                 "forecast_period": {"start": start_date, "end": end_date},
                 "daily_forecasts": [],
-                "summary": {},
+                "summary": {
+                    "setup_required": True,
+                    "message": "Weather forecasts require an OpenWeatherMap API key",
+                    "instructions": "Get a free API key from https://openweathermap.org/api and set OPENWEATHER_API_KEY in your environment"
+                },
                 "error": "OPENWEATHER_API_KEY not configured"
+            }
+        
+        # Check if dates are in the past or too far in the future
+        today = datetime.now().date()
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        
+        # If trip is in the past, return historical weather info
+        if end_dt < today:
+            return {
+                "destination": destination,
+                "forecast_period": {"start": start_date, "end": end_date},
+                "daily_forecasts": [],
+                "summary": {
+                    "message": f"Historical weather data for {destination} during {start_date} to {end_date}",
+                    "note": "This trip occurred in the past. For current weather forecasts, please use current or future dates.",
+                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                },
+                "historical": True
+            }
+        
+        # If trip is more than 5 days in the future, return typical weather
+        if start_dt > today + timedelta(days=5):
+            return {
+                "destination": destination,
+                "forecast_period": {"start": start_date, "end": end_date},
+                "daily_forecasts": [],
+                "summary": {
+                    "message": f"Typical weather for {destination} during {start_date} to {end_date}",
+                    "note": "Detailed forecasts are only available for the next 5 days. Showing typical weather patterns.",
+                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                },
+                "typical_weather": True
             }
         
         try:
@@ -198,4 +241,17 @@ class WeatherService:
             suggestions.append("Sunscreen")
         
         return list(set(suggestions))  # Remove duplicates
+    
+    def _get_typical_weather(self, destination: str, month: int) -> Dict:
+        """Get typical weather patterns for a destination and month - NO HARDCODED DATA"""
+        # NO HARDCODED WEATHER DATA - This is a placeholder that should be replaced with real API calls
+        # For now, return a generic message indicating weather data is not available
+        return {
+            "temp_high": None,
+            "temp_low": None,
+            "condition": "Weather data unavailable",
+            "description": f"Weather forecast not available for {destination} in month {month}. Please check weather services directly.",
+            "icon": "❓",
+            "note": "No hardcoded weather data - real API integration required"
+        }
     

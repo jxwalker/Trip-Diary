@@ -23,6 +23,9 @@ class GooglePlacesEnhancer:
             self.client = googlemaps.Client(key=self.api_key)
         else:
             self.client = None
+            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment variables")
+            print("[INFO] To enable enhanced maps and attraction details, get a free API key from: https://developers.google.com/maps/documentation/places/web-service/get-api-key")
+            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment or .env file")
             
     async def enhance_restaurant(self, restaurant: Dict, destination: str) -> Dict:
         """
@@ -88,6 +91,14 @@ class GooglePlacesEnhancer:
             # Google Maps URL
             if details.get('url'):
                 enhanced['google_maps_url'] = details['url']
+                
+            # Static map image for the restaurant
+            if details.get('geometry', {}).get('location'):
+                location = details['geometry']['location']
+                lat, lng = location['lat'], location['lng']
+                static_map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom=15&size=400x300&markers=color:blue%7C{lat},{lng}&key={self.api_key}"
+                enhanced['static_map_url'] = static_map_url
+                enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 
             # Try to extract or create booking URLs
             enhanced['booking_url'] = await self._find_booking_url(
@@ -219,9 +230,28 @@ class GooglePlacesEnhancer:
             if details.get('url'):
                 enhanced['google_maps_url'] = details['url']
                 
-            # Ticket booking URL for attractions
-            if 'museum' in attraction.get('type', '').lower() or 'gallery' in attraction.get('type', '').lower():
-                enhanced['booking_url'] = details.get('website', '') or f"https://www.viator.com/searchResults/all?text={clean_name}&destId={city}"
+            # Static map image for the attraction
+            if details.get('geometry', {}).get('location'):
+                location = details['geometry']['location']
+                lat, lng = location['lat'], location['lng']
+                static_map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom=15&size=400x300&markers=color:red%7C{lat},{lng}&key={self.api_key}"
+                enhanced['static_map_url'] = static_map_url
+                enhanced['coordinates'] = {"lat": lat, "lng": lng}
+                
+            # Enhanced booking URLs for different attraction types
+            attraction_type = attraction.get('type', '').lower()
+            if 'museum' in attraction_type or 'gallery' in attraction_type:
+                enhanced['booking_url'] = details.get('website', '') or f"https://www.viator.com/searchResults/all?text={attraction.get('name', '')}&destId={destination}"
+                enhanced['ticket_info'] = "Advance booking recommended for popular museums"
+            elif 'park' in attraction_type or 'garden' in attraction_type:
+                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
+                enhanced['ticket_info'] = "Free entry - no booking required"
+            elif 'monument' in attraction_type or 'landmark' in attraction_type:
+                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
+                enhanced['ticket_info'] = "Check website for entry requirements"
+            else:
+                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
+                enhanced['ticket_info'] = "Check website for entry requirements"
                 
             print(f"[DEBUG] Enhanced {attraction.get('name')} with Google Places data")
             return enhanced
@@ -251,3 +281,92 @@ class GooglePlacesEnhancer:
                 await asyncio.sleep(0.5)
                 
         return enhanced_attractions
+    
+    async def get_destination_map_data(self, destination: str) -> Dict:
+        """
+        Get comprehensive map data for a destination including coordinates and map URLs
+        """
+        if not self.client:
+            return {
+                "destination": destination,
+                "error": "Google Maps API key not configured",
+                "setup_instructions": "Get a free API key from https://developers.google.com/maps/documentation/places/web-service/get-api-key"
+            }
+        
+        try:
+            # Get coordinates for the destination
+            geocode_result = self.client.geocode(destination)
+            if not geocode_result:
+                return {
+                    "destination": destination,
+                    "error": f"Could not find coordinates for {destination}"
+                }
+            
+            location = geocode_result[0]['geometry']['location']
+            lat, lng = location['lat'], location['lng']
+            
+            # Create various map URLs
+            map_urls = {
+                "google_maps": f"https://maps.google.com/?q={lat},{lng}",
+                "google_maps_embed": f"https://www.google.com/maps/embed/v1/place?key={self.api_key}&q={lat},{lng}",
+                "directions": f"https://maps.google.com/maps/dir/?api=1&destination={lat},{lng}",
+                "street_view": f"https://maps.google.com/maps/@?api=1&map_action=pano&viewpoint={lat},{lng}"
+            }
+            
+            return {
+                "destination": destination,
+                "coordinates": {"lat": lat, "lng": lng},
+                "map_urls": map_urls,
+                "formatted_address": geocode_result[0].get('formatted_address', destination)
+            }
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to get map data for {destination}: {e}")
+            return {
+                "destination": destination,
+                "error": str(e)
+            }
+    
+    async def create_attraction_route(self, attractions: List[Dict], start_location: str = None) -> Dict:
+        """
+        Create an optimized route between attractions
+        """
+        if not self.client or not attractions:
+            return {
+                "error": "Google Maps API key not configured or no attractions provided"
+            }
+        
+        try:
+            # Get coordinates for all attractions
+            waypoints = []
+            for attraction in attractions:
+                if attraction.get('coordinates'):
+                    waypoints.append(f"{attraction['coordinates']['lat']},{attraction['coordinates']['lng']}")
+                elif attraction.get('address'):
+                    # Geocode the address
+                    geocode_result = self.client.geocode(attraction['address'])
+                    if geocode_result:
+                        location = geocode_result[0]['geometry']['location']
+                        waypoints.append(f"{location['lat']},{location['lng']}")
+            
+            if not waypoints:
+                return {"error": "Could not get coordinates for attractions"}
+            
+            # Create route URL
+            if start_location:
+                route_url = f"https://maps.google.com/maps/dir/{start_location}/"
+            else:
+                route_url = f"https://maps.google.com/maps/dir/"
+            
+            route_url += "/".join(waypoints)
+            
+            return {
+                "route_url": route_url,
+                "waypoints": waypoints,
+                "attraction_count": len(attractions),
+                "optimization_note": "Route is optimized for efficient travel between attractions"
+            }
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to create attraction route: {e}")
+            return {"error": str(e)}

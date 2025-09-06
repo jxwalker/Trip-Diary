@@ -19,8 +19,13 @@ export async function POST(
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Stream the PDF back to the client
+    const headers = new Headers(response.headers);
+    headers.set('Content-Type', 'application/pdf');
+    // Preserve filename if backend set it
+    const cd = response.headers.get('Content-Disposition') || `attachment; filename="travel_pack_${tripId}.pdf"`;
+    headers.set('Content-Disposition', cd);
+    return new NextResponse(response.body, { status: 200, headers });
   } catch (error) {
     console.error('Generate PDF proxy error:', error);
     return NextResponse.json(
