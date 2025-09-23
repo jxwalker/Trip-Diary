@@ -15,7 +15,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.colors import black, white, HexColor
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
-                                      Image, Table, TableStyle, PageBreak)
+                                Image, Table, TableStyle, PageBreak)
 from reportlab.platypus.flowables import HRFlowable
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 
@@ -46,7 +46,7 @@ class MagazinePDFService:
         self.colors = {
             "primary": self.color_palette.get('primary', HexColor("#1a365d")),
             "secondary": self.color_palette.get('secondary',
-                                                   HexColor("#2d3748")),
+                                                HexColor("#2d3748")),
             "accent": self.color_palette.get('accent', HexColor("#e53e3e")),
             "gold": self.color_palette.get('gold', HexColor("#d69e2e")),
             "light_gray": self.color_palette.get('light', HexColor("#f7fafc")),
