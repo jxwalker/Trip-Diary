@@ -344,40 +344,40 @@ class ServiceFactory:
         try:
             return EnhancedGuideService()
         except Exception as e:
-            logger.error(f"Failed to create enhanced guide service: {e}")
-            raise ConfigurationError(f"Enhanced guide service creation failed: {e}")
+            logger.exception(f"Failed to create enhanced guide service: {e}")
+            raise ConfigurationError(f"Enhanced guide service creation failed: {e}") from e
     
     def create_optimized_guide_service(self) -> OptimizedGuideService:
         """Create optimized guide service"""
         try:
             return OptimizedGuideService()
         except Exception as e:
-            logger.error(f"Failed to create optimized guide service: {e}")
-            raise ConfigurationError(f"Optimized guide service creation failed: {e}")
+            logger.exception(f"Failed to create optimized guide service: {e}")
+            raise ConfigurationError(f"Optimized guide service creation failed: {e}") from e
     
     def create_luxury_guide_service(self) -> LuxuryGuideService:
         """Create luxury guide service"""
         try:
             return LuxuryGuideService()
         except Exception as e:
-            logger.error(f"Failed to create luxury guide service: {e}")
-            raise ConfigurationError(f"Luxury guide service creation failed: {e}")
+            logger.exception(f"Failed to create luxury guide service: {e}")
+            raise ConfigurationError(f"Luxury guide service creation failed: {e}") from e
     
-    def create_magazine_pdf_service(self, destination: str = None) -> MagazinePDFService:
+    def create_magazine_pdf_service(self, destination: Optional[str] = None) -> MagazinePDFService:
         """Create magazine PDF service"""
         try:
             return MagazinePDFService(destination=destination)
         except Exception as e:
-            logger.error(f"Failed to create magazine PDF service: {e}")
-            raise ConfigurationError(f"Magazine PDF service creation failed: {e}")
+            logger.exception(f"Failed to create magazine PDF service: {e}")
+            raise ConfigurationError(f"Magazine PDF service creation failed: {e}") from e
     
     def create_unified_guide_service(self) -> UnifiedGuideService:
         """Create unified guide service"""
         try:
             return UnifiedGuideService()
         except Exception as e:
-            logger.error(f"Failed to create unified guide service: {e}")
-            raise ConfigurationError(f"Unified guide service creation failed: {e}")
+            logger.exception(f"Failed to create unified guide service: {e}")
+            raise ConfigurationError(f"Unified guide service creation failed: {e}") from e
     
     def _get_service_config(self, service_type: str, service_name: str) -> ServiceConfig:
         """Get service configuration"""
