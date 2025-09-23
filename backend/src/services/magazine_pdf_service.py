@@ -171,7 +171,7 @@ class MagazinePDFService:
                 topMargin=72,
                 bottomMargin=72
             )
-            
+
             # Build story (content)
             story = []
 
@@ -252,7 +252,7 @@ class MagazinePDFService:
         story.append(Spacer(1, 20))
 
         # Subtitle
-        story.append(Paragraph("Your Personalized Travel Guide", 
+        story.append(Paragraph("Your Personalized Travel Guide",
                                self.styles['subtitle']))
         story.append(Spacer(1, 30))
 
@@ -263,18 +263,18 @@ class MagazinePDFService:
 
         # Generated date
         date_str = datetime.now().strftime("%B %d, %Y")
-        story.append(Paragraph(f"Generated on {date_str}", 
+        story.append(Paragraph(f"Generated on {date_str}",
                                self.styles['caption']))
-    
-    async def _add_table_of_contents(self, story: List, 
+
+    async def _add_table_of_contents(self, story: List,
                                      guide_data: Dict[str, Any]) -> None:
         """Add table of contents"""
         story.append(Paragraph("Table of Contents", self.styles['section']))
         story.append(Spacer(1, 20))
-        
+
         contents = [
             "Weather Forecast",
-            "Daily Itinerary", 
+            "Daily Itinerary",
             "Restaurants & Dining",
             "Attractions & Activities",
             "Practical Information",
@@ -282,41 +282,41 @@ class MagazinePDFService:
             "Accessibility",
             "Emergency Contacts"
         ]
-        
+
         for i, item in enumerate(contents, 1):
             story.append(Paragraph(f"{i}. {item}", self.styles['body']))
             story.append(Spacer(1, 8))
-    
-    async def _add_weather_section(self, story: List, 
+
+    async def _add_weather_section(self, story: List,
                                    guide_data: Dict[str, Any]) -> None:
         """Add weather forecast section with beautiful layout"""
         story.append(Paragraph("Weather Forecast", self.styles['section']))
         story.append(Spacer(1, 15))
-        
+
         weather_data = guide_data.get("weather", [])
         if not weather_data:
             story.append(Paragraph(
                 "Weather information will be available closer to your "
-                "travel date.", 
+                "travel date.",
                 self.styles['body']))
             return
-        
+
         # Create weather table
-        weather_table_data = [["Date", "Conditions", "High", "Low", 
+        weather_table_data = [["Date", "Conditions", "High", "Low",
                                "Description"]]
-        
+
         for day in weather_data[:5]:  # Show 5 days
             date = day.get("date", "")
             conditions = day.get("conditions", "")
             high = day.get("temperature", {}).get("high", "--")
             low = day.get("temperature", {}).get("low", "--")
             description = day.get("description", "")
-            
-            weather_table_data.append([date, conditions, high, low, 
+
+            weather_table_data.append([date, conditions, high, low,
                                        description])
-        
+
         weather_table = Table(
-            weather_table_data, 
+            weather_table_data,
             colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 2.7*inch]
         )
         weather_table.setStyle(TableStyle([
@@ -329,18 +329,19 @@ class MagazinePDFService:
             ('BACKGROUND', (0, 1), (-1, -1), self.colors["light_gray"]),
             ('GRID', (0, 0), (-1, -1), 1, black)
         ]))
-        
+
         story.append(weather_table)
         story.append(Spacer(1, 20))
-    
+
     async def _add_daily_itinerary(
         self, story: List, guide_data: Dict[str, Any]
     ) -> None:
         """Add daily itinerary with photos and beautiful layout"""
         story.append(Paragraph("Daily Itinerary", self.styles['section']))
         story.append(Spacer(1, 15))
-        
+
         daily_itinerary = guide_data.get("daily_itinerary", [])
+
         
         for day_data in daily_itinerary:
             day_num = day_data.get("day", 1)
@@ -349,7 +350,7 @@ class MagazinePDFService:
             
             # Day header
             story.append(Paragraph(
-                f"Day {day_num} - {day_of_week}, {date}", 
+                f"Day {day_num} - {day_of_week}, {date}",
                 self.styles['section']
             ))
             story.append(Spacer(1, 10))
@@ -392,7 +393,7 @@ class MagazinePDFService:
             # Add day separator
             if day_num < len(daily_itinerary):
                 story.append(HRFlowable(
-                    width="100%", thickness=1, lineCap='round', 
+                    width="100%", thickness=1, lineCap='round',
                     color=self.colors["muted"]
                 ))
                 story.append(Spacer(1, 15))
@@ -515,7 +516,7 @@ class MagazinePDFService:
             for transport_type, details in transportation.items():
                 if details and not isinstance(details, str):
                     story.append(Paragraph(
-                        f"<b>{transport_type.replace('_', ' ').title()}</b>", 
+                        f"<b>{transport_type.replace('_', ' ').title()}</b>",
                         self.styles['body']
                     ))
                     if isinstance(details, dict):
@@ -524,7 +525,7 @@ class MagazinePDFService:
                     story.append(Spacer(1, 10))
         else:
             story.append(Paragraph(
-                "Transportation information will be available in the full guide.", 
+                "Transportation information will be available in the full guide.",
                 self.styles['body']
             ))
     
