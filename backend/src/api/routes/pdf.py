@@ -57,7 +57,8 @@ async def generate_pdf_for_trip(
             if not (destination and start_date and end_date):
                 raise HTTPException(
                     status_code=400,
-                    detail="Trip is missing destination or dates required to generate guide"
+                    detail=("Trip is missing destination or dates required "
+                           "to generate guide")
                 )
 
             hotel_info = {}

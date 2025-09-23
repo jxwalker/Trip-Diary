@@ -225,7 +225,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                 "created_time": datetime.fromtimestamp(
                     stat.st_ctime
                 ).isoformat(),
-                "modified_time": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                "modified_time": datetime.fromtimestamp(
+                    stat.st_mtime
+                ).isoformat()
             }
             
             # PDF-specific metadata
@@ -238,7 +240,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                     metadata.update({
                         "page_count": len(pdf_reader.pages),
                         "is_encrypted": pdf_reader.is_encrypted,
-                        "pdf_version": getattr(pdf_reader, 'pdf_version', 'Unknown')
+                        "pdf_version": getattr(
+                            pdf_reader, 'pdf_version', 'Unknown'
+                        )
                     })
                     
                     # Document info
@@ -250,8 +254,12 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                             "subject": doc_info.get("/Subject", ""),
                             "creator": doc_info.get("/Creator", ""),
                             "producer": doc_info.get("/Producer", ""),
-                            "creation_date": str(doc_info.get("/CreationDate", "")),
-                            "modification_date": str(doc_info.get("/ModDate", ""))
+                            "creation_date": str(
+                                doc_info.get("/CreationDate", "")
+                            ),
+                            "modification_date": str(
+                                doc_info.get("/ModDate", "")
+                            )
                         })
                         
             except Exception as e:
@@ -279,27 +287,38 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                     
                     for page_num, page in enumerate(pdf_reader.pages):
                         if '/XObject' in page['/Resources']:
-                            xObject = page['/Resources']['/XObject'].get_object()
+                            xObject = page['/Resources'][
+                                '/XObject'
+                            ].get_object()
                             
                             for obj in xObject:
                                 if xObject[obj]['/Subtype'] == '/Image':
                                     try:
-                                        size = (xObject[obj]['/Width'], xObject[obj]['/Height'])
+                                        size = (
+                                            xObject[obj]['/Width'], 
+                                            xObject[obj]['/Height']
+                                        )
                                         data = xObject[obj].get_data()
                                         
-                                        if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
+                                        if (xObject[obj]['/ColorSpace'] == 
+                                            '/DeviceRGB'):
                                             mode = "RGB"
                                         else:
                                             mode = "P"
                                         
-                                        # Convert to PIL Image and then to bytes
-                                        img = PIL.Image.frombytes(mode, size, data)
+                                        # Convert to PIL Image and bytes
+                                        img = PIL.Image.frombytes(
+                                            mode, size, data
+                                        )
                                         img_bytes = io.BytesIO()
                                         img.save(img_bytes, format='PNG')
                                         images.append(img_bytes.getvalue())
                                         
                                     except Exception as img_error:
-                                        logger.warning(f"Failed to extract image from page {page_num}: {img_error}")
+                                        logger.warning(
+                                            f"Failed to extract image from "
+                                            f"page {page_num}: {img_error}"
+                                        )
                                         continue
                                         
             except Exception as e:
@@ -325,7 +344,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                         page_text = page.extract_text()
                         text += page_text + "\n"
                     except Exception as e:
-                        logger.warning(f"Failed to extract text from page: {e}")
+                        logger.warning(
+                            f"Failed to extract text from page: {e}"
+                        )
                         continue
             
             return text
@@ -340,14 +361,18 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         try:
             # This would require additional OCR libraries like pytesseract
             # For now, return a placeholder
-            logger.warning("OCR text extraction not implemented - would require pytesseract")
+            logger.warning(
+                "OCR text extraction not implemented - would require pytesseract"
+            )
             return ""
             
         except Exception as e:
             logger.error(f"OCR text extraction failed: {e}")
             return ""
     
-    async def _extract_structured_data(self, text: str, extraction_type: str) -> Dict[str, Any]:
+    async def _extract_structured_data(
+        self, text: str, extraction_type: str
+    ) -> Dict[str, Any]:
         """Extract structured data from text using LLM"""
         try:
             # Import LLM service
@@ -360,7 +385,8 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             # Create extraction prompt based on type
             if extraction_type == "travel":
                 prompt = f"""
-                Extract travel information from the following text and return as JSON:
+                Extract travel information from the following text and 
+                return as JSON:
                 
                 Text: {text[:4000]}  # Limit text length
                 

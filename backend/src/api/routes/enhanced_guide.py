@@ -282,7 +282,8 @@ async def generate_enhanced_guide(
         )
         
         # Skip the database save for now
-        # save_result = await database_service.save_enhanced_guide_data(trip_id, guide)
+        # save_result = await database_service.save_enhanced_guide_data(
+        # )
         # if not save_result.success:
         #     logger.error(f"Failed to save guide: {save_result.error}")
         #     raise HTTPException(
@@ -366,19 +367,22 @@ async def regenerate_enhanced_guide(
             destination = extracted_data.get("destination")
 
         # Try to get destination from hotel city if not found
-        if not destination and isinstance(extracted_data, dict) and extracted_data.get("hotels"):
+        if (not destination and isinstance(extracted_data, dict) and 
+                extracted_data.get("hotels")):
             hotel_info = extracted_data["hotels"][0]
             destination = hotel_info.get("city")
 
         # Try to get destination from flight arrival location
-        if not destination and isinstance(extracted_data, dict) and extracted_data.get("flights"):
+        if (not destination and isinstance(extracted_data, dict) and 
+                extracted_data.get("flights")):
             flight_info = extracted_data["flights"][0]
             destination = flight_info.get("arrival_location")
 
         if not destination:
             raise HTTPException(
                 status_code=400,
-                detail="No destination found in trip data. Please ensure your trip includes destination information."
+                detail=("No destination found in trip data. Please ensure "
+                       "your trip includes destination information.")
             )
 
         # Get dates from flights if available - NO HARDCODED FALLBACKS
@@ -391,7 +395,8 @@ async def regenerate_enhanced_guide(
         if not start_date or not end_date:
             raise HTTPException(
                 status_code=400,
-                detail="No travel dates found in trip data. Please ensure your trip includes flight information with dates."
+                detail=("No travel dates found in trip data. Please ensure "
+                       "your trip includes flight information with dates.")
             )
             
         # Get hotel info if available
@@ -418,7 +423,9 @@ async def regenerate_enhanced_guide(
                 hotel_info=hotel_info,
                 preferences=preferences,
                 progress_callback=lambda progress, message: 
-                    database_service.update_processing_state(validated_trip_id, message, progress),
+                    database_service.update_processing_state(
+                        validated_trip_id, message, progress
+                    ),
                 timeout=45
             )
         else:
@@ -430,7 +437,9 @@ async def regenerate_enhanced_guide(
                 preferences=preferences,
                 extracted_data=extracted_data,
                 progress_callback=lambda progress, message: 
-                    database_service.update_processing_state(validated_trip_id, message, progress),
+                    database_service.update_processing_state(
+                        validated_trip_id, message, progress
+                    ),
                 single_pass=True
             )
         
@@ -446,15 +455,25 @@ async def regenerate_enhanced_guide(
                 "message": guide.get("message", "Guide regeneration failed")
             }
         
-        # Save updated guide - using direct method to avoid runtime loading issue
+        # Save updated guide - using direct method to avoid runtime 
+        # loading issue
         # Save guide - using new method to avoid caching issues
         logger.info("Saving updated enhanced guide data using new method")
-        save_result = await database_service.save_enhanced_guide_data(validated_trip_id, guide)
+        save_result = await database_service.save_enhanced_guide_data(
+            validated_trip_id, guide
+        )
         if not save_result.success:
             logger.error(f"Failed to save updated guide: {save_result.error}")
-            raise HTTPException(status_code=500, detail=f"Failed to save updated guide: {save_result.error}")
-        logger.info(f"Enhanced guide updated successfully for trip {validated_trip_id}")
-        await database_service.update_processing_state(validated_trip_id, "Guide regeneration complete", 100)
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to save updated guide: {save_result.error}"
+            )
+        logger.info(
+            f"Enhanced guide updated successfully for trip {validated_trip_id}"
+        )
+        await database_service.update_processing_state(
+            validated_trip_id, "Guide regeneration complete", 100
+        )
         
         return {
             "trip_id": validated_trip_id,
@@ -521,19 +540,22 @@ async def generate_luxury_guide(
             destination = extracted_data.get("destination")
 
         # Try to get destination from hotel city if not found
-        if not destination and isinstance(extracted_data, dict) and extracted_data.get("hotels"):
+        if (not destination and isinstance(extracted_data, dict) and 
+                extracted_data.get("hotels")):
             hotel_info = extracted_data["hotels"][0]
             destination = hotel_info.get("city")
 
         # Try to get destination from flight arrival location
-        if not destination and isinstance(extracted_data, dict) and extracted_data.get("flights"):
+        if (not destination and isinstance(extracted_data, dict) and 
+                extracted_data.get("flights")):
             flight_info = extracted_data["flights"][0]
             destination = flight_info.get("arrival_location")
 
         if not destination:
             raise HTTPException(
                 status_code=400,
-                detail="No destination found in trip data. Please ensure your trip includes destination information."
+                detail=("No destination found in trip data. Please ensure "
+                       "your trip includes destination information.")
             )
 
         # Get dates from flights if available - NO HARDCODED FALLBACKS
@@ -546,7 +568,8 @@ async def generate_luxury_guide(
         if not start_date or not end_date:
             raise HTTPException(
                 status_code=400,
-                detail="No travel dates found in trip data. Please ensure your trip includes flight information with dates."
+                detail=("No travel dates found in trip data. Please ensure "
+                       "your trip includes flight information with dates.")
             )
         
         # Get hotel info - NO HARDCODED FALLBACKS
@@ -578,7 +601,9 @@ async def generate_luxury_guide(
         
         # Save guide - using new method to avoid caching issues
         logger.info("Saving luxury enhanced guide data using new method")
-        save_result = await database_service.save_enhanced_guide_data(validated_trip_id, guide)
+        save_result = await database_service.save_enhanced_guide_data(
+            validated_trip_id, guide
+        )
         if not save_result.success:
             logger.error(f"Failed to save luxury guide: {save_result.error}")
             raise HTTPException(status_code=500, detail=f"Failed to save luxury guide: {save_result.error}")

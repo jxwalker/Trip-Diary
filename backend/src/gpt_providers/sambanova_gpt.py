@@ -9,17 +9,23 @@ class SambanovaGPT(GPTInterface):
         if api_key is None:
             api_key = os.getenv('SAMBANOVA_API_KEY')
             if not api_key:
-                raise ValueError("API key not found. Please set the SAMBANOVA_API_KEY environment variable.")
+                raise ValueError(
+                    "API key not found. Please set the SAMBANOVA_API_KEY "
+                    "environment variable."
+                )
         self.client = openai.OpenAI(
             api_key=api_key,
             base_url="https://api.sambanova.ai/v1"
         )
 
-    def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
+    def generate_text(
+        self, prompt: str, system: str | None = None
+    ) -> Dict[str, Any]:
         system_content = (
             f"{system}\n\n"
             "IMPORTANT: You must respond with ONLY a valid JSON object. "
-            "Do not include any other text, markdown formatting, or explanations."
+            "Do not include any other text, markdown formatting, "
+            "or explanations."
         ) if system else "You are a helpful assistant"
 
         try:

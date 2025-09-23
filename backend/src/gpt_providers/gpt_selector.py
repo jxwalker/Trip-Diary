@@ -26,6 +26,8 @@ class GPTSelector:
         api_key = os.getenv(env_key)
         
         if not api_key:
-            raise ValueError(f"API key not found for provider: {provider_name}")
+            raise ValueError(
+                f"API key not found for provider: {provider_name}"
+            )
             
         return provider_class(api_key=api_key)

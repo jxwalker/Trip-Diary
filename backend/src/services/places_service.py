@@ -92,7 +92,9 @@ class PlacesService:
                             details.get('reviews', [])
                         ),
                         "specialties": [],
-                        "reservation_recommended": details.get('rating', 0) > 4.3,
+                        "reservation_recommended": (
+                            details.get('rating', 0) > 4.3
+                        ),
                         "distance_from_hotel": None
                     }
                     
@@ -103,12 +105,15 @@ class PlacesService:
                                 origins=[hotel_address],
                                 destinations=[restaurant["address"]]
                             )
-                            if distance['rows'][0]['elements'][0]['status'] == 'OK':
+                            if (distance['rows'][0]['elements'][0]['status'] == 
+                                'OK'):
                                 restaurant["distance_from_hotel"] = (
-                                    distance['rows'][0]['elements'][0]['distance']['text']
+                                    distance['rows'][0]['elements'][0]
+                                    ['distance']['text']
                                 )
                                 restaurant["walking_time"] = (
-                                    distance['rows'][0]['elements'][0]['duration']['text']
+                                    distance['rows'][0]['elements'][0]
+                                    ['duration']['text']
                                 )
                         except:
                             pass
@@ -191,7 +196,9 @@ class PlacesService:
                             details
                         ),
                         "entry_fee": None,
-                        "typical_duration": self._estimate_duration(place_type),
+                        "typical_duration": self._estimate_duration(
+                            place_type
+                        ),
                         "best_time_to_visit": self._suggest_visit_time(
                             place_type
                         ),
@@ -205,12 +212,15 @@ class PlacesService:
                                 origins=[hotel_address],
                                 destinations=[attraction["address"]]
                             )
-                            if distance['rows'][0]['elements'][0]['status'] == 'OK':
+                            if (distance['rows'][0]['elements'][0]['status'] == 
+                                'OK'):
                                 attraction["distance_from_hotel"] = (
-                                    distance['rows'][0]['elements'][0]['distance']['text']
+                                    distance['rows'][0]['elements'][0]
+                                    ['distance']['text']
                                 )
                                 attraction["travel_time"] = (
-                                    distance['rows'][0]['elements'][0]['duration']['text']
+                                    distance['rows'][0]['elements'][0]
+                                    ['duration']['text']
                                 )
                         except:
                             pass

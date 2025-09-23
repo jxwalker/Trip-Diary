@@ -147,7 +147,8 @@ class TravelPackGenerator:
         ))
     
     async def generate(self, trip_id: str, itinerary: Dict, 
-                      recommendations: Dict, enhanced_guide: Dict = None) -> str:
+                      recommendations: Dict, 
+                      enhanced_guide: Dict = None) -> str:
         """
         Generate PDF travel pack with enhanced guide content
         """
@@ -267,7 +268,8 @@ class TravelPackGenerator:
                 Spacer(1, 0.5*inch),
                 Paragraph(f"Trip ID: {trip_id}", self.styles['InfoText']),
                 Paragraph(
-                    "Your travel pack is being prepared. Please try again later.", 
+                    "Your travel pack is being prepared. "
+                    "Please try again later.", 
                     self.styles['InfoText']
                 )
             ]
@@ -309,7 +311,8 @@ class TravelPackGenerator:
             Paragraph(f"<b>{destination}</b>", self.styles['CustomTitle']),
             Spacer(1, 0.15*inch),
             Paragraph(
-                f"{trip_summary.get('start_date', '')} - {trip_summary.get('end_date', '')}",
+                f"{trip_summary.get('start_date', '')} - "
+                f"{trip_summary.get('end_date', '')}",
                 self.styles['InfoText']
             ),
             Paragraph(f"{persona}", self.styles['SmallText']),
@@ -329,15 +332,30 @@ class TravelPackGenerator:
         # Create overview table
         data = []
         if trip_summary.get("destination"):
-            data.append(["Destination:", self._safe_text(trip_summary.get("destination"))])
+            data.append([
+                "Destination:", 
+                self._safe_text(trip_summary.get("destination"))
+            ])
         if trip_summary.get("duration"):
-            data.append(["Duration:", self._safe_text(trip_summary.get("duration"))])
+            data.append([
+                "Duration:", 
+                self._safe_text(trip_summary.get("duration"))
+            ])
         if trip_summary.get("start_date"):
-            data.append(["Start Date:", self._safe_text(trip_summary.get("start_date"))])
+            data.append([
+                "Start Date:", 
+                self._safe_text(trip_summary.get("start_date"))
+            ])
         if trip_summary.get("end_date"):
-            data.append(["End Date:", self._safe_text(trip_summary.get("end_date"))])
+            data.append([
+                "End Date:", 
+                self._safe_text(trip_summary.get("end_date"))
+            ])
         if trip_summary.get("total_passengers"):
-            data.append(["Travelers:", self._safe_text(trip_summary.get("total_passengers"))])
+            data.append([
+                "Travelers:", 
+                self._safe_text(trip_summary.get("total_passengers"))
+            ])
         
         if data:
             table = Table(data, colWidths=[2*inch, 4*inch])
@@ -354,7 +372,10 @@ class TravelPackGenerator:
     def _create_guide_summary(self, enhanced_guide: Dict) -> List:
         """Create enhanced guide summary section"""
         story = []
-        story.append(Paragraph("Your Personalized Travel Guide", self.styles['SectionHeader']))
+        story.append(Paragraph(
+            "Your Personalized Travel Guide", 
+            self.styles['SectionHeader']
+        ))
         story.append(Spacer(1, 0.2*inch))
         
         if enhanced_guide.get("summary"):
@@ -362,16 +383,25 @@ class TravelPackGenerator:
             summary_text = self._safe_text(enhanced_guide["summary"])
             for para in summary_text.split('\n'):
                 if para.strip():
-                    story.append(Paragraph(para.strip(), self.styles['InfoText']))
+                    story.append(Paragraph(
+                        para.strip(), 
+                        self.styles['InfoText']
+                    ))
                     story.append(Spacer(1, 0.1*inch))
         
         if enhanced_guide.get("destination_insights"):
             story.append(Spacer(1, 0.2*inch))
-            story.append(Paragraph("Destination Insights", self.styles['SubHeader']))
+            story.append(Paragraph(
+                "Destination Insights", 
+                self.styles['SubHeader']
+            ))
             insights_text = self._safe_text(enhanced_guide["destination_insights"])
             for para in insights_text.split('\n'):
                 if para.strip():
-                    story.append(Paragraph(para.strip(), self.styles['InfoText']))
+                    story.append(Paragraph(
+                        para.strip(), 
+                        self.styles['InfoText']
+                    ))
                     story.append(Spacer(1, 0.1*inch))
         
         return story
@@ -379,7 +409,10 @@ class TravelPackGenerator:
     def _create_flight_section(self, flights: List[Dict]) -> List:
         """Create flight information section"""
         story = []
-        story.append(Paragraph("Flight Information", self.styles['SectionHeader']))
+        story.append(Paragraph(
+            "Flight Information", 
+            self.styles['SectionHeader']
+        ))
         story.append(Spacer(1, 0.2*inch))
         
         for i, flight in enumerate(flights):
@@ -387,9 +420,14 @@ class TravelPackGenerator:
                 story.append(Spacer(1, 0.3*inch))
             
             # Flight header
-            flight_num = self._safe_text(flight.get("flight_number", f"Flight {i+1}"))
+            flight_num = self._safe_text(
+                flight.get("flight_number", f"Flight {i+1}")
+            )
             airline = self._safe_text(flight.get("airline", ""))
-            story.append(Paragraph(f"<b>{flight_num}</b> - {airline}", self.styles['SubHeader']))
+            story.append(Paragraph(
+                f"<b>{flight_num}</b> - {airline}", 
+                self.styles['SubHeader']
+            ))
             
             # Flight details table
             data = []
@@ -400,7 +438,8 @@ class TravelPackGenerator:
                 data.append([
                     "Departure:",
                     f"{self._safe_text(dep.get('airport', ''))}",
-                    f"{self._safe_text(dep.get('date', ''))} at {self._safe_text(dep.get('time', ''))}"
+                    f"{self._safe_text(dep.get('date', ''))} at "
+                    f"{self._safe_text(dep.get('time', ''))}"
                 ])
             
             # Arrival
@@ -409,14 +448,19 @@ class TravelPackGenerator:
                 data.append([
                     "Arrival:",
                     f"{self._safe_text(arr.get('airport', ''))}",
-                    f"{self._safe_text(arr.get('date', ''))} at {self._safe_text(arr.get('time', ''))}"
+                    f"{self._safe_text(arr.get('date', ''))} at "
+                    f"{self._safe_text(arr.get('time', ''))}"
                 ])
             
             # Other details
             if flight.get("seat"):
                 data.append(["Seat:", self._safe_text(flight.get("seat")), ""])
             if flight.get("class"):
-                data.append(["Class:", self._safe_text(flight.get("class")), ""])
+                data.append([
+                    "Class:", 
+                    self._safe_text(flight.get("class")), 
+                    ""
+                ])
             
             if data:
                 table = Table(data, colWidths=[1.5*inch, 2.5*inch, 2*inch])

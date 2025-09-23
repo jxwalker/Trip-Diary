@@ -53,7 +53,7 @@ class FastGuideService:
         # Prepare all tasks to run in PARALLEL
         tasks = []
         
-        # Task 1: Get essential info (restaurants, attractions, events) in ONE call
+        # Task 1: Get essential info (restaurants, attractions, events)
         tasks.append(self._get_essential_content(
             destination, start_date, end_date, preferences))
         
@@ -81,11 +81,14 @@ class FastGuideService:
             await progress_callback(80, "Assembling guide")
         
         # Unpack results
-        essential_content = (results[0] if not isinstance(results[0], Exception) 
+        essential_content = (results[0] 
+                             if not isinstance(results[0], Exception) 
                              else {})
-        weather_data = (results[1] if not isinstance(results[1], Exception) 
+        weather_data = (results[1] 
+                       if not isinstance(results[1], Exception) 
                        else {})
-        itinerary_result = (results[2] if not isinstance(results[2], Exception) 
+        itinerary_result = (results[2] 
+                           if not isinstance(results[2], Exception) 
                            else [])
         
         # Check if itinerary is an error response
@@ -132,7 +135,8 @@ class FastGuideService:
 
         # Build destination insights
         insights_parts = [
-            f"Discover the best of {destination} with our curated recommendations."]
+            f"Discover the best of {destination} with our curated "
+            f"recommendations."]
         if essential_content.get("error"):
             insights_parts.append(f"Note: {essential_content['error']}")
         else:
@@ -162,7 +166,8 @@ class FastGuideService:
                 "packing": self._generate_packing_suggestions(weather_forecasts)
             },
             "hidden_gems": [],
-            "citations": ["Perplexity AI search results", "OpenWeather API", "Local travel expertise"],
+            "citations": ["Perplexity AI search results", 
+                         "OpenWeather API", "Local travel expertise"],
             "generated_with": "fast_guide_service",
             "generated_in_seconds": 15,
             "timestamp": datetime.now().isoformat(),
@@ -170,14 +175,16 @@ class FastGuideService:
         }
         
         # CRITICAL: Validate guide completeness before returning
-        is_valid, errors, validation_details = GuideValidator.validate_guide(guide)
+        is_valid, errors, validation_details = (
+            GuideValidator.validate_guide(guide))
 
         if not is_valid:
             print(f"Guide validation failed: {errors}")
             # Return error instead of fallback content
             return {
                 "error": "Guide validation failed",
-                "message": f"Generated guide for {destination} is incomplete: {', '.join(errors)}",
+                "message": (f"Generated guide for {destination} is "
+                           f"incomplete: {', '.join(errors)}"),
                 "validation_errors": errors,
                 "destination": destination,
                 "start_date": start_date,
@@ -189,7 +196,8 @@ class FastGuideService:
             guide["validation_passed"] = True
 
         # Log validation results
-        GuideValidator.log_validation_results(guide, is_valid, errors, validation_details)
+        GuideValidator.log_validation_results(
+            guide, is_valid, errors, validation_details)
 
         # Cache for future use
         self.destination_cache[cache_key] = guide
@@ -199,7 +207,9 @@ class FastGuideService:
 
         return guide
     
-    async def _get_essential_content(self, destination: str, start_date: str, end_date: str, preferences: Dict) -> Dict:
+    async def _get_essential_content(self, destination: str, 
+                                    start_date: str, end_date: str, 
+                                    preferences: Dict) -> Dict:
         """Get restaurants, attractions, and events with retry logic"""
         
         if not self.perplexity_api_key:
@@ -213,7 +223,8 @@ class FastGuideService:
             }
         
         # Smaller, focused prompt
-        prompt = f"""For {destination} from {start_date} to {end_date}, provide:
+        prompt = (f"For {destination} from {start_date} to {end_date}, "
+                 f"provide:")
 
 1. TOP 5 RESTAURANTS:
 - Name, cuisine, price ($/$$/$$$), address, why recommended
@@ -235,7 +246,8 @@ BE CONCISE - one line per item."""
 
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=base_timeout + (attempt * 5))  # 12s, 17s
+                timeout = aiohttp.ClientTimeout(
+                    total=base_timeout + (attempt * 5))  # 12s, 17s
                 print(f"Attempt {attempt + 1}/{max_retries} for Perplexity API (timeout: {timeout.total}s)")
                 
                 async with aiohttp.ClientSession(timeout=timeout) as session:

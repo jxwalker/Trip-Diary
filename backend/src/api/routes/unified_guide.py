@@ -112,7 +112,9 @@ async def generate_unified_pdf(
                     "unified_pdf_generation"
                 )
         else:
-            logger.exception(f"PDF service returned unexpected type: {type(pdf_result)}")
+            logger.exception(
+                f"PDF service returned unexpected type: {type(pdf_result)}"
+            )
             return create_error_response(
                 "PDF generation failed - unexpected return type", 
                 "unified_pdf_generation"
@@ -156,17 +158,23 @@ async def get_available_personas():
             {
                 "id": "foodie",
                 "name": "Foodie",
-                "description": "Culinary experiences, local cuisine, food tours"
+                "description": (
+                    "Culinary experiences, local cuisine, food tours"
+                )
             },
             {
                 "id": "adventure_seeker",
                 "name": "Adventure Seeker",
-                "description": "Outdoor activities, extreme sports, adventure tours"
+                "description": (
+                    "Outdoor activities, extreme sports, adventure tours"
+                )
             },
             {
                 "id": "cultural_enthusiast",
                 "name": "Cultural Enthusiast",
-                "description": "Museums, historical sites, cultural experiences"
+                "description": (
+                    "Museums, historical sites, cultural experiences"
+                )
             },
             {
                 "id": "family_friendly",

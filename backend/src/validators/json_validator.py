@@ -44,8 +44,11 @@ Return ONLY the cleaned JSON, no other text."""
                 logger.debug(f"Basic cleaned JSON: {json_str}")
                 return json_str
             except RuntimeError:
-                cleaned_result = asyncio.run(llm_parser._parse_with_openai(cleaning_prompt))
-                if isinstance(cleaned_result, dict) and 'cleaned_json' in cleaned_result:
+                cleaned_result = asyncio.run(
+                    llm_parser._parse_with_openai(cleaning_prompt)
+                )
+                if (isinstance(cleaned_result, dict) and 
+                    'cleaned_json' in cleaned_result):
                     return cleaned_result['cleaned_json']
                 elif isinstance(cleaned_result, str):
                     return cleaned_result
@@ -80,7 +83,8 @@ Return ONLY the cleaned JSON, no other text."""
     @staticmethod
     def validate_passenger(passenger: Dict) -> bool:
         """Validate a passenger entry."""
-        if not all(k in passenger for k in ['title', 'first_name', 'last_name']):
+        required_fields = ['title', 'first_name', 'last_name']
+        if not all(k in passenger for k in required_fields):
             logger.debug(f"Missing required passenger fields: {passenger}")
             return False
 
@@ -96,9 +100,12 @@ Return ONLY the cleaned JSON, no other text."""
             return False
 
         # Validate no unexpected names
-        unexpected_names = {'JAMES'}  # Add any other names that shouldn't appear
+        # Add any other names that shouldn't appear
+        unexpected_names = {'JAMES'}
         if passenger['first_name'].upper() in unexpected_names:
-            logger.debug(f"Unexpected passenger name: {passenger['first_name']}")
+            logger.debug(
+                f"Unexpected passenger name: {passenger['first_name']}"
+            )
             return False
 
         return True
@@ -119,14 +126,18 @@ Return ONLY the cleaned JSON, no other text."""
 
         # Convert features to list if string
         if isinstance(room.get('features'), str):
-            room['features'] = [f.strip() for f in room['features'].split(',') if f.strip()]
+            room['features'] = [
+                f.strip() for f in room['features'].split(',') if f.strip()
+            ]
 
         return True
 
     @staticmethod
     def validate_hotel(hotel: Dict) -> bool:
         """Validate hotel structure and room details."""
-        required_fields = ['name', 'city', 'check_in_date', 'check_out_date', 'rooms']
+        required_fields = [
+            'name', 'city', 'check_in_date', 'check_out_date', 'rooms'
+        ]
         if not all(k in hotel for k in required_fields):
             logger.debug(f"Missing required hotel fields: {hotel}")
             return False
@@ -139,7 +150,8 @@ Return ONLY the cleaned JSON, no other text."""
         # Group rooms by type and bed configuration
         room_configs = set()
         for room in hotel['rooms']:
-            if not isinstance(room, dict) or not JSONValidator.validate_room(room):
+            if (not isinstance(room, dict) or 
+                not JSONValidator.validate_room(room)):
                 logger.debug(f"Invalid room data: {room}")
                 return False
 
@@ -154,7 +166,10 @@ Return ONLY the cleaned JSON, no other text."""
                 ('Premium Pool Access', '2 Double')
             }
             if not room_configs.issuperset(expected_configs):
-                logger.debug(f"Missing expected room configs for Phuket Marriott: {room_configs}")
+                logger.debug(
+                    f"Missing expected room configs for Phuket Marriott: "
+                    f"{room_configs}"
+                )
                 return False
 
         elif 'bangkok marriott' in hotel_name:
@@ -163,7 +178,10 @@ Return ONLY the cleaned JSON, no other text."""
                 ('Deluxe Room', '2 Double')
             }
             if not room_configs.issuperset(expected_configs):
-                logger.debug(f"Missing expected room configs for Bangkok Marriott: {room_configs}")
+                logger.debug(
+                    f"Missing expected room configs for Bangkok Marriott: "
+                    f"{room_configs}"
+                )
                 return False
 
         return True
@@ -190,7 +208,8 @@ Return ONLY the cleaned JSON, no other text."""
 
         for response in responses:
             # Take first non-null booking reference
-            if not result['booking_reference'] and response.get('booking_reference'):
+            if (not result['booking_reference'] and 
+                response.get('booking_reference')):
                 result['booking_reference'] = response['booking_reference']
 
             # Merge passengers (with validation)
@@ -245,7 +264,10 @@ Return ONLY the cleaned JSON, no other text."""
                     data = json.loads(cleaned)
 
                     # Basic validation
-                    if any(field in data for field in ['booking_reference', 'passengers', 'flights', 'hotels']):
+                    required_fields = [
+                        'booking_reference', 'passengers', 'flights', 'hotels'
+                    ]
+                    if any(field in data for field in required_fields):
                         valid_responses.append(data)
                 except json.JSONDecodeError as e:
                     logger.debug(f"Failed to parse JSON object: {str(e)}")
@@ -255,7 +277,8 @@ Return ONLY the cleaned JSON, no other text."""
             if valid_responses:
                 # Merge all valid responses
                 merged = JSONValidator.merge_responses(valid_responses)
-                if merged and any(merged.get(key) for key in ['passengers', 'flights', 'hotels']):
+                check_keys = ['passengers', 'flights', 'hotels']
+                if merged and any(merged.get(key) for key in check_keys):
                     return merged
 
             # If no valid JSON objects found, try to parse the entire response

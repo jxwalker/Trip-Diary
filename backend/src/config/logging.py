@@ -16,7 +16,9 @@ class LoggingConfig(BaseSettings):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         env="LOG_FORMAT"
     )
-    date_format: str = Field(default="%Y-%m-%d %H:%M:%S", env="LOG_DATE_FORMAT")
+    date_format: str = Field(
+        default="%Y-%m-%d %H:%M:%S", env="LOG_DATE_FORMAT"
+    )
     
     # File logging
     file_enabled: bool = Field(default=True, env="LOG_FILE_ENABLED")
@@ -30,23 +32,37 @@ class LoggingConfig(BaseSettings):
     console_level: str = Field(default="INFO", env="LOG_CONSOLE_LEVEL")
     
     # Structured logging
-    structured_enabled: bool = Field(default=False, env="LOG_STRUCTURED_ENABLED")
-    structured_format: str = Field(default="json", env="LOG_STRUCTURED_FORMAT")  # json, logfmt
+    structured_enabled: bool = Field(
+        default=False, env="LOG_STRUCTURED_ENABLED"
+    )
+    structured_format: str = Field(
+        default="json", env="LOG_STRUCTURED_FORMAT"
+    )  # json, logfmt
     
     # Request logging
-    request_logging_enabled: bool = Field(default=True, env="LOG_REQUEST_ENABLED")
+    request_logging_enabled: bool = Field(
+        default=True, env="LOG_REQUEST_ENABLED"
+    )
     request_log_body: bool = Field(default=False, env="LOG_REQUEST_BODY")
     request_log_headers: bool = Field(default=False, env="LOG_REQUEST_HEADERS")
     
     # Performance logging
-    performance_logging_enabled: bool = Field(default=True, env="LOG_PERFORMANCE_ENABLED")
-    slow_request_threshold_ms: int = Field(default=1000, env="LOG_SLOW_REQUEST_THRESHOLD_MS")
+    performance_logging_enabled: bool = Field(
+        default=True, env="LOG_PERFORMANCE_ENABLED"
+    )
+    slow_request_threshold_ms: int = Field(
+        default=1000, env="LOG_SLOW_REQUEST_THRESHOLD_MS"
+    )
     
     # External service logging
-    external_service_logging_enabled: bool = Field(default=True, env="LOG_EXTERNAL_SERVICE_ENABLED")
+    external_service_logging_enabled: bool = Field(
+        default=True, env="LOG_EXTERNAL_SERVICE_ENABLED"
+    )
     
     # Security logging
-    security_logging_enabled: bool = Field(default=True, env="LOG_SECURITY_ENABLED")
+    security_logging_enabled: bool = Field(
+        default=True, env="LOG_SECURITY_ENABLED"
+    )
     
     # Logger-specific levels
     logger_levels: Dict[str, str] = Field(
@@ -74,7 +90,9 @@ class LoggingConfig(BaseSettings):
         """Validate structured format"""
         valid_formats = ['json', 'logfmt']
         if v not in valid_formats:
-            raise ValueError(f'Structured format must be one of: {valid_formats}')
+            raise ValueError(
+                f'Structured format must be one of: {valid_formats}'
+            )
         return v
     
     def get_log_level(self) -> int:
@@ -95,7 +113,8 @@ class LoggingConfig(BaseSettings):
     
     def should_log_slow_request(self, duration_ms: float) -> bool:
         """Check if request should be logged as slow"""
-        return self.performance_logging_enabled and duration_ms > self.slow_request_threshold_ms
+        return (self.performance_logging_enabled and 
+                duration_ms > self.slow_request_threshold_ms)
     
     def get_logger_config(self) -> Dict[str, Any]:
         """Get complete logger configuration"""

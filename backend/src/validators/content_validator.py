@@ -54,7 +54,9 @@ class ContentValidator:
             )
     
     @classmethod
-    def validate_itinerary_data(cls, itinerary: Dict[str, Any], file_path: str) -> None:
+    def validate_itinerary_data(
+        cls, itinerary: Dict[str, Any], file_path: str
+    ) -> None:
         """
         Validate parsed itinerary data against our models.
 
@@ -82,11 +84,15 @@ class ContentValidator:
 
             # Ensure we have basic required data
             if not parsed_data['passengers']:
-                raise ValueError(f"No valid passenger information found in {file_path}")
+                raise ValueError(
+                    f"No valid passenger information found in {file_path}"
+                )
 
 
             if not parsed_data['flights']:
-                raise ValueError(f"No valid flight information found in {file_path}")
+                raise ValueError(
+                    f"No valid flight information found in {file_path}"
+                )
 
 
         except ValidationError as e:

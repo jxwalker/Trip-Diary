@@ -29,7 +29,9 @@ class Location(BaseModel):
                     parsed_date = datetime.strptime(v, '%d %B %Y')
                     return parsed_date.strftime('%Y-%m-%d')
                 except ValueError:
-                    raise ValueError(f"Invalid date format: {v}. Expected YYYY-MM-DD or DD MMM YYYY")
+                    raise ValueError(
+                        f"Invalid date format: {v}. Expected YYYY-MM-DD or DD MMM YYYY"
+                    )
 
 class BaggageAllowance(BaseModel):
     """Baggage allowance information."""
@@ -61,8 +63,9 @@ class RoomDetails(BaseModel):
                 return data
             if isinstance(data, dict):
                 # Clean up room type if it's being used as bed type
-                if 'room_type' in data and any(bed in data['room_type'].lower() 
-                                             for bed in ['king', 'queen', 'double', 'twin']):
+                if ('room_type' in data and 
+                    any(bed in data['room_type'].lower() 
+                        for bed in ['king', 'queen', 'double', 'twin'])):
                     data['bed_type'] = data['room_type']
                     data['room_type'] = 'Standard Room'
                 return cls(**data)
@@ -127,7 +130,9 @@ class Flight(BaseModel):
 
     def __hash__(self):
         """Hash based on core attributes."""
-        return hash((self.flight_number, self.departure.date, self.departure.time))
+        return hash((
+            self.flight_number, self.departure.date, self.departure.time
+        ))
 
 class Hotel(BaseModel):
     """Hotel booking information."""
@@ -157,7 +162,9 @@ class Hotel(BaseModel):
                     parsed_date = datetime.strptime(v, '%d %B %Y')
                     return parsed_date.strftime('%Y-%m-%d')
                 except ValueError:
-                    raise ValueError(f"Invalid date format: {v}. Expected YYYY-MM-DD or DD MMM YYYY")
+                    raise ValueError(
+                        f"Invalid date format: {v}. Expected YYYY-MM-DD or DD MMM YYYY"
+                    )
 
     @validator('name')
     def clean_hotel_name(cls, v):
@@ -198,7 +205,9 @@ class Hotel(BaseModel):
 
     def __hash__(self):
         """Hash based on core attributes."""
-        return hash((self.name, self.city, self.check_in_date, self.check_out_date))
+        return hash((
+            self.name, self.city, self.check_in_date, self.check_out_date
+        ))
 
 # --- Person Model ---
 
@@ -227,7 +236,9 @@ class Passenger(BaseModel):
             return None
 
     def __hash__(self) -> int:
-        return hash((self.title.upper(), self.first_name.upper(), self.last_name.upper()))
+        return hash((
+            self.title.upper(), self.first_name.upper(), self.last_name.upper()
+        ))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Passenger):
@@ -257,4 +268,5 @@ class TravelEvent(BaseModel):
             'hotel_checkin': 3,
             'hotel_checkout': 4
         }
-        return type_priority.get(self.event_type, 999) < type_priority.get(other.event_type, 999)
+        return (type_priority.get(self.event_type, 999) < 
+                type_priority.get(other.event_type, 999))

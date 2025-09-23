@@ -13,36 +13,58 @@ class ServicesConfig(BaseSettings):
     openai_enabled: bool = Field(default=True, env="OPENAI_ENABLED")
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4", env="OPENAI_MODEL")
-    openai_vision_model: str = Field(default="gpt-4-vision-preview", env="OPENAI_VISION_MODEL")
+    openai_vision_model: str = Field(
+        default="gpt-4-vision-preview", env="OPENAI_VISION_MODEL"
+    )
     openai_max_tokens: int = Field(default=4000, env="OPENAI_MAX_TOKENS")
     openai_temperature: float = Field(default=0.7, env="OPENAI_TEMPERATURE")
     openai_timeout: int = Field(default=60, env="OPENAI_TIMEOUT")
     
     # Anthropic Configuration
     anthropic_enabled: bool = Field(default=True, env="ANTHROPIC_ENABLED")
-    anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
-    anthropic_model: str = Field(default="claude-3-sonnet-20240229", env="ANTHROPIC_MODEL")
+    anthropic_api_key: Optional[str] = Field(
+        default=None, env="ANTHROPIC_API_KEY"
+    )
+    anthropic_model: str = Field(
+        default="claude-3-sonnet-20240229", env="ANTHROPIC_MODEL"
+    )
     anthropic_max_tokens: int = Field(default=4000, env="ANTHROPIC_MAX_TOKENS")
-    anthropic_temperature: float = Field(default=0.7, env="ANTHROPIC_TEMPERATURE")
+    anthropic_temperature: float = Field(
+        default=0.7, env="ANTHROPIC_TEMPERATURE"
+    )
     anthropic_timeout: int = Field(default=60, env="ANTHROPIC_TIMEOUT")
     
     # Perplexity Configuration
     perplexity_enabled: bool = Field(default=True, env="PERPLEXITY_ENABLED")
-    perplexity_api_key: Optional[str] = Field(default=None, env="PERPLEXITY_API_KEY")
-    perplexity_model: str = Field(default="llama-3.1-sonar-small-128k-online", env="PERPLEXITY_MODEL")
-    perplexity_max_tokens: int = Field(default=4000, env="PERPLEXITY_MAX_TOKENS")
-    perplexity_temperature: float = Field(default=0.2, env="PERPLEXITY_TEMPERATURE")
+    perplexity_api_key: Optional[str] = Field(
+        default=None, env="PERPLEXITY_API_KEY"
+    )
+    perplexity_model: str = Field(
+        default="llama-3.1-sonar-small-128k-online", env="PERPLEXITY_MODEL"
+    )
+    perplexity_max_tokens: int = Field(
+        default=4000, env="PERPLEXITY_MAX_TOKENS"
+    )
+    perplexity_temperature: float = Field(
+        default=0.2, env="PERPLEXITY_TEMPERATURE"
+    )
     perplexity_timeout: int = Field(default=60, env="PERPLEXITY_TIMEOUT")
     
     # Google Places Configuration
-    google_places_enabled: bool = Field(default=True, env="GOOGLE_PLACES_ENABLED")
-    google_places_api_key: Optional[str] = Field(default=None, env="GOOGLE_PLACES_API_KEY")
+    google_places_enabled: bool = Field(
+        default=True, env="GOOGLE_PLACES_ENABLED"
+    )
+    google_places_api_key: Optional[str] = Field(
+        default=None, env="GOOGLE_PLACES_API_KEY"
+    )
     google_places_timeout: int = Field(default=30, env="GOOGLE_PLACES_TIMEOUT")
     
     # Weather Service Configuration
     weather_enabled: bool = Field(default=True, env="WEATHER_ENABLED")
     weather_api_key: Optional[str] = Field(default=None, env="WEATHER_API_KEY")
-    weather_provider: str = Field(default="openweathermap", env="WEATHER_PROVIDER")
+    weather_provider: str = Field(
+        default="openweathermap", env="WEATHER_PROVIDER"
+    )
     weather_timeout: int = Field(default=30, env="WEATHER_TIMEOUT")
     
     # Maps Service Configuration
@@ -53,7 +75,9 @@ class ServicesConfig(BaseSettings):
     
     # PDF Generation Configuration
     pdf_enabled: bool = Field(default=True, env="PDF_ENABLED")
-    pdf_engine: str = Field(default="weasyprint", env="PDF_ENGINE")  # weasyprint, reportlab
+    pdf_engine: str = Field(
+        default="weasyprint", env="PDF_ENGINE"
+    )  # weasyprint, reportlab
     pdf_timeout: int = Field(default=120, env="PDF_TIMEOUT")
     
     # Image Processing Configuration

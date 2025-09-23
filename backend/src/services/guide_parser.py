@@ -12,7 +12,7 @@ class GuideParser:
         """NO REGEX - All parsing should be done by LLM services"""
 
         # This class should not do regex-based parsing
-        # Return minimal structure - actual parsing should be done by LLM services
+        # Return minimal structure - actual parsing should be done by LLM 
         guide = {
             "summary": "",
             "destination_insights": "",
@@ -25,7 +25,8 @@ class GuideParser:
             "practical_info": {},
             "hidden_gems": [],
             "raw_content": content,
-            "parsing_note": "Use LLM services for structured parsing instead of regex"
+            "parsing_note": ("Use LLM services for structured parsing "
+                            "instead of regex")
         }
 
         return guide

@@ -465,7 +465,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
                 f"Failed to save metadata for {metadata.trip_id}: {e}"
             )
     
-    def _apply_filters(self, trips: List[TripMetadata], filters: List[QueryFilter]) -> List[TripMetadata]:
+    def _apply_filters(
+        self, trips: List[TripMetadata], filters: List[QueryFilter]
+    ) -> List[TripMetadata]:
         """Apply query filters to trip list"""
         filtered_trips = trips
         
@@ -475,13 +477,25 @@ class EnhancedDatabaseService(StorageServiceInterface):
             value = filter_obj.value
             
             if operator == QueryOperator.EQUALS:
-                filtered_trips = [t for t in filtered_trips if getattr(t, field, None) == value]
+                filtered_trips = [
+                    t for t in filtered_trips 
+                    if getattr(t, field, None) == value
+                ]
             elif operator == QueryOperator.CONTAINS:
-                filtered_trips = [t for t in filtered_trips if value.lower() in str(getattr(t, field, "")).lower()]
+                filtered_trips = [
+                    t for t in filtered_trips 
+                    if value.lower() in str(getattr(t, field, "")).lower()
+                ]
             elif operator == QueryOperator.GREATER_THAN:
-                filtered_trips = [t for t in filtered_trips if getattr(t, field, "") > value]
+                filtered_trips = [
+                    t for t in filtered_trips 
+                    if getattr(t, field, "") > value
+                ]
             elif operator == QueryOperator.LESS_THAN:
-                filtered_trips = [t for t in filtered_trips if getattr(t, field, "") < value]
+                filtered_trips = [
+                    t for t in filtered_trips 
+                    if getattr(t, field, "") < value
+                ]
             # Add more operators as needed
         
         return filtered_trips
@@ -519,7 +533,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             return StorageResult.success_result(processing_state)
             
         except Exception as e:
-            logger.error(f"Failed to create processing state for {trip_id}: {e}")
+            logger.error(
+                f"Failed to create processing state for {trip_id}: {e}"
+            )
             return StorageResult.error_result(str(e))
     
     async def update_processing_state(
@@ -535,7 +551,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             # Get existing state
             state = await self.get_processing_state(trip_id)
             if not state:
-                return StorageResult.error_result(f"Processing state not found for {trip_id}")
+                return StorageResult.error_result(
+                    f"Processing state not found for {trip_id}"
+                )
             
             # Update fields
             if status is not None:
@@ -561,10 +579,14 @@ class EnhancedDatabaseService(StorageServiceInterface):
             return StorageResult.success_result(state)
             
         except Exception as e:
-            logger.error(f"Failed to update processing state for {trip_id}: {e}")
+            logger.error(
+                f"Failed to update processing state for {trip_id}: {e}"
+            )
             return StorageResult.error_result(str(e))
     
-    async def get_processing_state(self, trip_id: str) -> Optional[ProcessingState]:
+    async def get_processing_state(
+        self, trip_id: str
+    ) -> Optional[ProcessingState]:
         """Get processing state by trip ID"""
         try:
             # Check cache first
@@ -605,10 +627,14 @@ class EnhancedDatabaseService(StorageServiceInterface):
             return StorageResult.success_result()
             
         except Exception as e:
-            logger.error(f"Failed to delete processing state for {trip_id}: {e}")
+            logger.error(
+                f"Failed to delete processing state for {trip_id}: {e}"
+            )
             return StorageResult.error_result(str(e))
     
-    async def cleanup_old_data(self, older_than_days: int = 30) -> StorageResult:
+    async def cleanup_old_data(
+        self, older_than_days: int = 30
+    ) -> StorageResult:
         """Clean up old data older than specified days"""
         try:
             cutoff_date = datetime.now() - timedelta(days=older_than_days)
@@ -646,7 +672,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
                 count = len(list(self.processing_path.glob("*.json")))
                 return StorageResult.success_result(data={"count": count})
             else:
-                return StorageResult.error_result("Unsupported query for file-based storage")
+                return StorageResult.error_result(
+                    "Unsupported query for file-based storage"
+                )
                 
         except Exception as e:
             logger.error(f"Failed to execute query: {e}")
@@ -675,7 +703,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             return await self.save_trip_data(trip_data)
             
         except Exception as e:
-            logger.error(f"Failed to update preference progress for {trip_id}: {e}")
+            logger.error(
+                f"Failed to update preference progress for {trip_id}: {e}"
+            )
             return StorageResult.error_result(str(e))
     
     async def save_enhanced_guide_data(self, trip_id: str, guide_data: Dict[str, Any]) -> StorageResult:

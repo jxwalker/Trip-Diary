@@ -284,13 +284,18 @@ class EnhancedLLMService(LLMServiceInterface):
             raise ConfigurationError(
                 "OpenAI library not installed (required for Perplexity)")
     
-    async def _generate_openai_response(self, request: LLMRequest) -> LLMResponse:
+    async def _generate_openai_response(
+        self, request: LLMRequest
+    ) -> LLMResponse:
         """Generate response using OpenAI"""
         try:
             messages = []
             
             if request.system_prompt:
-                messages.append({"role": "system", "content": request.system_prompt})
+                messages.append({
+                    "role": "system", 
+                    "content": request.system_prompt
+                })
             
             messages.append({"role": "user", "content": request.prompt})
             
@@ -307,8 +312,10 @@ class EnhancedLLMService(LLMServiceInterface):
             response = await self._client.chat.completions.create(
                 model=request.model or self.settings.services.openai_model,
                 messages=messages,
-                max_tokens=request.max_tokens or self.settings.services.openai_max_tokens,
-                temperature=request.temperature or self.settings.services.openai_temperature,
+                max_tokens=(request.max_tokens or 
+                           self.settings.services.openai_max_tokens),
+                temperature=(request.temperature or 
+                            self.settings.services.openai_temperature),
                 timeout=self.config.timeout_seconds
             )
             
@@ -330,13 +337,17 @@ class EnhancedLLMService(LLMServiceInterface):
         except Exception as e:
             raise ServiceError(f"OpenAI API error: {e}", service_name="openai")
     
-    async def _generate_anthropic_response(self, request: LLMRequest) -> LLMResponse:
+    async def _generate_anthropic_response(
+        self, request: LLMRequest
+    ) -> LLMResponse:
         """Generate response using Anthropic"""
         try:
             response = await self._client.messages.create(
                 model=request.model or self.settings.services.anthropic_model,
-                max_tokens=request.max_tokens or self.settings.services.anthropic_max_tokens,
-                temperature=request.temperature or self.settings.services.anthropic_temperature,
+                max_tokens=(request.max_tokens or 
+                           self.settings.services.anthropic_max_tokens),
+                temperature=(request.temperature or 
+                            self.settings.services.anthropic_temperature),
                 system=request.system_prompt or "",
                 messages=[{"role": "user", "content": request.prompt}],
                 timeout=self.config.timeout_seconds
@@ -346,7 +357,8 @@ class EnhancedLLMService(LLMServiceInterface):
             usage = {
                 "prompt_tokens": response.usage.input_tokens,
                 "completion_tokens": response.usage.output_tokens,
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens
+                "total_tokens": (response.usage.input_tokens + 
+                                response.usage.output_tokens)
             } if response.usage else None
             
             return LLMResponse(
@@ -358,9 +370,12 @@ class EnhancedLLMService(LLMServiceInterface):
             )
             
         except Exception as e:
-            raise ServiceError(f"Anthropic API error: {e}", service_name="anthropic")
+            raise ServiceError(
+                f"Anthropic API error: {e}", service_name="anthropic")
     
-    async def _generate_perplexity_response(self, request: LLMRequest) -> LLMResponse:
+    async def _generate_perplexity_response(
+        self, request: LLMRequest
+    ) -> LLMResponse:
         """Generate response using Perplexity"""
         try:
             messages = [{"role": "user", "content": request.prompt}]
@@ -368,8 +383,10 @@ class EnhancedLLMService(LLMServiceInterface):
             response = await self._client.chat.completions.create(
                 model=request.model or self.settings.services.perplexity_model,
                 messages=messages,
-                max_tokens=request.max_tokens or self.settings.services.perplexity_max_tokens,
-                temperature=request.temperature or self.settings.services.perplexity_temperature,
+                max_tokens=(request.max_tokens or 
+                           self.settings.services.perplexity_max_tokens),
+                temperature=(request.temperature or 
+                            self.settings.services.perplexity_temperature),
                 timeout=self.config.timeout_seconds
             )
             
@@ -388,7 +405,8 @@ class EnhancedLLMService(LLMServiceInterface):
             )
             
         except Exception as e:
-            raise ServiceError(f"Perplexity API error: {e}", service_name="perplexity")
+            raise ServiceError(
+                f"Perplexity API error: {e}", service_name="perplexity")
     
     async def _generate_openai_streaming(
         self, 
@@ -402,8 +420,10 @@ class EnhancedLLMService(LLMServiceInterface):
             stream = await self._client.chat.completions.create(
                 model=request.model or self.settings.services.openai_model,
                 messages=messages,
-                max_tokens=request.max_tokens or self.settings.services.openai_max_tokens,
-                temperature=request.temperature or self.settings.services.openai_temperature,
+                max_tokens=(request.max_tokens or 
+                           self.settings.services.openai_max_tokens),
+                temperature=(request.temperature or 
+                            self.settings.services.openai_temperature),
                 stream=True,
                 timeout=self.config.timeout_seconds
             )
@@ -422,7 +442,8 @@ class EnhancedLLMService(LLMServiceInterface):
             )
             
         except Exception as e:
-            raise ServiceError(f"OpenAI streaming error: {e}", service_name="openai")
+            raise ServiceError(
+                f"OpenAI streaming error: {e}", service_name="openai")
     
     def _get_provider_capabilities(self) -> List[LLMCapability]:
         """Get capabilities for the provider"""
@@ -447,10 +468,19 @@ class EnhancedLLMService(LLMServiceInterface):
     def _get_provider_models(self) -> List[str]:
         """Get available models for the provider"""
         if self._provider == LLMProvider.OPENAI:
-            return ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4-vision-preview"]
+            return [
+                "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", 
+                "gpt-4-vision-preview"
+            ]
         elif self._provider == LLMProvider.ANTHROPIC:
-            return ["claude-3-sonnet-20240229", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
+            return [
+                "claude-3-sonnet-20240229", "claude-3-opus-20240229", 
+                "claude-3-haiku-20240307"
+            ]
         elif self._provider == LLMProvider.PERPLEXITY:
-            return ["llama-3.1-sonar-small-128k-online", "llama-3.1-sonar-large-128k-online"]
+            return [
+                "llama-3.1-sonar-small-128k-online", 
+                "llama-3.1-sonar-large-128k-online"
+            ]
         else:
             return []

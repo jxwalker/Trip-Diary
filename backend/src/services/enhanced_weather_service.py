@@ -132,7 +132,8 @@ class EnhancedWeatherService(WeatherServiceInterface):
                 method=request.method.value,
                 url=request.url,
                 params=request.params,
-                json=request.data if request.method != RequestMethod.GET else None,
+                json=(request.data if request.method != RequestMethod.GET 
+                      else None),
                 headers=request.headers
             ) as response:
                 response_time = (
@@ -231,7 +232,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             # Cache result in both Redis and memory
             if self.config.cache_enabled:
                 # Store in Redis
-                await cache_manager.set("weather_data", cache_key_data, enhanced_data)
+                await cache_manager.set(
+                    "weather_data", cache_key_data, enhanced_data
+                )
                 # Store in memory cache
                 self._cache[memory_cache_key] = {
                     "data": enhanced_data,
@@ -283,7 +286,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             response = await self.make_request(request)
             
             if not response.is_success:
-                raise ServiceError(f"Forecast request failed: {response.error}")
+                raise ServiceError(
+                    f"Forecast request failed: {response.error}"
+                )
             
             # Process forecast data
             processed_data = self._process_forecast_data(response.data, days)
@@ -370,23 +375,33 @@ class EnhancedWeatherService(WeatherServiceInterface):
     ) -> Dict[str, Any]:
         """Get travel-specific weather summary"""
         try:
-            weather_data = await self.get_weather_for_dates(location, start_date, end_date, units)
+            weather_data = await self.get_weather_for_dates(
+                location, start_date, end_date, units
+            )
             
             # Generate travel recommendations
-            recommendations = self._generate_travel_recommendations(weather_data)
+            recommendations = self._generate_travel_recommendations(
+                weather_data
+            )
             
             return {
                 **weather_data,
                 "travel_recommendations": recommendations,
-                "packing_suggestions": self._generate_packing_suggestions(weather_data),
-                "activity_recommendations": self._generate_activity_recommendations(weather_data)
+                "packing_suggestions": self._generate_packing_suggestions(
+                    weather_data
+                ),
+                "activity_recommendations": (
+                    self._generate_activity_recommendations(weather_data)
+                )
             }
             
         except Exception as e:
             logger.error(f"Failed to get travel weather summary: {e}")
             raise ServiceError(f"Travel weather summary failed: {e}")
     
-    def _enhance_current_weather(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _enhance_current_weather(
+        self, raw_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Enhance current weather data with additional insights"""
         try:
             enhanced = raw_data.copy()
@@ -394,13 +409,21 @@ class EnhancedWeatherService(WeatherServiceInterface):
             # Add comfort index
             temp = raw_data["main"]["temp"]
             humidity = raw_data["main"]["humidity"]
-            enhanced["comfort_index"] = self._calculate_comfort_index(temp, humidity)
+            enhanced["comfort_index"] = self._calculate_comfort_index(
+                temp, humidity
+            )
             
             # Add travel suitability
-            enhanced["travel_suitability"] = self._assess_travel_suitability(raw_data)
+            enhanced["travel_suitability"] = (
+                self._assess_travel_suitability(raw_data)
+            )
             
             # Add clothing recommendations
-            enhanced["clothing_recommendations"] = self._get_clothing_recommendations(temp, raw_data["weather"][0]["main"])
+            enhanced["clothing_recommendations"] = (
+                self._get_clothing_recommendations(
+                    temp, raw_data["weather"][0]["main"]
+                )
+            )
             
             return enhanced
             
@@ -408,7 +431,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             logger.warning(f"Failed to enhance weather data: {e}")
             return raw_data
     
-    def _process_forecast_data(self, raw_data: Dict[str, Any], days: int) -> Dict[str, Any]:
+    def _process_forecast_data(
+        self, raw_data: Dict[str, Any], days: int
+    ) -> Dict[str, Any]:
         """Process raw forecast data into structured format"""
         try:
             forecasts = raw_data.get("list", [])
@@ -434,7 +459,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
                 
                 # Track min/max temperatures
                 temp = forecast["main"]["temp"]
-                daily_forecasts[date_key]["temp_min"] = min(daily_forecasts[date_key]["temp_min"], temp)
+                daily_forecasts[date_key]["temp_min"] = min(
+                    daily_forecasts[date_key]["temp_min"], temp
+                )
                 daily_forecasts[date_key]["temp_max"] = max(daily_forecasts[date_key]["temp_max"], temp)
                 
                 # Collect weather conditions

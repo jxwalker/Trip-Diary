@@ -118,16 +118,28 @@ class WellnessInterests(BaseModel):
 
 class Interests(BaseModel):
     culture: CultureInterests = Field(default_factory=CultureInterests)
-    entertainment: EntertainmentInterests = Field(default_factory=EntertainmentInterests)
+    entertainment: EntertainmentInterests = Field(
+        default_factory=EntertainmentInterests
+    )
     outdoor: OutdoorInterests = Field(default_factory=OutdoorInterests)
     shopping: ShoppingInterests = Field(default_factory=ShoppingInterests)
     wellness: WellnessInterests = Field(default_factory=WellnessInterests)
 
 class TravelPreferences(BaseModel):
-    pace: str = Field(default="moderate", pattern="^(relaxed|moderate|packed)$")
-    group_size: str = Field(default="couple", pattern="^(solo|couple|family|group)$")
-    accommodation_type: str = Field(default="hotel", pattern="^(hotel|airbnb|hostel|resort|boutique)$")
-    transportation: str = Field(default="mixed", pattern="^(walking|public_transit|taxi|rental_car|mixed)$")
+    pace: str = Field(
+        default="moderate", pattern="^(relaxed|moderate|packed)$"
+    )
+    group_size: str = Field(
+        default="couple", pattern="^(solo|couple|family|group)$"
+    )
+    accommodation_type: str = Field(
+        default="hotel", 
+        pattern="^(hotel|airbnb|hostel|resort|boutique)$"
+    )
+    transportation: str = Field(
+        default="mixed", 
+        pattern="^(walking|public_transit|taxi|rental_car|mixed)$"
+    )
 
 class AccessibilityNeeds(BaseModel):
     wheelchair_access: bool = False
@@ -148,11 +160,15 @@ class CanonicalPreferences(BaseModel):
     dining: DiningPreferences = Field(default_factory=DiningPreferences)
     interests: Interests = Field(default_factory=Interests)
     travel: TravelPreferences = Field(default_factory=TravelPreferences)
-    accessibility: AccessibilityNeeds = Field(default_factory=AccessibilityNeeds)
+    accessibility: AccessibilityNeeds = Field(
+        default_factory=AccessibilityNeeds
+    )
     
     # Trip-specific
     travel_style: Optional[str] = None
-    budget_level: Optional[str] = Field(default="moderate", pattern="^(budget|moderate|luxury)$")
+    budget_level: Optional[str] = Field(
+        default="moderate", pattern="^(budget|moderate|luxury)$"
+    )
     special_occasions: List[str] = Field(default_factory=list)
     must_see: List[str] = Field(default_factory=list)
     avoid: List[str] = Field(default_factory=list)
@@ -283,7 +299,9 @@ class PreferencesTransformer:
             if isinstance(travel_style, dict):
                 # Extract a string value from the object if it has a specific key
                 # or just skip it since it's optional
-                transformed['travel_style'] = travel_style.get('name') or travel_style.get('style')
+                transformed['travel_style'] = (
+                    travel_style.get('name') or travel_style.get('style')
+                )
             elif isinstance(travel_style, str):
                 transformed['travel_style'] = travel_style
         if 'budgetLevel' in data:
@@ -314,21 +332,33 @@ class PreferencesTransformer:
                 'dietaryRestrictions': data['dining']['dietary_restrictions'],
                 'priceRanges': data['dining']['price_ranges'],
                 'mealPreferences': {
-                    'breakfast': data['dining']['meal_preferences']['breakfast'],
+                    'breakfast': data['dining']['meal_preferences'][
+                        'breakfast'
+                    ],
                     'lunch': data['dining']['meal_preferences']['lunch'],
                     'dinner': data['dining']['meal_preferences']['dinner'],
-                    'streetFood': data['dining']['meal_preferences']['street_food'],
-                    'fineDining': data['dining']['meal_preferences']['fine_dining'],
+                    'streetFood': data['dining']['meal_preferences'][
+                        'street_food'
+                    ],
+                    'fineDining': data['dining']['meal_preferences'][
+                        'fine_dining'
+                    ],
                     'cafes': data['dining']['meal_preferences']['cafes'],
                     'bars': data['dining']['meal_preferences']['bars']
                 }
             },
             'interests': {
                 'culture': {
-                    'artGalleries': data['interests']['culture']['art_galleries'],
+                    'artGalleries': data['interests']['culture'][
+                        'art_galleries'
+                    ],
                     'museums': data['interests']['culture']['museums'],
-                    'historicalSites': data['interests']['culture']['historical_sites'],
-                    'architecture': data['interests']['culture']['architecture'],
+                    'historicalSites': data['interests']['culture'][
+                        'historical_sites'
+                    ],
+                    'architecture': data['interests']['culture'][
+                        'architecture'
+                    ],
                     'theaters': data['interests']['culture']['theaters'],
                     'localCulture': data['interests']['culture']['local_culture']
                 }

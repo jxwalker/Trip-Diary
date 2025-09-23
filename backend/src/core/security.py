@@ -23,7 +23,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def generate_token(data: Dict[str, Any], secret_key: str, expires_delta: Optional[timedelta] = None) -> str:
+def generate_token(
+    data: Dict[str, Any], 
+    secret_key: str, 
+    expires_delta: Optional[timedelta] = None
+) -> str:
     """Generate a JWT token"""
     to_encode = data.copy()
     if expires_delta:

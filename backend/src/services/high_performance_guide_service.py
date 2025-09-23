@@ -302,11 +302,14 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions", 
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
-                        content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+                        content = result.get("choices", [{}])[0].get(
+                            "message", {}).get("content", "{}")
                         
                         # Clean citations
                         content = re.sub(r'\[\d+\]', '', content)
@@ -315,15 +318,19 @@ Return as JSON arrays: restaurants, attractions"""
                         try:
                             parsed = json.loads(content)
                             # Cache the result
-                            await cache_service.set("perplexity_content", parsed, **cache_key)
+                            await cache_service.set(
+                                "perplexity_content", parsed, **cache_key)
                             return parsed
                         except json.JSONDecodeError:
                             # Try to extract JSON
-                            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                            json_match = re.search(
+                                r'\{.*\}', content, re.DOTALL)
                             if json_match:
                                 try:
                                     parsed = json.loads(json_match.group())
-                                    await cache_service.set("perplexity_content", parsed, **cache_key)
+                                    await cache_service.set(
+                                        "perplexity_content", parsed, 
+                                        **cache_key)
                                     return parsed
                                 except:
                                     pass
@@ -334,7 +341,8 @@ Return as JSON arrays: restaurants, attractions"""
         
         return {}
     
-    async def _get_cached_weather(self, destination: str, start_date: str, metrics: Dict) -> Dict:
+    async def _get_cached_weather(self, destination: str, start_date: str, 
+                                  metrics: Dict) -> Dict:
         """Get weather with caching"""
         
         cache_key = {"destination": destination, "date": start_date}
@@ -375,18 +383,22 @@ Return as JSON arrays: restaurants, attractions"""
                         
                         result = {
                             "daily_forecasts": forecasts,
-                            "summary": f"{forecasts[0]['condition']} - {forecasts[0]['temperature']}" if forecasts else ""
+                            "summary": (f"{forecasts[0]['condition']} - "
+                                       f"{forecasts[0]['temperature']}" 
+                                       if forecasts else "")
                         }
                         
                         # Cache for 1 hour
-                        await cache_service.set("weather", result, ttl=3600, **cache_key)
+                        await cache_service.set(
+                            "weather", result, ttl=3600, **cache_key)
                         return result
         except:
             pass
         
         return {"error": "Weather unavailable"}
     
-    async def _get_cached_events(self, destination: str, start_date: str, end_date: str, metrics: Dict) -> Dict:
+    async def _get_cached_events(self, destination: str, start_date: str, 
+                                 end_date: str, metrics: Dict) -> Dict:
         """Get events with caching"""
         
         cache_key = {
@@ -403,7 +415,9 @@ Return as JSON arrays: restaurants, attractions"""
         if not self.perplexity_api_key:
             return {}
         
-        prompt = f"List 5 events happening in {destination} between {start_date} and {end_date}. Include: name, date, venue, type. Format as JSON array."
+        prompt = (f"List 5 events happening in {destination} between "
+                 f"{start_date} and {end_date}. Include: name, date, venue, "
+                 f"type. Format as JSON array.")
         
         try:
             timeout = aiohttp.ClientTimeout(total=self.timeouts["perplexity"])
@@ -422,8 +436,10 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions",
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
@@ -435,7 +451,8 @@ Return as JSON arrays: restaurants, attractions"""
                             events = json.loads(content)
                             if isinstance(events, list):
                                 result = {"events": events[:5]}
-                                await cache_service.set("events", result, **cache_key)
+                                await cache_service.set(
+                                    "events", result, **cache_key)
                                 return result
                         except:
                             pass
@@ -444,7 +461,8 @@ Return as JSON arrays: restaurants, attractions"""
         
         return {}
     
-    async def _get_cached_neighborhoods(self, destination: str, metrics: Dict) -> List[Dict]:
+    async def _get_cached_neighborhoods(self, destination: str, 
+                                        metrics: Dict) -> List[Dict]:
         """Get neighborhoods with long-term caching"""
         
         cache_key = {"destination": destination}
@@ -457,7 +475,9 @@ Return as JSON arrays: restaurants, attractions"""
         if not self.perplexity_api_key:
             return []
         
-        prompt = f"List 5 main neighborhoods in {destination} for tourists. For each: name, description (10 words max). Format as JSON array."
+        prompt = (f"List 5 main neighborhoods in {destination} for "
+                 f"tourists. For each: name, description (10 words max). "
+                 f"Format as JSON array.")
         
         try:
             timeout = aiohttp.ClientTimeout(total=self.timeouts["perplexity"])
@@ -476,8 +496,10 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions",
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
@@ -489,8 +511,9 @@ Return as JSON arrays: restaurants, attractions"""
                             neighborhoods = json.loads(content)
                             if isinstance(neighborhoods, list):
                                 # Cache for 1 week
-                                await cache_service.set("neighborhoods", neighborhoods[:5], 
-                                                      ttl=604800, **cache_key)
+                                await cache_service.set(
+                                    "neighborhoods", neighborhoods[:5], 
+                                    ttl=604800, **cache_key)
                                 return neighborhoods[:5]
                         except:
                             pass
@@ -499,12 +522,14 @@ Return as JSON arrays: restaurants, attractions"""
         
         return []
     
-    def _generate_photo_urls(self, destination: str, neighborhoods: List[Dict]) -> List[str]:
+    def _generate_photo_urls(self, destination: str, 
+                             neighborhoods: List[Dict]) -> List[str]:
         """Generate photo URLs - NO PLACEHOLDER IMAGES"""
         # Return empty list - only use real photos from Google Places API
         return []
     
-    def _generate_fast_itinerary(self, num_days: int, content: Dict, destination: str) -> List[Dict]:
+    def _generate_fast_itinerary(self, num_days: int, content: Dict, 
+                                 destination: str) -> List[Dict]:
         """Generate quick itinerary"""
         restaurants = content.get("restaurants", [])
         attractions = content.get("attractions", [])

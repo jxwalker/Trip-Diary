@@ -38,7 +38,9 @@ def setup_logging(log_dir: str = "logs", debug: bool = False) -> None:
     if debug:
         root_logger.debug("Debug logging enabled")
 
-def log_gpt_response(logger: logging.Logger, response: str, cleaned: str) -> None:
+def log_gpt_response(
+    logger: logging.Logger, response: str, cleaned: str
+) -> None:
     """Log original and cleaned GPT response for debugging."""
     logger.debug("Original GPT response:")
     logger.debug(response)

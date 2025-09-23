@@ -28,7 +28,8 @@ class PerplexityResponseParser:
             if not line:
                 continue
             
-            # Check for numbered restaurant with inline format: "1. **Name** - Address"
+            # Check for numbered restaurant with inline format: 
+            # "1. **Name** - Address"
             inline_match = re.match(
                 r'^(\d+)\.\s+\*\*(.+?)\*\*\s*[-–]\s*(.+)', line
             )
@@ -112,7 +113,8 @@ class PerplexityResponseParser:
                 elif '**Cuisine' in line or '**cuisine' in line:
                     cuisine = (line.split(':', 1)[1].strip() 
                               if ':' in line else line)
-                    cuisine = re.sub(r'\*\*.*?\*\*\s*', '', cuisine).strip('- ')
+                    cuisine = re.sub(r'\*\*.*?\*\*\s*', '', cuisine).strip(
+                        '- ')
                     current_restaurant['cuisine'] = cuisine
                 
                 # Check for hours
@@ -191,13 +193,15 @@ class PerplexityResponseParser:
                         for word in ['price:', 'admission:', 'tickets:', 'cost:']):
                     price = (line.split(':', 1)[1].strip() 
                             if ':' in line else line)
-                    current_attraction['price'] = re.sub(r'\*\*.*?\*\*\s*', '', price).strip('- ')
+                    current_attraction['price'] = re.sub(
+                        r'\*\*.*?\*\*\s*', '', price).strip('- ')
                 
                 # Parse why it's recommended
                 elif 'Why' in line or 'Description:' in line:
                     desc = (line.split(':', 1)[1].strip() 
                            if ':' in line else line)
-                    current_attraction['description'] = re.sub(r'\*\*.*?\*\*\s*', '', desc).strip('- ')
+                    current_attraction['description'] = re.sub(
+                        r'\*\*.*?\*\*\s*', '', desc).strip('- ')
                 
                 # Collect other details
                 elif line.startswith('-'):
@@ -341,8 +345,9 @@ class PerplexityResponseParser:
                 cleaned = re.sub(r'\*\*.*?\*\*:', '', line)
                 cleaned = cleaned.strip('- •').strip()
                 
-                if len(cleaned) > 10 and not any(cleaned.lower().startswith(word) for word in 
-                    ['weather', 'transport', 'money', 'cultur', 'safety']):
+                if (len(cleaned) > 10 and not any(
+                    cleaned.lower().startswith(word) for word in 
+                    ['weather', 'transport', 'money', 'cultur', 'safety'])):
                     insights[current_section].append(cleaned)
         
         return insights

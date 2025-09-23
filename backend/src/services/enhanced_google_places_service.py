@@ -146,11 +146,12 @@ class EnhancedGooglePlacesService:
         # Check cache first
         cache_key = (
             f"google_restaurants_"
-            f"{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()}"
+            f"{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()[:16]}"
         )
         if cache_key in self._cache:
             logger.info(
-                f"Returning cached Google Places restaurant search for {location}"
+                f"Returning cached Google Places restaurant search for "
+                f"{location}"
             )
             return self._cache[cache_key]
         
@@ -265,7 +266,8 @@ class EnhancedGooglePlacesService:
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    # Store photo reference instead of full URL to avoid exposing API key
+                    # Store photo reference instead of full URL to avoid 
+                    # exposing API key
                     photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
         
@@ -311,8 +313,12 @@ class EnhancedGooglePlacesService:
             "opening_hours": opening_hours,
             "open_now": open_now,
             "coordinates": {
-                "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
-                "longitude": details.get('geometry', {}).get('location', {}).get('lng')
+                "latitude": details.get('geometry', {}).get('location', {}).get(
+                    'lat'
+                ),
+                "longitude": details.get('geometry', {}).get('location', {}).get(
+                    'lng'
+                )
             },
             "business_status": details.get('business_status', ''),
             "booking_urls": booking_urls,
@@ -449,7 +455,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places nearby search failed: {e}")
             raise ServiceError(f"Nearby search failed: {e}")
 
-    async def get_place_photos(self, place_id: str, max_photos: int = 5) -> List[str]:
+    async def get_place_photos(
+        self, place_id: str, max_photos: int = 5
+    ) -> List[str]:
         """Get photos for a Google Places location"""
         if not self.client:
             return []
@@ -462,7 +470,8 @@ class EnhancedGooglePlacesService:
                 for photo in details['photos'][:max_photos]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photos.append(photo_url)
 
@@ -472,7 +481,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places photos fetch failed: {e}")
             return []
 
-    async def get_place_reviews(self, place_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def get_place_reviews(
+        self, place_id: str, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """Get reviews for a specific place"""
         if not self.client:
             return []
@@ -488,7 +499,9 @@ class EnhancedGooglePlacesService:
                         "rating": review.get('rating', 0),
                         "text": review.get('text', ''),
                         "time": review.get('relative_time_description', ''),
-                        "profile_photo_url": review.get('profile_photo_url', ''),
+                        "profile_photo_url": review.get(
+                            'profile_photo_url', ''
+                        ),
                         "source": "google"
                     }
                     reviews.append(formatted_review)
@@ -529,7 +542,9 @@ class EnhancedGooglePlacesService:
 
             for attraction_type in attraction_types:
                 try:
-                    logger.info(f"Searching for {attraction_type} near {coordinates}")
+                    logger.info(
+                        f"Searching for {attraction_type} near {coordinates}"
+                    )
                     places_result = self.client.places_nearby(
                         location=coordinates,
                         radius=5000,  # 5km radius
@@ -537,26 +552,35 @@ class EnhancedGooglePlacesService:
                     )
 
                     if places_result.get('status') != 'OK':
-                        logger.warning(f"Places nearby search failed for {attraction_type}: {places_result.get('status')}")
+                        logger.warning(
+                            f"Places nearby search failed for {attraction_type}: "
+                            f"{places_result.get('status')}"
+                        )
                         continue
 
                 except Exception as e:
                     logger.error(f"Error searching for {attraction_type}: {e}")
                     continue
 
-                for place in places_result.get('results', [])[:5]:  # Top 5 per type
+                # Top 5 per type
+                for place in places_result.get('results', [])[:5]:
                     try:
                         place_id = place['place_id']
                         details = self.client.place(
                             place_id,
                             fields=[
-                                'name', 'formatted_address', 'formatted_phone_number',
-                                'rating', 'user_ratings_total', 'website', 'opening_hours',
-                                'photo', 'url', 'geometry', 'type', 'business_status'
+                                'name', 'formatted_address', 
+                                'formatted_phone_number',
+                                'rating', 'user_ratings_total', 'website', 
+                                'opening_hours',
+                                'photo', 'url', 'geometry', 'type', 
+                                'business_status'
                             ]
                         )['result']
 
-                        attraction = await self._format_attraction_data(details, place_id, attraction_type)
+                        attraction = await self._format_attraction_data(
+                            details, place_id, attraction_type
+                        )
                         attractions.append(attraction)
 
                     except Exception as e:
@@ -575,14 +599,18 @@ class EnhancedGooglePlacesService:
                     seen_names.add(name)
                     unique_attractions.append(attraction)
 
-            unique_attractions.sort(key=lambda x: x.get('rating', 0), reverse=True)
+            unique_attractions.sort(
+                key=lambda x: x.get('rating', 0), reverse=True
+            )
             return unique_attractions[:limit]
 
         except Exception as e:
             logger.error(f"Google Places attraction search failed: {e}")
             raise ServiceError(f"Attraction search failed: {e}")
 
-    async def _format_attraction_data(self, details: Dict[str, Any], place_id: str, attraction_type: str) -> Dict[str, Any]:
+    async def _format_attraction_data(
+        self, details: Dict[str, Any], place_id: str, attraction_type: str
+    ) -> Dict[str, Any]:
         """Format Google Places data into standardized attraction format"""
 
         # Format photos
@@ -598,7 +626,8 @@ class EnhancedGooglePlacesService:
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    # Store photo reference instead of full URL to avoid exposing API key
+                    # Store photo reference instead of full URL to avoid 
+                    # exposing API key
                     photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
 
@@ -624,12 +653,20 @@ class EnhancedGooglePlacesService:
             "opening_hours": opening_hours,
             "open_now": open_now,
             "coordinates": {
-                "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
-                "longitude": details.get('geometry', {}).get('location', {}).get('lng')
+                "latitude": details.get('geometry', {}).get('location', {}).get(
+                    'lat'
+                ),
+                "longitude": details.get('geometry', {}).get('location', {}).get(
+                    'lng'
+                )
             },
             "business_status": details.get('business_status', ''),
-            "estimated_duration": self._estimate_visit_duration(attraction_type),
-            "best_time_to_visit": self._suggest_visit_time(attraction_type),
+            "estimated_duration": self._estimate_visit_duration(
+                attraction_type
+            ),
+            "best_time_to_visit": self._suggest_visit_time(
+                attraction_type
+            ),
             "source": "google_places"
         }
 

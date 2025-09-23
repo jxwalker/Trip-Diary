@@ -145,7 +145,8 @@ class LuxuryGuideService:
             logger.error("Failed to generate itinerary")
             return {
                 "error": "Itinerary generation failed", 
-                "message": "Unable to create daily itinerary. Please try again."
+                "message": ("Unable to create daily itinerary. "
+                           "Please try again.")
             }
         
         # Create the luxury guide
@@ -186,9 +187,11 @@ class LuxuryGuideService:
         
         # Adapt restaurant request to preferences
         if budget == 'budget':
-            restaurant_type = "authentic LOCAL EATERIES and STREET FOOD spots (under €20 per meal)"
+            restaurant_type = ("authentic LOCAL EATERIES and STREET FOOD "
+                              "spots (under €20 per meal)")
         elif budget == 'moderate':
-            restaurant_type = "highly-rated BISTROS and LOCAL FAVORITES (€20-50 per meal)"
+            restaurant_type = ("highly-rated BISTROS and LOCAL FAVORITES "
+                              "(€20-50 per meal)")
         else:
             restaurant_type = "Michelin-starred and FINE DINING restaurants"
         
@@ -206,9 +209,11 @@ Traveler Preferences:
 
 Based on these preferences, provide:
 1. TEN {restaurant_type} focusing on {', '.join(cuisine_types)} cuisine
-   Include: name, cuisine type, price range, signature dish, location/neighborhood
+   Include: name, cuisine type, price range, signature dish, 
+   location/neighborhood
 2. EIGHT attractions related to {', '.join(interest_list[:3])}
-   Include: name, type, best time to visit, entry fee, why it matches their interests
+   Include: name, type, best time to visit, entry fee, 
+   why it matches their interests
 3. FIVE experiences matching their {budget} budget and interests
    Include: activity name, duration, cost, booking requirements
 4. FIVE events/happenings during their visit dates
@@ -219,7 +224,9 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
         max_retries = 2
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=30 + (attempt * 10))  # 30s, then 40s
+                timeout = aiohttp.ClientTimeout(
+                    total=30 + (attempt * 10)
+                )  # 30s, then 40s
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     headers = {
                         "Authorization": f"Bearer {self.perplexity_api_key}",
@@ -231,7 +238,10 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a luxury travel concierge creating bespoke guides for discerning travelers. Provide accurate, current information with rich details."
+                            "content": ("You are a luxury travel concierge "
+                                       "creating bespoke guides for discerning "
+                                       "travelers. Provide accurate, current "
+                                       "information with rich details.")
                         },
                         {
                             "role": "user",
@@ -261,16 +271,25 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                                 json_start = content_clean.find('{')
                                 json_end = content_clean.rfind('}') + 1
                                 if json_start >= 0 and json_end > json_start:
-                                    json_str = content_clean[json_start:json_end]
+                                    json_str = content_clean[
+                                        json_start:json_end
+                                    ]
                                     parsed = json.loads(json_str)
                                     # Ensure we have the expected keys
-                                    if not all(k in parsed for k in ['restaurants', 'attractions']):
+                                    required_keys = ['restaurants', 'attractions']
+                                    if not all(k in parsed for k in required_keys):
                                         # Try to extract from markdown code block
                                         if '```json' in content:
-                                            json_start = content.find('```json') + 7
-                                            json_end = content.find('```', json_start)
+                                            json_start = (
+                                                content.find('```json') + 7
+                                            )
+                                            json_end = content.find(
+                                                '```', json_start
+                                            )
                                             if json_end > json_start:
-                                                parsed = json.loads(content[json_start:json_end])
+                                                parsed = json.loads(
+                                                    content[json_start:json_end]
+                                                )
                                     return self._enhance_premium_content(parsed)
                             except json.JSONDecodeError as e:
                                 logger.error(f"Failed to parse premium content JSON: {e}")

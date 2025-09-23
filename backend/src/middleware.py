@@ -45,7 +45,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         # Generate correlation ID
         correlation_id = set_correlation_id()
         
@@ -104,7 +105,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             if isinstance(e, HTTPException):
                 return JSONResponse(
                     status_code=e.status_code,
-                    content={"error": e.detail, "correlation_id": correlation_id},
+                    content={"error": e.detail, 
+                            "correlation_id": correlation_id},
                     headers={"X-Correlation-ID": correlation_id}
                 )
             else:
@@ -113,7 +115,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                     content={
                         "error": "Internal server error",
                         "correlation_id": correlation_id,
-                        "message": str(e) if logger.level <= logging.DEBUG else "An unexpected error occurred"
+                        "message": str(e) if logger.level <= logging.DEBUG 
+                                  else "An unexpected error occurred"
                     },
                     headers={"X-Correlation-ID": correlation_id}
                 )
@@ -124,7 +127,8 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         try:
             return await call_next(request)
         except HTTPException:
@@ -132,7 +136,8 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             raise
         except Exception as e:
             # Log unexpected errors
-            correlation_id = getattr(request.state, 'correlation_id', 'unknown')
+            correlation_id = getattr(request.state, 'correlation_id', 
+                                    'unknown')
             
             log_error(logger, e, {
                 'request_method': request.method,
@@ -146,7 +151,8 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "Internal server error",
                     "correlation_id": correlation_id,
-                    "message": "An unexpected error occurred. Please check the logs for details."
+                    "message": ("An unexpected error occurred. "
+                           "Please check the logs for details.")
                 },
                 headers={"X-Correlation-ID": correlation_id}
             )
@@ -156,7 +162,8 @@ def setup_error_handlers(app):
     
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
-        correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4())[:8])
+        correlation_id = getattr(request.state, 'correlation_id', 
+                                str(uuid.uuid4())[:8])
         
         logger.warning(
             f"HTTP {exc.status_code}: {exc.detail}",
@@ -179,7 +186,8 @@ def setup_error_handlers(app):
     
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
-        correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4())[:8])
+        correlation_id = getattr(request.state, 'correlation_id', 
+                                str(uuid.uuid4())[:8])
         
         log_error(logger, exc, {
             'request_path': str(request.url),
@@ -198,7 +206,8 @@ def setup_error_handlers(app):
     
     @app.exception_handler(FileNotFoundError)
     async def file_not_found_handler(request: Request, exc: FileNotFoundError):
-        correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4())[:8])
+        correlation_id = getattr(request.state, 'correlation_id', 
+                                str(uuid.uuid4())[:8])
         
         logger.warning(
             f"File not found: {str(exc)}",
@@ -219,7 +228,8 @@ def setup_error_handlers(app):
     
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4())[:8])
+        correlation_id = getattr(request.state, 'correlation_id', 
+                                str(uuid.uuid4())[:8])
         
         log_error(logger, exc, {
             'request_path': str(request.url),
@@ -231,7 +241,8 @@ def setup_error_handlers(app):
             content={
                 "error": "Internal server error",
                 "correlation_id": correlation_id,
-                "message": "An unexpected error occurred. Please contact support if the problem persists."
+                "message": ("An unexpected error occurred. "
+                           "Please contact support if the problem persists.")
             },
             headers={"X-Correlation-ID": correlation_id}
         )

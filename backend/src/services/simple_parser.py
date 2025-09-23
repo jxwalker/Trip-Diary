@@ -43,7 +43,8 @@ def parse_restaurants_simple(response: str) -> List[Dict]:
                     if i + 1 < len(lines):
                         next_line = lines[i + 1].strip()
                         if (next_line and not 
-                            next_line.startswith(('**', '-', '1.', '2.', '3.'))):
+                            next_line.startswith(
+                                ('**', '-', '1.', '2.', '3.'))):
                             restaurant['description'] = next_line
                             i += 1
                 else:
@@ -73,7 +74,8 @@ def parse_restaurants_simple(response: str) -> List[Dict]:
                                 if i + j + 1 < len(lines):
                                     desc_line = lines[i + j + 1].strip()
                                     if (desc_line and not 
-                                        desc_line.startswith(('**', '-', '1.', '2.'))):
+                                        desc_line.startswith(
+                                            ('**', '-', '1.', '2.'))):
                                         restaurant['description'] = desc_line
                                 i = i + j
                                 break
@@ -104,8 +106,9 @@ def parse_attractions_simple(response: str) -> List[Dict]:
         line = lines[i].strip()
         
         # Look for attraction name in bold
-        if ('**' in line and not any(skip in line.lower() 
-                                      for skip in ['address:', 'price:', 'hours:'])):
+        if ('**' in line and not any(
+                skip in line.lower() 
+                for skip in ['address:', 'price:', 'hours:'])):
             name_match = re.search(r'\*\*(.+?)\*\*', line)
             if name_match:
                 name = name_match.group(1).strip()
@@ -137,7 +140,8 @@ def parse_attractions_simple(response: str) -> List[Dict]:
                               'Open:' in detail_line):
                             attraction['hours'] = (
                                 detail_line.split(':', 1)[1].strip())
-                        elif not attraction.get('description') and len(detail_line) > 20:
+                        elif (not attraction.get('description') and 
+                              len(detail_line) > 20):
                             attraction['description'] = detail_line
                 
                 if attraction.get('name'):

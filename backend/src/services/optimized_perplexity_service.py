@@ -172,8 +172,12 @@ class OptimizedPerplexityService:
                     attractions if not isinstance(attractions, Exception) else []
                 ),
                 "events": events if not isinstance(events, Exception) else [],
-                "practical_info": practical_info if not isinstance(practical_info, Exception) else {},
-                "daily_suggestions": daily_suggestions if not isinstance(daily_suggestions, Exception) else [],
+                "practical_info": (
+                    practical_info if not isinstance(practical_info, Exception) else {}
+                ),
+                "daily_suggestions": (
+                    daily_suggestions if not isinstance(daily_suggestions, Exception) else []
+                ),
                 "generated_at": datetime.now().isoformat(),
                 "cache_key": cache_key
             }
@@ -188,17 +192,24 @@ class OptimizedPerplexityService:
             
         except asyncio.TimeoutError:
             logger.error(f"Timeout generating guide data for {destination}")
-            return self._create_error_response(f"Timeout generating guide data for {destination}")
+            return self._create_error_response(
+                f"Timeout generating guide data for {destination}"
+            )
         except Exception as e:
             logger.error(f"Error generating guide data: {e}")
-            return self._create_error_response(f"Error generating guide data: {str(e)}")
+            return self._create_error_response(
+                f"Error generating guide data: {str(e)}"
+            )
     
-    async def _fetch_restaurants(self, destination: str, preferences: Dict) -> List[Dict]:
+    async def _fetch_restaurants(
+        self, destination: str, preferences: Dict
+    ) -> List[Dict]:
         """Fetch restaurant recommendations"""
         cuisine_types = preferences.get("cuisineTypes", [])
         price_range = preferences.get("priceRange", "")
         
-        prompt = f"""Find the top 8 restaurants in {destination} for these preferences:
+        prompt = f"""Find the top 8 restaurants in {destination} for these \
+preferences:
 - Cuisine types: {', '.join(cuisine_types)}
 - Price range: {price_range}
 - Include mix of local favorites and popular spots
@@ -211,20 +222,28 @@ For each restaurant provide:
 - Why recommended (1 sentence)
 - Reservation info if needed
 
-Return as JSON array with these exact keys: name, cuisine, price_range, address, recommendation, reservation_info"""
+Return as JSON array with these exact keys: name, cuisine, price_range, \
+address, recommendation, reservation_info"""
         
         try:
             response = await self._make_api_request(prompt)
-            return await self._parse_json_response(response, "restaurants") or []
+            return await self._parse_json_response(
+                response, "restaurants"
+            ) or []
         except Exception as e:
             logger.warning(f"Restaurant fetch failed: {e}")
             return []
     
-    async def _fetch_attractions(self, destination: str, preferences: Dict) -> List[Dict]:
+    async def _fetch_attractions(
+        self, destination: str, preferences: Dict
+    ) -> List[Dict]:
         """Fetch attraction recommendations"""
-        interests = preferences.get("specialInterests", ["culture", "history", "landmarks"])
+        interests = preferences.get(
+            "specialInterests", ["culture", "history", "landmarks"]
+        )
         
-        prompt = f"""Find the top 8 attractions in {destination} for these interests:
+        prompt = f"""Find the top 8 attractions in {destination} for these \
+interests:
 - Special interests: {', '.join(interests)}
 - Include mix of must-see landmarks and hidden gems
 
@@ -237,11 +256,14 @@ For each attraction provide:
 - Why visit (1 sentence)
 - Time needed for visit
 
-Return as JSON array with these exact keys: name, type, address, hours, price, description, time_needed"""
+Return as JSON array with these exact keys: name, type, address, hours, \
+price, description, time_needed"""
         
         try:
             response = await self._make_api_request(prompt)
-            return await self._parse_json_response(response, "attractions") or []
+            return await self._parse_json_response(
+                response, "attractions"
+            ) or []
         except Exception as e:
             logger.warning(f"Attractions fetch failed: {e}")
             return []

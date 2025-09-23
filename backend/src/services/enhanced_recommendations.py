@@ -117,8 +117,12 @@ class EnhancedRecommendationsService:
         if check_in and check_out:
             try:
                 # Format dates for URL parameters
-                ci_date = datetime.strptime(check_in, "%Y-%m-%d").strftime("%Y-%m-%d")
-                co_date = datetime.strptime(check_out, "%Y-%m-%d").strftime("%Y-%m-%d")
+                ci_date = datetime.strptime(check_in, "%Y-%m-%d").strftime(
+                    "%Y-%m-%d"
+                )
+                co_date = datetime.strptime(check_out, "%Y-%m-%d").strftime(
+                    "%Y-%m-%d"
+                )
                 date_params = f"&checkin={ci_date}&checkout={co_date}"
             except:
                 date_params = ""
@@ -126,13 +130,20 @@ class EnhancedRecommendationsService:
         urls = {
             "google_maps": f"https://www.google.com/maps/search/"
                           f"{location_query}",
-            "booking_com": f"https://www.booking.com/search.html?ss={encoded_name}{date_params}",
-            "hotels_com": f"https://www.hotels.com/search.do?q={encoded_name}{date_params}",
-            "expedia": f"https://www.expedia.com/Hotel-Search?destination={encoded_name}{date_params}",
-            "agoda": f"https://www.agoda.com/search?city={encoded_address}&q={encoded_name}",
-            "tripadvisor": f"https://www.tripadvisor.com/Search?q={encoded_name}+hotel",
-            "google_hotels": f"https://www.google.com/travel/hotels/search?q={location_query}{date_params}",
-            "official_website": f"https://www.google.com/search?q={location_query}+official+website+booking"
+            "booking_com": (f"https://www.booking.com/search.html?ss="
+                           f"{encoded_name}{date_params}"),
+            "hotels_com": (f"https://www.hotels.com/search.do?q="
+                          f"{encoded_name}{date_params}"),
+            "expedia": (f"https://www.expedia.com/Hotel-Search?destination="
+                       f"{encoded_name}{date_params}"),
+            "agoda": (f"https://www.agoda.com/search?city={encoded_address}"
+                     f"&q={encoded_name}"),
+            "tripadvisor": (f"https://www.tripadvisor.com/Search?q="
+                           f"{encoded_name}+hotel"),
+            "google_hotels": (f"https://www.google.com/travel/hotels/search?"
+                             f"q={location_query}{date_params}"),
+            "official_website": (f"https://www.google.com/search?q="
+                                f"{location_query}+official+website+booking")
         }
         
         return urls
@@ -149,21 +160,28 @@ class EnhancedRecommendationsService:
         search_query = urllib.parse.quote(f"{name} {venue} {date}")
         
         urls = {
-            "google_search": f"https://www.google.com/search?q={search_query}+tickets",
-            "ticketmaster": f"https://www.ticketmaster.com/search?q={encoded_name}",
+            "google_search": (f"https://www.google.com/search?q="
+                             f"{search_query}+tickets"),
+            "ticketmaster": (f"https://www.ticketmaster.com/search?q="
+                            f"{encoded_name}"),
             "stubhub": f"https://www.stubhub.com/find/s/?q={encoded_name}",
-            "eventbrite": f"https://www.eventbrite.com/d/search/?q={encoded_name}",
-            "venue_website": f"https://www.google.com/search?q={encoded_venue}+official+website",
+            "eventbrite": (f"https://www.eventbrite.com/d/search/?q="
+                          f"{encoded_name}"),
+            "venue_website": (f"https://www.google.com/search?q="
+                             f"{encoded_venue}+official+website"),
             "seatgeek": f"https://seatgeek.com/search?search={encoded_name}"
         }
         
         # Add specific URLs based on event type
         if "concert" in event_type.lower() or "music" in event_type.lower():
-            urls["bandsintown"] = f"https://www.bandsintown.com/?q={encoded_name}"
+            urls["bandsintown"] = (f"https://www.bandsintown.com/?"
+                                   f"q={encoded_name}")
         elif "sports" in event_type.lower():
-            urls["sports_tickets"] = f"https://www.google.com/search?q={search_query}+sports+tickets"
+            urls["sports_tickets"] = (f"https://www.google.com/search?q="
+                                      f"{search_query}+sports+tickets")
         elif "theater" in event_type.lower():
-            urls["theater_tickets"] = f"https://www.google.com/search?q={search_query}+theater+tickets"
+            urls["theater_tickets"] = (f"https://www.google.com/search?q="
+                                       f"{search_query}+theater+tickets")
         
         return urls
     

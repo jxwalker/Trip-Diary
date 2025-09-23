@@ -207,9 +207,11 @@ class MultimodalLLMExtractor:
                 
                 # Clean up response
                 if "```json" in result_text:
-                    result_text = result_text.split("```json")[1].split("```")[0]
+                    result_text = result_text.split("```json")[1].split(
+                        "```")[0]
                 elif "```" in result_text:
-                    result_text = result_text.split("```")[1].split("```")[0]
+                    result_text = result_text.split("```")[1].split(
+                        "```")[0]
                 
                 result = json.loads(result_text.strip())
                 
@@ -240,7 +242,7 @@ class MultimodalLLMExtractor:
                     })
                 
                 response = await self.claude_client.messages.create(
-                    model="claude-3-sonnet-20240229",  # or claude-3-opus-20240229
+                    model="claude-3-sonnet-20240229",  # or claude-3-opus
                     max_tokens=4096,
                     temperature=0.1,
                     messages=[
@@ -283,7 +285,9 @@ class MultimodalLLMExtractor:
             }
         }
     
-    async def extract_from_multiple_files(self, file_paths: List[str], progress_callback=None) -> Dict[str, Any]:
+    async def extract_from_multiple_files(
+        self, file_paths: List[str], progress_callback=None
+    ) -> Dict[str, Any]:
         """Process multiple files and merge results."""
         all_results = {
             "flights": [],
@@ -296,8 +300,10 @@ class MultimodalLLMExtractor:
         for idx, file_path in enumerate(file_paths):
             # Update progress if callback provided
             if progress_callback:
-                progress = 30 + (20 * (idx + 1) // total_files)  # Progress from 30-50%
-                await progress_callback(progress, f"Analyzing document {idx+1} of {total_files}...")
+                progress = 30 + (20 * (idx + 1) // total_files)  # 30-50%
+                await progress_callback(
+                    progress, f"Analyzing document {idx+1} of {total_files}..."
+                )
             
             result = await self.extract_from_image(file_path=file_path)
             if result and not result.get("_metadata", {}).get("error"):
@@ -317,7 +323,8 @@ class MultimodalLLMExtractor:
         seen_flights = set()
         unique_flights = []
         for flight in results["flights"]:
-            key = f"{flight.get('flight_number', '')}{flight.get('departure_date', '')}"
+            key = (f"{flight.get('flight_number', '')}"
+                   f"{flight.get('departure_date', '')}")
             if key not in seen_flights:
                 seen_flights.add(key)
                 unique_flights.append(flight)
@@ -337,7 +344,8 @@ class MultimodalLLMExtractor:
         seen_passengers = set()
         unique_passengers = []
         for passenger in results["passengers"]:
-            key = f"{passenger.get('first_name', '')}{passenger.get('last_name', '')}"
+            key = (f"{passenger.get('first_name', '')}"
+                   f"{passenger.get('last_name', '')}")
             if key not in seen_passengers:
                 seen_passengers.add(key)
                 unique_passengers.append(passenger)

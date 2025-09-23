@@ -207,9 +207,9 @@ Return ONLY the JSON object, no other text."""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a data extraction expert. Extract "
-                                       "structured data from travel guides and "
-                                       "return valid JSON."
+                            "content": ("You are a data extraction expert. "
+                                       "Extract structured data from travel "
+                                       "guides and return valid JSON.")
                         },
                         {
                             "role": "user",

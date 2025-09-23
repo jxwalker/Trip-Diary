@@ -33,7 +33,8 @@ class ImmediateGuideGenerator:
             get_required_api_key("perplexity")
         except ValueError as e:
             raise APIError(
-                f"Perplexity API key required for immediate guide generation: {e}"
+                f"Perplexity API key required for immediate guide "
+                f"generation: {e}"
             )
     
     async def enhance_itinerary_immediately(self, itinerary: Dict) -> Dict:
@@ -115,7 +116,8 @@ class ImmediateGuideGenerator:
                             ),
                             "dinner": (
                                 f"Dine at {restaurants[2]['name']}"
-                                if len(restaurants) > 2 else "Restaurant near hotel"
+                                if len(restaurants) > 2 
+                                else "Restaurant near hotel"
                             )
                         }
             
@@ -148,7 +150,9 @@ class ImmediateGuideGenerator:
                     f"{restaurants[0].get('name', 'local restaurant')}"
                 )
                 if restaurants[0].get('address'):
-                    activities.append(f"📍 Location: {restaurants[0]['address']}")
+                    activities.append(
+                        f"📍 Location: {restaurants[0]['address']}"
+                    )
             else:
                 activities.append(f"Evening: Explore neighborhood and find dinner")
         
@@ -159,15 +163,18 @@ class ImmediateGuideGenerator:
             afternoon_idx = (morning_idx + 1) % len(attractions)
             
             morning_attraction = (
-                attractions[morning_idx] if morning_idx < len(attractions) else None
+                attractions[morning_idx] 
+                if morning_idx < len(attractions) else None
             )
             afternoon_attraction = (
-                attractions[afternoon_idx] if afternoon_idx < len(attractions) else None
+                attractions[afternoon_idx] 
+                if afternoon_idx < len(attractions) else None
             )
             
             if morning_attraction:
                 activities.append(
-                    f"Morning: Visit {morning_attraction.get('name', 'attraction')}"
+                    f"Morning: Visit "
+                    f"{morning_attraction.get('name', 'attraction')}"
                 )
                 if morning_attraction.get('address'):
                     activities.append(f"📍 {morning_attraction['address']}")
@@ -176,12 +183,14 @@ class ImmediateGuideGenerator:
             lunch_idx = (day_num - 1) % len(restaurants) if restaurants else 0
             if restaurants and lunch_idx < len(restaurants):
                 activities.append(
-                    f"Lunch: {restaurants[lunch_idx].get('name', 'local restaurant')}"
+                    f"Lunch: "
+                    f"{restaurants[lunch_idx].get('name', 'local restaurant')}"
                 )
             
             if afternoon_attraction:
                 activities.append(
-                    f"Afternoon: Explore {afternoon_attraction.get('name', 'attraction')}"
+                    f"Afternoon: Explore "
+                    f"{afternoon_attraction.get('name', 'attraction')}"
                 )
                 if afternoon_attraction.get('address'):
                     activities.append(f"📍 {afternoon_attraction['address']}")
@@ -190,7 +199,8 @@ class ImmediateGuideGenerator:
             dinner_idx = (day_num) % len(restaurants) if restaurants else 0
             if restaurants and dinner_idx < len(restaurants):
                 activities.append(
-                    f"Dinner: {restaurants[dinner_idx].get('name', 'restaurant')}"
+                    f"Dinner: "
+                    f"{restaurants[dinner_idx].get('name', 'restaurant')}"
                 )
         
         # Last day - Departure

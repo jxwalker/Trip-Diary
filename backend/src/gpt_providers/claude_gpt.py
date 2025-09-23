@@ -7,7 +7,10 @@ class ClaudeGPT(GPTInterface):
         if api_key is None:
             api_key = os.getenv('ANTHROPIC_API_KEY')
             if not api_key:
-                raise ValueError("API key not found. Please set the ANTHROPIC_API_KEY environment variable.")
+                raise ValueError(
+                    "API key not found. Please set the ANTHROPIC_API_KEY "
+                    "environment variable."
+                )
         self.client = Anthropic(api_key=api_key)
 
     def generate_text(self, prompt: str, system: str | None = None) -> str:

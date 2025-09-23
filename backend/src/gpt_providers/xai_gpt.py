@@ -9,13 +9,18 @@ class XAIGPT(GPTInterface):
         if api_key is None:
             api_key = os.getenv('XAI_API_KEY')
             if not api_key:
-                raise ValueError("API key not found. Please set the XAI_API_KEY environment variable.")
+                raise ValueError(
+                    "API key not found. Please set the XAI_API_KEY "
+                    "environment variable."
+                )
         self.client = Anthropic(
             api_key=api_key,
             base_url="https://api.x.ai"
         )
 
-    def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
+    def generate_text(
+        self, prompt: str, system: str | None = None
+    ) -> Dict[str, Any]:
         try:
             messages = []
             

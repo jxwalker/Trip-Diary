@@ -65,7 +65,8 @@ class GuideValidator:
         if guide.get('destination_insights'):
             insights_length = len(guide['destination_insights'].strip())
             details['insights_length'] = insights_length
-            if insights_length < cls.MINIMUM_CONTENT_REQUIREMENTS['destination_insights']:
+            min_insights = cls.MINIMUM_CONTENT_REQUIREMENTS['destination_insights']
+            if insights_length < min_insights:
                 errors.append(
                     f"Destination insights too short: {insights_length} chars"
                 )
@@ -76,7 +77,8 @@ class GuideValidator:
         # Check daily itinerary
         itinerary = guide.get('daily_itinerary', [])
         details['itinerary_days'] = len(itinerary)
-        if len(itinerary) < cls.MINIMUM_CONTENT_REQUIREMENTS['daily_itinerary']:
+        min_itinerary = cls.MINIMUM_CONTENT_REQUIREMENTS['daily_itinerary']
+        if len(itinerary) < min_itinerary:
             errors.append("Daily itinerary is empty")
         else:
             # Check itinerary quality

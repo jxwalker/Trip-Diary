@@ -122,7 +122,8 @@ class RealEventsService:
                                     "start", {}).get("localDate", ""),
                                 "time": event.get("dates", {}).get(
                                     "start", {}).get("localTime", ""),
-                                "venue": event.get("_embedded", {}).get("venues", [{}])[0].get("name", ""),
+                                "venue": event.get("_embedded", {}).get(
+                                    "venues", [{}])[0].get("name", ""),
                                 "address": self._get_venue_address(event),
                                 "price_range": self._get_price_range(event),
                                 "description": event.get("info", ""),
@@ -144,7 +145,9 @@ class RealEventsService:
         
         return []
     
-    async def _fetch_eventbrite_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_eventbrite_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch events from Eventbrite API"""
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -156,10 +159,12 @@ class RealEventsService:
                 params = {
                     "token": self.eventbrite_key,
                     "location.address": destination,
-                    "start_date.range_start": start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                    "start_date.range_end": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "start_date.range_start": start_dt.strftime(
+                        "%Y-%m-%dT%H:%M:%S"),
+                    "start_date.range_end": end_dt.strftime(
+                        "%Y-%m-%dT%H:%M:%S"),
                     "expand": "venue",
-                    "categories": "103,104,105,106,108,110",  # Arts, Music, Food, Sports, etc.
+                    "categories": "103,104,105,106,108,110",  # Arts, Music, etc.
                     "sort_by": "relevance"
                 }
                 
@@ -172,12 +177,17 @@ class RealEventsService:
                             event_data = {
                                 "name": event.get("name", {}).get("text", ""),
                                 "type": self._get_eventbrite_type(event),
-                                "date": event.get("start", {}).get("local", "").split("T")[0],
-                                "time": event.get("start", {}).get("local", "").split("T")[1][:5] if "T" in event.get("start", {}).get("local", "") else "",
+                                "date": event.get("start", {}).get(
+                                    "local", "").split("T")[0],
+                                "time": event.get("start", {}).get(
+                                    "local", "").split("T")[1][:5] if "T" in 
+                                    event.get("start", {}).get("local", "") else "",
                                 "venue": event.get("venue", {}).get("name", ""),
                                 "address": self._get_eventbrite_address(event),
                                 "price_range": self._get_eventbrite_price(event),
-                                "description": event.get("description", {}).get("text", "")[:200] + "..." if event.get("description", {}).get("text") else "",
+                                "description": (event.get("description", {}).get(
+                                    "text", "")[:200] + "..." if event.get(
+                                    "description", {}).get("text") else ""),
                                 "booking_url": event.get("url", ""),
                                 "image_url": event.get("logo", {}).get("url", ""),
                                 "source": "Eventbrite"
@@ -196,7 +206,9 @@ class RealEventsService:
         
         return []
     
-    async def _fetch_seatgeek_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_seatgeek_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch events from SeatGeek API"""
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -220,11 +232,14 @@ class RealEventsService:
                                 "name": event.get("title", ""),
                                 "type": event.get("type", ""),
                                 "date": event.get("datetime_utc", "").split("T")[0],
-                                "time": event.get("datetime_utc", "").split("T")[1][:5] if "T" in event.get("datetime_utc", "") else "",
+                                "time": event.get("datetime_utc", "").split(
+                                    "T")[1][:5] if "T" in event.get(
+                                    "datetime_utc", "") else "",
                                 "venue": event.get("venue", {}).get("name", ""),
                                 "address": self._get_seatgeek_address(event),
                                 "price_range": self._get_seatgeek_price(event),
-                                "description": f"{event.get('type', 'Event')} at {event.get('venue', {}).get('name', '')}",
+                                "description": (f"{event.get('type', 'Event')} at "
+                                    f"{event.get('venue', {}).get('name', '')}"),
                                 "booking_url": event.get("url", ""),
                                 "image_url": event.get("performers", [{}])[0].get("image", ""),
                                 "source": "SeatGeek"
@@ -314,8 +329,9 @@ OUTPUT:"""
                                 elif isinstance(cleaned_content, dict) and 'events' in cleaned_content:
                                     events = cleaned_content['events']
                                     return events[:10] if len(events) > 10 else events
-                            except:
+                            except Exception as e:
                                 # Fallback to basic cleaning
+                                logger.exception("LLM event parsing failed, using regex fallback")
                                 import re
                                 content = re.sub(r'\[\d+\]', '', content)
                             

@@ -21,8 +21,12 @@ class DatabaseConfig(BaseSettings):
     postgres_host: Optional[str] = Field(default=None, env="DB_POSTGRES_HOST")
     postgres_port: int = Field(default=5432, env="DB_POSTGRES_PORT")
     postgres_user: Optional[str] = Field(default=None, env="DB_POSTGRES_USER")
-    postgres_password: Optional[str] = Field(default=None, env="DB_POSTGRES_PASSWORD")
-    postgres_database: Optional[str] = Field(default=None, env="DB_POSTGRES_DATABASE")
+    postgres_password: Optional[str] = Field(
+        default=None, env="DB_POSTGRES_PASSWORD"
+    )
+    postgres_database: Optional[str] = Field(
+        default=None, env="DB_POSTGRES_DATABASE"
+    )
     
     # Connection settings
     pool_size: int = Field(default=5, env="DB_POOL_SIZE")
@@ -31,8 +35,12 @@ class DatabaseConfig(BaseSettings):
     
     # Backup settings
     backup_enabled: bool = Field(default=True, env="DB_BACKUP_ENABLED")
-    backup_interval_hours: int = Field(default=24, env="DB_BACKUP_INTERVAL_HOURS")
-    backup_retention_days: int = Field(default=7, env="DB_BACKUP_RETENTION_DAYS")
+    backup_interval_hours: int = Field(
+        default=24, env="DB_BACKUP_INTERVAL_HOURS"
+    )
+    backup_retention_days: int = Field(
+        default=7, env="DB_BACKUP_RETENTION_DAYS"
+    )
     backup_path: str = Field(default="backups", env="DB_BACKUP_PATH")
     
     # Performance settings
@@ -67,9 +75,17 @@ class DatabaseConfig(BaseSettings):
         elif self.type == "sqlite":
             return f"sqlite:///{self.get_sqlite_file_path()}"
         elif self.type == "postgresql":
-            if not all([self.postgres_host, self.postgres_user, self.postgres_password, self.postgres_database]):
-                raise ValueError("PostgreSQL connection requires host, user, password, and database")
-            return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+            if not all([
+                self.postgres_host, self.postgres_user, 
+                self.postgres_password, self.postgres_database
+            ]):
+                raise ValueError(
+                    "PostgreSQL connection requires host, user, password, and database"
+                )
+            return (
+                f"postgresql://{self.postgres_user}:{self.postgres_password}"
+                f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+            )
         else:
             raise ValueError(f"Unsupported database type: {self.type}")
     

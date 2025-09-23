@@ -31,7 +31,8 @@ class WeatherService:
             print("[INFO] Then set OPENWEATHER_API_KEY in your environment "
                   "or .env file")
         
-    async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
+    async def get_weather_forecast(self, destination: str, 
+                                   start_date: str, end_date: str) -> Dict:
         """
         Get weather forecast for a destination during trip dates
 
@@ -78,7 +79,8 @@ class WeatherService:
                     "note": "This trip occurred in the past. For current "
                             "weather forecasts, please use current or future "
                             "dates.",
-                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                    "typical_weather": self._get_typical_weather(
+                        destination, start_dt.month)
                 },
                 "historical": True
             }
@@ -94,7 +96,8 @@ class WeatherService:
                                f"{start_date} to {end_date}",
                     "note": "Detailed forecasts are only available for the "
                             "next 5 days. Showing typical weather patterns.",
-                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                    "typical_weather": self._get_typical_weather(
+                        destination, start_dt.month)
                 },
                 "typical_weather": True
             }
@@ -136,7 +139,8 @@ class WeatherService:
                     else:
                         return {
                             "destination": destination,
-                            "forecast_period": {"start": start_date, "end": end_date},
+                            "forecast_period": {"start": start_date, 
+                                                "end": end_date},
                             "daily_forecasts": [],
                             "summary": {},
                             "error": "OpenWeather forecast unavailable"
@@ -168,7 +172,9 @@ class WeatherService:
             pass
         return None
 
-    async def _get_seasonal_weather_estimate(self, destination: str, start_date: str, end_date: str) -> Dict:
+    async def _get_seasonal_weather_estimate(self, destination: str, 
+                                             start_date: str, 
+                                             end_date: str) -> Dict:
         """
         Provide seasonal weather estimates for dates beyond 5-day forecast
         Based on historical climate data for major destinations
@@ -207,15 +213,18 @@ class WeatherService:
             current_date += timedelta(days=1)
 
         # Create summary
-        avg_high = sum(d["temperature"]["high"] for d in daily_forecasts) / len(daily_forecasts)
-        avg_low = sum(d["temperature"]["low"] for d in daily_forecasts) / len(daily_forecasts)
+        avg_high = (sum(d["temperature"]["high"] for d in daily_forecasts) 
+                    / len(daily_forecasts))
+        avg_low = (sum(d["temperature"]["low"] for d in daily_forecasts) 
+                   / len(daily_forecasts))
 
         condition = daily_forecasts[0]["condition"] if daily_forecasts else ""
         summary = {
             "average_high": round(avg_high, 1),
             "average_low": round(avg_low, 1),
             "general_conditions": condition,
-            "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
+            "packing_suggestions": self._get_packing_suggestions(
+                avg_high, avg_low, condition),
             "note": "Weather estimates based on seasonal patterns"
         }
 
@@ -232,16 +241,36 @@ class WeatherService:
         # Seasonal patterns for major destinations
         seasonal_patterns = {
             "paris": {
-                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 70, "humidity": 80, "wind_speed": 15},
-                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", "description": "Cool with occasional rain", "precipitation": 60, "humidity": 75, "wind_speed": 12},
-                3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", "description": "Mild spring weather", "precipitation": 50, "humidity": 70, "wind_speed": 10},
-                4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", "description": "Pleasant spring weather", "precipitation": 45, "humidity": 65, "wind_speed": 8},
-                5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", "description": "Warm and pleasant", "precipitation": 40, "humidity": 60, "wind_speed": 8},
-                6: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
-                7: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm and dry", "precipitation": 30, "humidity": 50, "wind_speed": 7},
-                8: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
-                9: {"temp_high": 22, "temp_low": 13, "condition": "Partly Cloudy", "description": "Pleasant autumn weather", "precipitation": 45, "humidity": 65, "wind_speed": 9},
-                10: {"temp_high": 17, "temp_low": 9, "condition": "Cloudy", "description": "Cool autumn weather", "precipitation": 55, "humidity": 75, "wind_speed": 12},
+                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", 
+                    "description": "Cool and often rainy", "precipitation": 70, 
+                    "humidity": 80, "wind_speed": 15},
+                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", 
+                    "description": "Cool with occasional rain", "precipitation": 60, 
+                    "humidity": 75, "wind_speed": 12},
+                3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", 
+                    "description": "Mild spring weather", "precipitation": 50, 
+                    "humidity": 70, "wind_speed": 10},
+                4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", 
+                    "description": "Pleasant spring weather", "precipitation": 45, 
+                    "humidity": 65, "wind_speed": 8},
+                5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", 
+                    "description": "Warm and pleasant", "precipitation": 40, 
+                    "humidity": 60, "wind_speed": 8},
+                6: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", 
+                    "description": "Warm summer weather", "precipitation": 35, 
+                    "humidity": 55, "wind_speed": 7},
+                7: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", 
+                    "description": "Warm and dry", "precipitation": 30, 
+                    "humidity": 50, "wind_speed": 7},
+                8: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", 
+                    "description": "Warm summer weather", "precipitation": 35, 
+                    "humidity": 55, "wind_speed": 7},
+                9: {"temp_high": 22, "temp_low": 13, "condition": "Partly Cloudy", 
+                    "description": "Pleasant autumn weather", "precipitation": 45, 
+                    "humidity": 65, "wind_speed": 9},
+                10: {"temp_high": 17, "temp_low": 9, "condition": "Cloudy", 
+                     "description": "Cool autumn weather", "precipitation": 55, 
+                     "humidity": 75, "wind_speed": 12},
                 11: {"temp_high": 11, "temp_low": 5, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 65, "humidity": 80, "wind_speed": 14},
                 12: {"temp_high": 8, "temp_low": 3, "condition": "Cloudy", "description": "Cold winter weather", "precipitation": 70, "humidity": 85, "wind_speed": 15}
             }

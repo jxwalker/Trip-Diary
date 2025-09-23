@@ -55,7 +55,9 @@ def get_required_api_key(service: str) -> str:
     """
     key = get_api_key(service)
     if not key:
-        raise ValueError(f"Missing required API key: {service.upper()}_API_KEY")
+        raise ValueError(
+            f"Missing required API key: {service.upper()}_API_KEY"
+        )
     return key
 
 

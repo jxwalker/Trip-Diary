@@ -155,7 +155,8 @@ no markdown formatting, no explanations."""
                     )
                 except Exception as format_error:
                     print(
-                        "[EXTRACTION] ⚠️  Using fallback without response_format"
+                        "[EXTRACTION] ⚠️  Using fallback without "
+                        "response_format"
                     )
                     # Fallback without response_format
                     response = await self.openai_client.chat.completions.create(
@@ -225,7 +226,9 @@ no markdown formatting, no explanations."""
                     )
 
                 # Log passenger info
-                for i, passenger in enumerate(parsed_data.get('passengers', [])):
+                for i, passenger in enumerate(
+                    parsed_data.get('passengers', [])
+                ):
                     print(
                         f"[EXTRACTION] 👤 Passenger {i+1}: "
                         f"{passenger.get('full_name')}"

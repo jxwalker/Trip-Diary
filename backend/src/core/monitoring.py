@@ -224,7 +224,10 @@ class MonitoringService:
                 "summary": {
                     "total_checks": total_checks,
                     "critical_failures": critical_failures,
-                    "healthy_checks": sum(1 for r in health_results.values() if r.get("status") == "healthy")
+                    "healthy_checks": sum(
+                        1 for r in health_results.values() 
+                        if r.get("status") == "healthy"
+                    )
                 }
             }
             
@@ -254,7 +257,9 @@ class MonitoringService:
             disk_percent = (disk.used / disk.total) * 100
             
             # Load average
-            load_avg = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else [0.0, 0.0, 0.0]
+            load_avg = (psutil.getloadavg() 
+                       if hasattr(psutil, 'getloadavg') 
+                       else [0.0, 0.0, 0.0])
             
             # Uptime
             uptime_seconds = time.time() - self._start_time
@@ -308,15 +313,18 @@ class MonitoringService:
                     "min": min(values) if values else 0,
                     "max": max(values) if values else 0,
                     "avg": sum(values) / len(values) if values else 0,
-                    "type": metric_list[0].metric_type.value if metric_list else "unknown"
+                    "type": (metric_list[0].metric_type.value 
+                            if metric_list else "unknown")
                 }
             
             return {
                 "total_metrics": len(self.metrics),
                 "metric_summaries": summaries,
                 "time_range": {
-                    "start": min(m.timestamp for m in self.metrics).isoformat() if self.metrics else None,
-                    "end": max(m.timestamp for m in self.metrics).isoformat() if self.metrics else None
+                    "start": (min(m.timestamp for m in self.metrics).isoformat() 
+                             if self.metrics else None),
+                    "end": (max(m.timestamp for m in self.metrics).isoformat() 
+                           if self.metrics else None)
                 }
             }
             
@@ -342,9 +350,21 @@ class MonitoringService:
                 ]
                 
                 # Record system metrics as metrics
-                self.record_metric(Metric("system.cpu_percent", system_metrics.cpu_percent, MetricType.GAUGE))
-                self.record_metric(Metric("system.memory_percent", system_metrics.memory_percent, MetricType.GAUGE))
-                self.record_metric(Metric("system.disk_percent", system_metrics.disk_percent, MetricType.GAUGE))
+                self.record_metric(Metric(
+                    "system.cpu_percent", 
+                    system_metrics.cpu_percent, 
+                    MetricType.GAUGE
+                ))
+                self.record_metric(Metric(
+                    "system.memory_percent", 
+                    system_metrics.memory_percent, 
+                    MetricType.GAUGE
+                ))
+                self.record_metric(Metric(
+                    "system.disk_percent", 
+                    system_metrics.disk_percent, 
+                    MetricType.GAUGE
+                ))
                 
                 # Check for alerts
                 await self._check_alerts(system_metrics)
@@ -370,14 +390,16 @@ class MonitoringService:
                 alerts.append({
                     "type": "high_cpu",
                     "severity": "critical",
-                    "message": f"High CPU usage: {system_metrics.cpu_percent:.1f}%",
+                    "message": (f"High CPU usage: "
+                               f"{system_metrics.cpu_percent:.1f}%"),
                     "timestamp": datetime.now().isoformat()
                 })
             elif system_metrics.cpu_percent > 80:
                 alerts.append({
                     "type": "high_cpu",
                     "severity": "warning",
-                    "message": f"Elevated CPU usage: {system_metrics.cpu_percent:.1f}%",
+                    "message": (f"Elevated CPU usage: "
+                               f"{system_metrics.cpu_percent:.1f}%"),
                     "timestamp": datetime.now().isoformat()
                 })
             
@@ -386,14 +408,16 @@ class MonitoringService:
                 alerts.append({
                     "type": "high_memory",
                     "severity": "critical",
-                    "message": f"High memory usage: {system_metrics.memory_percent:.1f}%",
+                    "message": (f"High memory usage: "
+                               f"{system_metrics.memory_percent:.1f}%"),
                     "timestamp": datetime.now().isoformat()
                 })
             elif system_metrics.memory_percent > 80:
                 alerts.append({
                     "type": "high_memory",
                     "severity": "warning",
-                    "message": f"Elevated memory usage: {system_metrics.memory_percent:.1f}%",
+                    "message": (f"Elevated memory usage: "
+                               f"{system_metrics.memory_percent:.1f}%"),
                     "timestamp": datetime.now().isoformat()
                 })
             
@@ -402,7 +426,8 @@ class MonitoringService:
                 alerts.append({
                     "type": "high_disk",
                     "severity": "critical",
-                    "message": f"High disk usage: {system_metrics.disk_percent:.1f}%",
+                    "message": (f"High disk usage: "
+                               f"{system_metrics.disk_percent:.1f}%"),
                     "timestamp": datetime.now().isoformat()
                 })
             elif system_metrics.disk_percent > 85:

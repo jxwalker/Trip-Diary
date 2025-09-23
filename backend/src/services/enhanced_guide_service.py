@@ -69,21 +69,21 @@ class EnhancedGuideService:
                 "travel_guide": {
                     "base_prompt": (
                         "You are a seasoned travel editor crafting a glossy "
-                        "magazine-style, personalized guide. Use rich, specific "
-                        "details, real addresses, times, booking links, and "
-                        "actionable tips."
+                        "magazine-style, personalized guide. Use rich, "
+                        "specific details, real addresses, times, booking "
+                        "links, and actionable tips."
                     ),
                     "components": {
                         "destination_overview": (
                             "Provide a vivid destination overview for "
-                            "{destination} during {month_year}, considering the "
-                            "travel pace ({pace}), group ({group_type}), and "
-                            "interests."
+                            "{destination} during {month_year}, considering "
+                            "the travel pace ({pace}), group ({group_type}), "
+                            "and interests."
                         ),
                         "weather_analysis": (
-                            "Summarize the likely weather for {destination} "
-                            "from {start_date} to {end_date}, including packing "
-                            "and what-to-wear guidance."
+                            "Summarize the likely weather for "
+                            "{destination} from {start_date} to {end_date}, "
+                            "including packing and what-to-wear guidance."
                         ),
                         "personalized_recommendations": {
                             "template": (
@@ -96,8 +96,8 @@ class EnhancedGuideService:
                             "template": (
                                 "Build a detailed day-by-day itinerary "
                                 "({duration} total) with specific times and "
-                                "places; balance walking level ({walking_level}) "
-                                "and interests."
+                                "places; balance walking level "
+                                "({walking_level}) and interests."
                             )
                         },
                         "events_search": (
@@ -112,21 +112,27 @@ class EnhancedGuideService:
                             )
                         },
                         "local_insights": (
-                            "Add insider tips, transport guidance, money matters, safety notes, and cultural etiquette."
+                            "Add insider tips, transport guidance, money "
+                            "matters, safety notes, and cultural etiquette."
                         ),
                         "hidden_gems": (
-                            "Highlight lesser-known gems and photo spots, avoiding over-touristed cliches."
+                            "Highlight lesser-known gems and photo spots, "
+                            "avoiding over-touristed cliches."
                         ),
                         "shopping_guide": (
-                            "If relevant to preferences, suggest neighborhoods or streets and what to buy."
+                            "If relevant to preferences, suggest "
+                            "neighborhoods or streets and what to buy."
                         ),
                         "evening_entertainment": (
-                            "Offer nightlife/theater/music options based on the traveler's nightlife level."
+                            "Offer nightlife/theater/music options based on "
+                            "the traveler's nightlife level."
                         )
                     },
                     "output_format": (
-                        "Structure with sections: Summary, Destination Insights, Weather, Daily Itinerary, "
-                        "Restaurants, Attractions, Events, Neighborhoods (if relevant), Practical Info, Hidden Gems."
+                        "Structure with sections: Summary, Destination "
+                        "Insights, Weather, Daily Itinerary, Restaurants, "
+                        "Attractions, Events, Neighborhoods (if relevant), "
+                        "Practical Info, Hidden Gems."
                     )
                 }
             }
@@ -135,8 +141,11 @@ class EnhancedGuideService:
             with open(prompts_path, 'r') as f:
                 loaded = json.load(f)
                 # Ensure essential structure exists; otherwise, fallback
-                if not isinstance(loaded, dict) or "travel_guide" not in loaded:
-                    self.logger.warning("prompts.json missing expected keys; using defaults")
+                if (not isinstance(loaded, dict) or 
+                    "travel_guide" not in loaded):
+                    self.logger.warning(
+                        "prompts.json missing expected keys; using defaults"
+                    )
                     return default_prompts()
                 return loaded
         except Exception as e:

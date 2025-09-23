@@ -30,7 +30,7 @@ class HTMLPDFRenderer:
             from playwright.sync_api import sync_playwright
         except Exception as e:
             raise RuntimeError(
-                "Playwright is not installed. Run: python -m playwright install chromium"
+                "Playwright is not installed. Run: python -m playwright install chromium"  # noqa: E501
             ) from e
 
         output_path.parent.mkdir(parents=True, exist_ok=True)

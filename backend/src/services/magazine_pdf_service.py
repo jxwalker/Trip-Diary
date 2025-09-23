@@ -304,7 +304,8 @@ class MagazinePDFService:
         weather_data = guide_data.get("weather", [])
         if not weather_data:
             story.append(Paragraph(
-                "Weather information will be available closer to your travel date.", 
+                "Weather information will be available closer to your "
+                "travel date.", 
                 self.styles['body']))
             return
         
@@ -322,7 +323,10 @@ class MagazinePDFService:
             weather_table_data.append([date, conditions, high, low, 
                                        description])
         
-        weather_table = Table(weather_table_data, colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 2.7*inch])
+        weather_table = Table(
+            weather_table_data, 
+            colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 2.7*inch]
+        )
         weather_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.colors["primary"]),
             ('TEXTCOLOR', (0, 0), (-1, 0), white),
@@ -337,7 +341,9 @@ class MagazinePDFService:
         story.append(weather_table)
         story.append(Spacer(1, 20))
     
-    async def _add_daily_itinerary(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_daily_itinerary(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add daily itinerary with photos and beautiful layout"""
         story.append(Paragraph("Daily Itinerary", self.styles['section']))
         story.append(Spacer(1, 15))
@@ -350,7 +356,10 @@ class MagazinePDFService:
             day_of_week = day_data.get("day_of_week", "")
             
             # Day header
-            story.append(Paragraph(f"Day {day_num} - {day_of_week}, {date}", self.styles['section']))
+            story.append(Paragraph(
+                f"Day {day_num} - {day_of_week}, {date}", 
+                self.styles['section']
+            ))
             story.append(Spacer(1, 10))
             
             # Morning activities
@@ -359,16 +368,22 @@ class MagazinePDFService:
                 story.append(Paragraph("<b>Morning</b>", self.styles['body']))
                 for activity in morning:
                     if activity.strip():
-                        story.append(Paragraph(f"• {activity}", self.styles['body']))
+                        story.append(Paragraph(
+                            f"• {activity}", self.styles['body']
+                        ))
                 story.append(Spacer(1, 10))
             
             # Afternoon activities
             afternoon = day_data.get("afternoon", [])
             if afternoon:
-                story.append(Paragraph("<b>Afternoon</b>", self.styles['body']))
+                story.append(Paragraph(
+                    "<b>Afternoon</b>", self.styles['body']
+                ))
                 for activity in afternoon:
                     if activity.strip():
-                        story.append(Paragraph(f"• {activity}", self.styles['body']))
+                        story.append(Paragraph(
+                            f"• {activity}", self.styles['body']
+                        ))
                 story.append(Spacer(1, 10))
             
             # Evening activities
@@ -377,15 +392,22 @@ class MagazinePDFService:
                 story.append(Paragraph("<b>Evening</b>", self.styles['body']))
                 for activity in evening:
                     if activity.strip():
-                        story.append(Paragraph(f"• {activity}", self.styles['body']))
+                        story.append(Paragraph(
+                            f"• {activity}", self.styles['body']
+                        ))
                 story.append(Spacer(1, 15))
             
             # Add day separator
             if day_num < len(daily_itinerary):
-                story.append(HRFlowable(width="100%", thickness=1, lineCap='round', color=self.colors["muted"]))
+                story.append(HRFlowable(
+                    width="100%", thickness=1, lineCap='round', 
+                    color=self.colors["muted"]
+                ))
                 story.append(Spacer(1, 15))
     
-    async def _add_restaurants_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_restaurants_section(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add restaurants section with photos and details"""
         story.append(Paragraph("Restaurants & Dining", self.styles['section']))
         story.append(Spacer(1, 15))
@@ -407,12 +429,16 @@ class MagazinePDFService:
             
             # Restaurant details
             story.append(Paragraph(f"<b>{name}</b>", self.styles['body']))
-            story.append(Paragraph(f"{cuisine} • {price_range}", self.styles['caption']))
+            story.append(Paragraph(
+                f"{cuisine} • {price_range}", self.styles['caption']
+            ))
             story.append(Paragraph(f"📍 {address}", self.styles['body']))
             story.append(Paragraph(description, self.styles['body']))
             story.append(Spacer(1, 15))
     
-    async def _add_attractions_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_attractions_section(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add attractions section with photos and details"""
         story.append(Paragraph("Attractions & Activities", self.styles['section']))
         story.append(Spacer(1, 15))
@@ -435,7 +461,9 @@ class MagazinePDFService:
             
             # Attraction details
             story.append(Paragraph(f"<b>{name}</b>", self.styles['body']))
-            story.append(Paragraph(f"{attraction_type}", self.styles['caption']))
+            story.append(Paragraph(
+                f"{attraction_type}", self.styles['caption']
+            ))
             story.append(Paragraph(f"📍 {address}", self.styles['body']))
             if hours:
                 story.append(Paragraph(f"🕒 {hours}", self.styles['body']))
@@ -444,7 +472,9 @@ class MagazinePDFService:
             story.append(Paragraph(description, self.styles['body']))
             story.append(Spacer(1, 15))
     
-    async def _add_practical_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_practical_section(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add practical information section"""
         story.append(Paragraph("Practical Information", self.styles['section']))
         story.append(Spacer(1, 15))
@@ -454,7 +484,9 @@ class MagazinePDFService:
         # Budget information
         budget_info = practical_info.get("budget_info", {})
         if budget_info:
-            story.append(Paragraph("<b>Budget Information</b>", self.styles['body']))
+            story.append(Paragraph(
+                "<b>Budget Information</b>", self.styles['body']
+            ))
             for key, value in budget_info.items():
                 story.append(Paragraph(f"• {key}: {value}", self.styles['body']))
             story.append(Spacer(1, 10))
@@ -462,7 +494,9 @@ class MagazinePDFService:
         # Cultural etiquette
         cultural = practical_info.get("cultural_etiquette", {})
         if cultural:
-            story.append(Paragraph("<b>Cultural Etiquette</b>", self.styles['body']))
+            story.append(Paragraph(
+                "<b>Cultural Etiquette</b>", self.styles['body']
+            ))
             for key, value in cultural.items():
                 story.append(Paragraph(f"• {key}: {value}", self.styles['body']))
             story.append(Spacer(1, 10))
@@ -470,11 +504,15 @@ class MagazinePDFService:
         # Safety information
         safety = practical_info.get("safety_info", {})
         if safety:
-            story.append(Paragraph("<b>Safety Information</b>", self.styles['body']))
+            story.append(Paragraph(
+                "<b>Safety Information</b>", self.styles['body']
+            ))
             for key, value in safety.items():
                 story.append(Paragraph(f"• {key}: {value}", self.styles['body']))
     
-    async def _add_transportation_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_transportation_section(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add transportation section"""
         story.append(Paragraph("Transportation", self.styles['section']))
         story.append(Spacer(1, 15))
@@ -484,15 +522,23 @@ class MagazinePDFService:
         if transportation and not transportation.get("error"):
             for transport_type, details in transportation.items():
                 if details and not isinstance(details, str):
-                    story.append(Paragraph(f"<b>{transport_type.replace('_', ' ').title()}</b>", self.styles['body']))
+                    story.append(Paragraph(
+                        f"<b>{transport_type.replace('_', ' ').title()}</b>", 
+                        self.styles['body']
+                    ))
                     if isinstance(details, dict):
                         for key, value in details.items():
                             story.append(Paragraph(f"• {key}: {value}", self.styles['body']))
                     story.append(Spacer(1, 10))
         else:
-            story.append(Paragraph("Transportation information will be available in the full guide.", self.styles['body']))
+            story.append(Paragraph(
+                "Transportation information will be available in the full guide.", 
+                self.styles['body']
+            ))
     
-    async def _add_accessibility_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_accessibility_section(
+        self, story: List, guide_data: Dict[str, Any]
+    ) -> None:
         """Add accessibility section"""
         story.append(Paragraph("Accessibility", self.styles['section']))
         story.append(Spacer(1, 15))

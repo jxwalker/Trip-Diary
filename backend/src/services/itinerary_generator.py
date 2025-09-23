@@ -179,7 +179,8 @@ class ItineraryGenerator:
                         print(f"[DESTINATION] ❓ Airport '{arrival_airport}' "
                               f"not in mapping")
 
-        print(f"[DESTINATION] ⚠️  Could not determine destination, using 'Unknown Destination'")
+        print(f"[DESTINATION] ⚠️  Could not determine destination, "
+              f"using 'Unknown Destination'")
         return "Unknown Destination"
     
     def _calculate_duration(self, start_date: str, end_date: str) -> str:
@@ -187,7 +188,8 @@ class ItineraryGenerator:
         try:
             if start_date and end_date and start_date != "" and end_date != "":
                 # Try different date formats
-                for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%m-%d-%Y", "%d %b %Y"]:
+                for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", 
+                           "%m-%d-%Y", "%d %b %Y"]:
                     try:
                         start = datetime.strptime(start_date, fmt)
                         end = datetime.strptime(end_date, fmt)
@@ -209,10 +211,12 @@ class ItineraryGenerator:
                     "airline": flight.get("airline", "Unknown Airline"),
                     "departure": {
                         "airport": flight.get("departure_airport", ""),
-                        "airport_name": flight.get("departure_airport_name", ""),
+                        "airport_name": flight.get(
+                            "departure_airport_name", ""),
                         "terminal": flight.get("departure_terminal", ""),
                         "time": flight.get("departure_time", ""),
-                        "date": flight.get("departure_date", flight.get("date", ""))
+                        "date": flight.get("departure_date", 
+                                         flight.get("date", ""))
                     },
                     "arrival": {
                         "airport": flight.get("arrival_airport", ""),
@@ -249,14 +253,15 @@ class ItineraryGenerator:
                     "rate_per_night": hotel.get("rate_per_night", ""),
                     "currency": hotel.get("currency", ""),
                     "total_amount": hotel.get("total_amount", ""),
-                    "amenities": hotel.get("amenities", []),  # Get actual amenities from data
+                    "amenities": hotel.get("amenities", []),
                     "contact": hotel.get("phone", "")
                 })
         return processed
     
-    def _generate_daily_schedule(self, start_date: str, end_date: str, 
+    def _generate_daily_schedule(self, start_date: str, end_date: str,
                                 flights: List, hotels: List) -> List[Dict]:
-        """Generate day-by-day schedule structure (details filled by enhanced guide service)"""
+        """Generate day-by-day schedule structure 
+        (details filled by enhanced guide service)"""
         schedule = []
         
         try:

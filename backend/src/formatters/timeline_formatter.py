@@ -18,7 +18,10 @@ class TimelineFormatter:
             checkin_time = departure_time - timedelta(hours=2)
             return checkin_time.strftime('%H:%M')
         except Exception as e:
-            logger.error(f"Could not calculate check-in time from {flight.departure.time}: {str(e)}")
+            logger.error(
+                f"Could not calculate check-in time from "
+                f"{flight.departure.time}: {str(e)}"
+            )
             return "00:00"  # Default time if calculation fails
     
     @staticmethod
@@ -37,25 +40,35 @@ class TimelineFormatter:
         events = []
         try:
             # Format location names consistently
-            dep_loc = flight.departure.location.split(' (')[0]  # Remove anything in parentheses
+            # Remove anything in parentheses
+            dep_loc = flight.departure.location.split(' (')[0]
             arr_loc = flight.arrival.location.split(' (')[0]
 
             # Create events
             events.extend([
                 TravelEvent(
                     event_type='flight_checkin',
-                    start_date=f"{flight.departure.date} {cls.calculate_checkin_time(flight)}",
-                    description=f"Check in for flight {flight.flight_number} at {dep_loc}"
+                    start_date=(
+                        f"{flight.departure.date} "
+                        f"{cls.calculate_checkin_time(flight)}"
+                    ),
+                    description=(
+                        f"Check in for flight {flight.flight_number} at {dep_loc}"
+                    )
                 ),
                 TravelEvent(
                     event_type='flight_departure',
                     start_date=f"{flight.departure.date} {flight.departure.time}",
-                    description=f"Flight {flight.flight_number} departs {dep_loc} → {arr_loc}"
+                    description=(
+                        f"Flight {flight.flight_number} departs {dep_loc} → {arr_loc}"
+                    )
                 ),
                 TravelEvent(
                     event_type='flight_arrival',
                     start_date=f"{flight.arrival.date} {flight.arrival.time}",
-                    description=f"Flight {flight.flight_number} arrives at {arr_loc}"
+                    description=(
+                        f"Flight {flight.flight_number} arrives at {arr_loc}"
+                    )
                 )
             ])
         except Exception as e:
@@ -71,18 +84,20 @@ class TimelineFormatter:
         return [
             TravelEvent(
                 event_type='hotel_checkin',
-                start_date=f"{hotel.check_in_date} 15:00",  # Standard check-in time
+                start_date=f"{hotel.check_in_date} 15:00",  # Standard check-in
                 description=f"Check in at {hotel_name}, {hotel.city}"
             ),
             TravelEvent(
                 event_type='hotel_checkout',
-                start_date=f"{hotel.check_out_date} 11:00",  # Standard check-out time
+                start_date=f"{hotel.check_out_date} 11:00",  # Standard check-out
                 description=f"Check out from {hotel_name}, {hotel.city}"
             )
         ]
     
     @classmethod
-    def format_timeline(cls, flights: List[Flight], hotels: List[Hotel]) -> str:
+    def format_timeline(
+        cls, flights: List[Flight], hotels: List[Hotel]
+    ) -> str:
         """Create a chronological timeline of all travel events."""
         events = []
         

@@ -1,6 +1,7 @@
 """
 Unified Travel Guide Service
-Consolidates all guide generation functionality into a single, high-quality service
+Consolidates all guide generation functionality into a single, 
+high-quality service
 Replaces: enhanced_guide_service, optimized_guide_service, luxury_guide_service
 """
 
@@ -103,7 +104,8 @@ class UnifiedGuideService:
         if not any([self.perplexity_api_key, self.openai_api_key, 
                    self.anthropic_api_key]):
             raise APIError(
-                "At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)"
+                "At least one LLM API key is required "
+                "(Perplexity, OpenAI, or Anthropic)"
             )
         
         # Performance tracking
@@ -122,14 +124,15 @@ class UnifiedGuideService:
             "travel_guide": {
                 "base_prompt": (
                     "You are an expert travel editor creating a premium, "
-                    "magazine-quality travel guide. Use specific details, real addresses, "
-                    "current information, and actionable recommendations. "
-                    "Adapt your tone and recommendations to the traveler's persona and preferences."
+                    "magazine-quality travel guide. Use specific details, "
+                    "real addresses, current information, and actionable "
+                    "recommendations. Adapt your tone and recommendations to "
+                    "the traveler's persona and preferences."
                 ),
                 "structured_extraction": {
                     "document_parser": """
-                    Extract travel information from the provided document in this 
-                    exact JSON format:
+                    Extract travel information from the provided document 
+                    in this exact JSON format:
                     {
                         "flights": [
                             {
@@ -183,15 +186,15 @@ class UnifiedGuideService:
                 "persona_adaptation": {
                     PersonaType.LUXURY_TRAVELER: {
                         "tone": "Sophisticated, exclusive, refined",
-                        "focus": "Premium experiences, fine dining, luxury accommodations, "
-                                 "VIP access",
+                        "focus": "Premium experiences, fine dining, "
+                                 "luxury accommodations, VIP access",
                         "budget_range": "$$$-$$$$",
                         "activity_preference": "Curated, exclusive, comfort-focused"
                     },
                     PersonaType.BUDGET_EXPLORER: {
                         "tone": "Practical, resourceful, adventurous",
-                        "focus": "Value experiences, local gems, budget-friendly options, "
-                                 "free activities",
+                        "focus": "Value experiences, local gems, "
+                                 "budget-friendly options, free activities",
                         "budget_range": "$-$$",
                         "activity_preference": "DIY, authentic, cost-effective"
                     },
@@ -225,7 +228,8 @@ class UnifiedGuideService:
                     }
                 },
                 "weather_integration": """
-                For each day of the itinerary, consider the weather forecast and:
+                For each day of the itinerary, consider the weather forecast 
+                and:
                 1. Recommend appropriate clothing and gear
                 2. Suggest indoor alternatives for bad weather days
                 3. Highlight weather-dependent activities (beach, hiking, outdoor markets)

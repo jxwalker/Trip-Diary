@@ -179,11 +179,19 @@ class RealtimeDataService:
                         )[:10]:
                             events.append({
                                 "name": event.get("name"),
-                                "type": event.get("classifications", [{}])[0].get("segment", {}).get("name", "Event"),
+                                "type": event.get("classifications", [{}])[0].get(
+                                    "segment", {}
+                                ).get("name", "Event"),
                                 "description": event.get("info", ""),
-                                "date": event.get("dates", {}).get("start", {}).get("localDate"),
-                                "time": event.get("dates", {}).get("start", {}).get("localTime"),
-                                "venue": event.get("_embedded", {}).get("venues", [{}])[0].get("name"),
+                                "date": event.get("dates", {}).get(
+                                    "start", {}
+                                ).get("localDate"),
+                                "time": event.get("dates", {}).get(
+                                    "start", {}
+                                ).get("localTime"),
+                                "venue": event.get("_embedded", {}).get(
+                                    "venues", [{}]
+                                )[0].get("name"),
                                 "ticket_info": event.get("url", "")
                             })
                         
@@ -195,5 +203,5 @@ class RealtimeDataService:
     
     async def get_local_tips(self, destination: str) -> Dict:
         """Get local tips - should be fetched dynamically"""
-        # Return empty dict - let Perplexity provide real-time local information
+        # Return empty dict - let Perplexity provide real-time local info
         return {}

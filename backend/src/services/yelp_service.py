@@ -268,7 +268,8 @@ class YelpService:
             "yelp_url": business.get("url", ""),
             "image_url": business.get("image_url", ""),
             "photos": (
-                [business.get("image_url")] if business.get("image_url") else []
+                [business.get("image_url")] 
+                if business.get("image_url") else []
             ),
             "coordinates": {
                 "latitude": business.get("coordinates", {}).get("latitude"),

@@ -139,7 +139,8 @@ class TripMetadata:
         return cls(
             trip_id=trip_data.trip_id,
             user_id=trip_data.user_id,
-            title=f"{trip_summary.get('destination', 'Trip')} - {trip_summary.get('start_date', '')}",
+            title=(f"{trip_summary.get('destination', 'Trip')} - "
+                   f"{trip_summary.get('start_date', '')}"),
             destination=trip_summary.get('destination', 'Unknown'),
             start_date=trip_summary.get('start_date', ''),
             end_date=trip_summary.get('end_date', ''),

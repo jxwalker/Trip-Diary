@@ -23,15 +23,20 @@ class GooglePlacesEnhancer:
             self.client = googlemaps.Client(key=self.api_key)
         else:
             self.client = None
-            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment variables")
-            print("[INFO] To enable enhanced maps and attraction details, get a free API key from:")
-            print("https://developers.google.com/maps/documentation/places/web-service/get-api-key")
-            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment or .env file")
+            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment "
+                  "variables")
+            print("[INFO] To enable enhanced maps and attraction details, "
+                  "get a free API key from:")
+            print("https://developers.google.com/maps/documentation/places/"
+                  "web-service/get-api-key")
+            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment "
+                  "or .env file")
             
     async def enhance_restaurant(self, restaurant: Dict, 
                                  destination: str) -> Dict:
         """
-        Enhance a restaurant with Google Places data including photos and booking URLs
+        Enhance a restaurant with Google Places data including photos and 
+        booking URLs
         """
         if not self.client:
             print("[WARNING] Google Maps API key not configured")
@@ -88,7 +93,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:  # Get up to 3 photos
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
@@ -102,7 +108,7 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                # Store coordinates instead of full URL to avoid exposing API key
+                # Store coordinates instead of full URL to avoid exposing 
                 static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
                                 f"&type=restaurant")
                 enhanced['static_map_url'] = static_map_url
@@ -242,7 +248,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
@@ -256,7 +263,7 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                # Store coordinates instead of full URL to avoid exposing API key
+                # Store coordinates instead of full URL to avoid exposing 
                 static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
                                 f"&type=attraction")
                 enhanced['static_map_url'] = static_map_url
@@ -265,33 +272,45 @@ class GooglePlacesEnhancer:
             # Enhanced booking URLs for different attraction types
             attraction_type = attraction.get('type', '').lower()
             if 'museum' in attraction_type or 'gallery' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://www.viator.com/searchResults/all?text={attraction.get('name', '')}&destId={destination}"
-                enhanced['ticket_info'] = "Advance booking recommended for popular museums"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://www.viator.com/searchResults/all?text="
+                    f"{attraction.get('name', '')}&destId={destination}")
+                enhanced['ticket_info'] = ("Advance booking recommended for "
+                    "popular museums")
             elif 'park' in attraction_type or 'garden' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
                 enhanced['ticket_info'] = "Free entry - no booking required"
             elif 'monument' in attraction_type or 'landmark' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
-                enhanced['ticket_info'] = "Check website for entry requirements"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
+                enhanced['ticket_info'] = ("Check website for entry "
+                    "requirements")
             else:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
-                enhanced['ticket_info'] = "Check website for entry requirements"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
+                enhanced['ticket_info'] = ("Check website for entry "
+                    "requirements")
                 
-            print(f"[DEBUG] Enhanced {attraction.get('name')} with Google Places data")
+            print(f"[DEBUG] Enhanced {attraction.get('name')} with "
+                  f"Google Places data")
             return enhanced
             
         except Exception as e:
-            print(f"[ERROR] Failed to enhance attraction {attraction.get('name')}: {e}")
+            print(f"[ERROR] Failed to enhance attraction "
+                  f"{attraction.get('name')}: {e}")
             return attraction
             
-    async def enhance_attractions_batch(self, attractions: List[Dict], destination: str) -> List[Dict]:
+    async def enhance_attractions_batch(self, attractions: List[Dict], 
+                                        destination: str) -> List[Dict]:
         """
         Enhance multiple attractions in parallel
         """
         if not attractions:
             return []
             
-        print(f"[DEBUG] Enhancing {len(attractions)} attractions with Google Places data...")
+        print(f"[DEBUG] Enhancing {len(attractions)} attractions with "
+              f"Google Places data...")
         
         # Process in parallel with rate limiting
         enhanced_attractions = []
@@ -308,13 +327,16 @@ class GooglePlacesEnhancer:
     
     async def get_destination_map_data(self, destination: str) -> Dict:
         """
-        Get comprehensive map data for a destination including coordinates and map URLs
+        Get comprehensive map data for a destination including coordinates 
+        and map URLs
         """
         if not self.client:
             return {
                 "destination": destination,
                 "error": "Google Maps API key not configured",
-                "setup_instructions": "Get a free API key from https://developers.google.com/maps/documentation/places/web-service/get-api-key"
+                "setup_instructions": ("Get a free API key from "
+                    "https://developers.google.com/maps/documentation/"
+                    "places/web-service/get-api-key")
             }
         
         try:
@@ -332,8 +354,10 @@ class GooglePlacesEnhancer:
             # Create various map URLs
             map_urls = {
                 "google_maps": f"https://maps.google.com/?q={lat},{lng}",
-                "google_maps_embed": f"https://www.google.com/maps/embed/v1/place?key={self.api_key}&q={lat},{lng}",
-                "directions": f"https://maps.google.com/maps/dir/?api=1&destination={lat},{lng}",
+                "google_maps_embed": (f"https://www.google.com/maps/embed/"
+                    f"v1/place?key={self.api_key}&q={lat},{lng}"),
+                "directions": (f"https://maps.google.com/maps/dir/?api=1"
+                    f"&destination={lat},{lng}"),
                 "street_view": f"https://maps.google.com/maps/@?api=1&map_action=pano&viewpoint={lat},{lng}"
             }
             

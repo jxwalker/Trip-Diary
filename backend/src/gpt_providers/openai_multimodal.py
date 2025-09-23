@@ -30,7 +30,7 @@ class OpenAIMultimodal:
             pdf_document = fitz.open(pdf_path)
             for page_num in range(min(len(pdf_document), max_pages)):
                 page = pdf_document[page_num]
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x scale for better quality
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
                 img_data = pix.pil_tobytes(format="PNG")
                 img_base64 = base64.b64encode(img_data).decode('utf-8')
                 images.append(img_base64)
@@ -74,12 +74,14 @@ class OpenAIMultimodal:
         if text_prompt:
             user_content.append({
                 "type": "text",
-                "text": f"Additional context: {text_prompt}\n\nPlease extract all travel information from the document(s):"
+                "text": (f"Additional context: {text_prompt}\n\n"
+                         "Please extract all travel information from the document(s):")
             })
         else:
             user_content.append({
                 "type": "text", 
-                "text": "Please extract all travel information from the following document(s):"
+                "text": ("Please extract all travel information from the "
+                         "following document(s):")
             })
         
         # Process based on input type
@@ -103,7 +105,8 @@ class OpenAIMultimodal:
                 user_content.append({
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/{file_ext[1:]};base64,{img_base64}",
+                        "url": (f"data:image/{file_ext[1:]};"
+                                f"base64,{img_base64}"),
                         "detail": "high"
                     }
                 })
@@ -136,14 +139,22 @@ class OpenAIMultimodal:
                             "properties": {
                                 "flight_number": {"type": "string"},
                                 "operator": {"type": "string"},
-                                "booking_reference": {"type": "string", "nullable": True},
+                                "booking_reference": {
+                                    "type": "string", "nullable": True
+                                },
                                 "departure": {
                                     "type": "object",
                                     "properties": {
                                         "location": {"type": "string"},
-                                        "airport_code": {"type": "string", "nullable": True},
-                                        "terminal": {"type": "string", "nullable": True},
-                                        "gate": {"type": "string", "nullable": True},
+                                        "airport_code": {
+                                            "type": "string", "nullable": True
+                                        },
+                                        "terminal": {
+                                            "type": "string", "nullable": True
+                                        },
+                                        "gate": {
+                                            "type": "string", "nullable": True
+                                        },
                                         "date": {"type": "string"},
                                         "time": {"type": "string"}
                                     }
@@ -152,16 +163,24 @@ class OpenAIMultimodal:
                                     "type": "object",
                                     "properties": {
                                         "location": {"type": "string"},
-                                        "airport_code": {"type": "string", "nullable": True},
-                                        "terminal": {"type": "string", "nullable": True},
-                                        "gate": {"type": "string", "nullable": True},
+                                        "airport_code": {
+                                            "type": "string", "nullable": True
+                                        },
+                                        "terminal": {
+                                            "type": "string", "nullable": True
+                                        },
+                                        "gate": {
+                                            "type": "string", "nullable": True
+                                        },
                                         "date": {"type": "string"},
                                         "time": {"type": "string"}
                                     }
                                 },
                                 "seat": {"type": "string", "nullable": True},
                                 "travel_class": {"type": "string"},
-                                "baggage_allowance": {"type": "object", "nullable": True},
+                                "baggage_allowance": {
+                                    "type": "object", "nullable": True
+                                },
                                 "confidence": {"type": "number", "minimum": 0, "maximum": 1}
                             }
                         }
@@ -172,13 +191,21 @@ class OpenAIMultimodal:
                             "type": "object",
                             "properties": {
                                 "name": {"type": "string"},
-                                "address": {"type": "string", "nullable": True},
+                                "address": {
+                                    "type": "string", "nullable": True
+                                },
                                 "city": {"type": "string"},
-                                "confirmation_number": {"type": "string", "nullable": True},
+                                "confirmation_number": {
+                                    "type": "string", "nullable": True
+                                },
                                 "check_in_date": {"type": "string"},
                                 "check_out_date": {"type": "string"},
-                                "room_type": {"type": "string", "nullable": True},
-                                "meal_plan": {"type": "string", "nullable": True},
+                                "room_type": {
+                                    "type": "string", "nullable": True
+                                },
+                                "meal_plan": {
+                                    "type": "string", "nullable": True
+                                },
                                 "confidence": {"type": "number", "minimum": 0, "maximum": 1}
                             }
                         }
@@ -191,8 +218,12 @@ class OpenAIMultimodal:
                                 "title": {"type": "string", "nullable": True},
                                 "first_name": {"type": "string"},
                                 "last_name": {"type": "string"},
-                                "frequent_flyer": {"type": "string", "nullable": True},
-                                "passport_number": {"type": "string", "nullable": True},
+                                "frequent_flyer": {
+                                    "type": "string", "nullable": True
+                                },
+                                "passport_number": {
+                                    "type": "string", "nullable": True
+                                },
                                 "confidence": {"type": "number", "minimum": 0, "maximum": 1}
                             }
                         }
@@ -205,7 +236,9 @@ class OpenAIMultimodal:
                                 "type": {"type": "string"},
                                 "description": {"type": "string"},
                                 "date": {"type": "string", "nullable": True},
-                                "confirmation": {"type": "string", "nullable": True},
+                                "confirmation": {
+                                    "type": "string", "nullable": True
+                                },
                                 "details": {"type": "object", "nullable": True}
                             }
                         }
@@ -229,7 +262,8 @@ class OpenAIMultimodal:
             result['_metadata'] = {
                 'model': self.model,
                 'processing_type': 'multimodal',
-                'document_type': Path(document_path).suffix if document_path else 'image'
+                'document_type': (Path(document_path).suffix 
+                                 if document_path else 'image')
             }
             
             return result

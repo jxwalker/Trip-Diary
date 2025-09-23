@@ -106,7 +106,10 @@ class EnhancedRedisCache:
             await self.redis_client.ping()
             self.connected = True
             
-            logger.info(f"Redis connected: {self.redis_host}:{self.redis_port} (pool: {self.redis_max_connections})")
+            logger.info(
+                f"Redis connected: {self.redis_host}:{self.redis_port} "
+                f"(pool: {self.redis_max_connections})"
+            )
             
             # Start background tasks
             asyncio.create_task(self._health_check_loop())
@@ -114,7 +117,9 @@ class EnhancedRedisCache:
             return True
             
         except Exception as e:
-            logger.warning(f"Redis connection failed: {e}. Running without cache.")
+            logger.warning(
+                f"Redis connection failed: {e}. Running without cache."
+            )
             self.connected = False
             return False
     
@@ -326,7 +331,9 @@ class EnhancedRedisCache:
             
             for ns in namespaces:
                 count = 0
-                async for _ in self.redis_client.scan_iter(f"tripdiary:{ns}:*"):
+                async for _ in self.redis_client.scan_iter(
+                    f"tripdiary:{ns}:*"
+                ):
                     count += 1
                 if count > 0:
                     namespace_counts[ns] = count
@@ -337,7 +344,10 @@ class EnhancedRedisCache:
                 "server_misses": info.get("keyspace_misses", 0),
                 "hit_rate": round(
                     info.get("keyspace_hits", 0) / 
-                    max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1) * 100,
+                    max(
+                        info.get("keyspace_hits", 0) + 
+                        info.get("keyspace_misses", 0), 1
+                    ) * 100,
                     2
                 ),
                 "memory_used": memory.get("used_memory_human", "0"),
