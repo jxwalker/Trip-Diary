@@ -20,7 +20,13 @@ from .weather_service import WeatherService
 from .google_places_enhancer import GooglePlacesEnhancer
 from .real_events_service import RealEventsService
 from .guide_validator import GuideValidator
-from ..utils.environment import load_project_env, get_api_key
+try:
+    from ..utils.environment import load_project_env, get_api_key
+except ImportError:
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    from utils.environment import load_project_env, get_api_key
 from ..utils.error_handling import APIError
 
 # Load environment variables
