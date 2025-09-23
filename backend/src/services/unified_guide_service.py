@@ -234,7 +234,7 @@ class UnifiedGuideService:
                 and:
                 1. Recommend appropriate clothing and gear
                 2. Suggest indoor alternatives for bad weather days
-                3. Highlight weather-dependent activities (beach, hiking, 
+                3. Highlight weather-dependent activities (beach, hiking,
                    outdoor markets)
                 4. Include seasonal considerations and local weather patterns
                 5. Provide specific "what to pack" recommendations
@@ -248,27 +248,27 @@ class UnifiedGuideService:
             WeatherActivityCorrelation(
                 temperature_range=(80, 100),
                 conditions=["sunny", "clear"],
-                recommended_activities=["beach", "swimming", "outdoor markets", 
+                recommended_activities=["beach", "swimming", "outdoor markets",
                                         "rooftop dining"],
                 avoid_activities=["intensive hiking", "long walking tours"],
-                clothing_suggestions=["light clothing", "sun hat", "sunscreen", 
+                clothing_suggestions=["light clothing", "sun hat", "sunscreen",
                                       "sunglasses"],
                 special_notes="Stay hydrated and seek shade during peak hours"
             ),
             WeatherActivityCorrelation(
                 temperature_range=(60, 79),
                 conditions=["sunny", "partly cloudy"],
-                recommended_activities=["walking tours", "outdoor dining", 
+                recommended_activities=["walking tours", "outdoor dining",
                                         "parks", "sightseeing"],
                 avoid_activities=[],
-                clothing_suggestions=["comfortable layers", "walking shoes", 
+                clothing_suggestions=["comfortable layers", "walking shoes",
                                       "light jacket"],
                 special_notes="Perfect weather for most outdoor activities"
             ),
             WeatherActivityCorrelation(
                 temperature_range=(40, 59),
                 conditions=["cloudy", "cool"],
-                recommended_activities=["museums", "indoor attractions", 
+                recommended_activities=["museums", "indoor attractions",
                                         "cafes", "shopping"],
                 avoid_activities=["beach activities", "outdoor swimming"],
                 clothing_suggestions=["warm layers", "jacket", "closed shoes"],
@@ -608,9 +608,9 @@ class UnifiedGuideService:
                     "Authorization": f"Bearer {self.perplexity_api_key}",
                     "Content-Type": "application/json"
                 }
-                
+
                 url = "https://api.perplexity.ai/chat/completions"
-                
+
                 payload = {
                     "model": "sonar-pro",
                     "messages": [
@@ -627,23 +627,23 @@ class UnifiedGuideService:
                     "top_p": 0.95,
                     "max_tokens": 16000
                 }
-                
+
                 async with session.post(url, json=payload, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
                         guide_content = data["choices"][0]["message"]["content"]
                         citations = data.get("citations", [])
-                        
+
                         parsed_guide = await self._parse_guide_with_llm(guide_content, context)
                         parsed_guide["citations"] = citations
                         parsed_guide["raw_content"] = guide_content
-                        
+
                         return parsed_guide
                     else:
                         error_text = await response.text()
                         logger.error(f"Perplexity API error: {response.status} - {error_text}")
                         return {"error": f"Perplexity API error: {response.status}"}
-                        
+
         except Exception as e:
             logger.error(f"Error calling Perplexity API: {e}")
             return {"error": f"Failed to generate guide content: {str(e)}"}
@@ -654,11 +654,11 @@ class UnifiedGuideService:
         context: GuideGenerationContext
     ) -> Dict[str, Any]:
         """Parse guide content using LLM instead of regex"""
-        
+
         parsing_prompt = f"""
         Parse the following travel guide content into structured JSON format.
         Extract information for these sections:
-        
+
         {{
             "summary": "Brief destination summary",
             "destination_insights": "Key insights about the destination",
@@ -705,22 +705,22 @@ class UnifiedGuideService:
                 "emergency_contacts": "Emergency contact information"
             }}
         }}
-        
+
         Travel Guide Content:
         {guide_content}
-        
+
         Return only valid JSON. If information is not available, use null or empty arrays.
         """
-        
+
         try:
             parsed_data = await self.llm_parser.parse_with_structure(
                 parsing_prompt,
                 expected_format="json"
             )
-            
+
             if not isinstance(parsed_data, dict):
                 parsed_data = {}
-            
+
             required_fields = {
                 "summary": "",
                 "destination_insights": "",
@@ -731,13 +731,13 @@ class UnifiedGuideService:
                 "transportation": {},
                 "safety_info": {}
             }
-            
+
             for field, default_value in required_fields.items():
                 if field not in parsed_data:
                     parsed_data[field] = default_value
-            
+
             return parsed_data
-            
+
         except Exception as e:
             logger.error(f"Error parsing guide content with LLM: {e}")
             return {
@@ -762,15 +762,15 @@ class UnifiedGuideService:
                 "Return as JSON array with name, address, cuisine_type, "
                 "price_range, rating."
             )
-            
+
             restaurants_data = await self.llm_parser._parse_with_perplexity(perplexity_prompt)
-            
+
             if not isinstance(restaurants_data, list):
                 restaurants_data = (
-                restaurants_data.get('restaurants', []) 
+                restaurants_data.get('restaurants', [])
                 if isinstance(restaurants_data, dict) else []
             )
-            
+
             # Enhance with Google Places data
             enhanced_restaurants = []
             for restaurant in restaurants_data[:10]:
@@ -1093,7 +1093,7 @@ class UnifiedGuideService:
         elif persona == PersonaType.LUXURY_TRAVELER:
             return f"A premium experience at {name}. Enjoy exclusive access and refined amenities."
         else:
-            return f"Highly rated attraction that showcases the best of the destination."
+            return "Highly rated attraction that showcases the best of the destination."
 
     def _generate_persona_specific_tips(self, persona: PersonaType, destination: str) -> List[str]:
         """Generate persona-specific travel tips"""
