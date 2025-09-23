@@ -187,7 +187,8 @@ class UnifiedGuideService:
                         "focus": "Premium experiences, fine dining, "
                                  "luxury accommodations, VIP access",
                         "budget_range": "$$$-$$$$",
-                        "activity_preference": "Curated, exclusive, comfort-focused"
+                        "activity_preference": ("Curated, exclusive, "
+                                         "comfort-focused")
                     },
                     PersonaType.BUDGET_EXPLORER: {
                         "tone": "Practical, resourceful, adventurous",
@@ -201,7 +202,8 @@ class UnifiedGuideService:
                         "focus": "Kid-friendly activities, family restaurants, "
                                  "safe neighborhoods, educational experiences",
                         "budget_range": "$$-$$$",
-                        "activity_preference": "Safe, engaging, age-appropriate"
+                        "activity_preference": ("Safe, engaging, "
+                                         "age-appropriate")
                     },
                     PersonaType.ADVENTURE_SEEKER: {
                         "tone": "Energetic, bold, inspiring",
@@ -215,14 +217,16 @@ class UnifiedGuideService:
                         "focus": "Museums, historical sites, local culture, "
                                  "art galleries, cultural events",
                         "budget_range": "$$-$$$",
-                        "activity_preference": "Educational, authentic, immersive"
+                        "activity_preference": ("Educational, authentic, "
+                                         "immersive")
                     },
                     PersonaType.FOODIE: {
                         "tone": "Passionate, knowledgeable, sensory",
                         "focus": "Restaurants, food markets, cooking classes, "
                                  "local specialties, wine/beer",
                         "budget_range": "$$-$$$$",
-                        "activity_preference": "Culinary-focused, authentic, diverse"
+                        "activity_preference": ("Culinary-focused, authentic, "
+                                         "diverse")
                     }
                 },
                 "weather_integration": """
@@ -230,7 +234,8 @@ class UnifiedGuideService:
                 and:
                 1. Recommend appropriate clothing and gear
                 2. Suggest indoor alternatives for bad weather days
-                3. Highlight weather-dependent activities (beach, hiking, outdoor markets)
+                3. Highlight weather-dependent activities (beach, hiking, 
+                   outdoor markets)
                 4. Include seasonal considerations and local weather patterns
                 5. Provide specific "what to pack" recommendations
                 """
@@ -243,23 +248,28 @@ class UnifiedGuideService:
             WeatherActivityCorrelation(
                 temperature_range=(80, 100),
                 conditions=["sunny", "clear"],
-                recommended_activities=["beach", "swimming", "outdoor markets", "rooftop dining"],
+                recommended_activities=["beach", "swimming", "outdoor markets", 
+                                        "rooftop dining"],
                 avoid_activities=["intensive hiking", "long walking tours"],
-                clothing_suggestions=["light clothing", "sun hat", "sunscreen", "sunglasses"],
+                clothing_suggestions=["light clothing", "sun hat", "sunscreen", 
+                                      "sunglasses"],
                 special_notes="Stay hydrated and seek shade during peak hours"
             ),
             WeatherActivityCorrelation(
                 temperature_range=(60, 79),
                 conditions=["sunny", "partly cloudy"],
-                recommended_activities=["walking tours", "outdoor dining", "parks", "sightseeing"],
+                recommended_activities=["walking tours", "outdoor dining", 
+                                        "parks", "sightseeing"],
                 avoid_activities=[],
-                clothing_suggestions=["comfortable layers", "walking shoes", "light jacket"],
+                clothing_suggestions=["comfortable layers", "walking shoes", 
+                                      "light jacket"],
                 special_notes="Perfect weather for most outdoor activities"
             ),
             WeatherActivityCorrelation(
                 temperature_range=(40, 59),
                 conditions=["cloudy", "cool"],
-                recommended_activities=["museums", "indoor attractions", "cafes", "shopping"],
+                recommended_activities=["museums", "indoor attractions", 
+                                        "cafes", "shopping"],
                 avoid_activities=["beach activities", "outdoor swimming"],
                 clothing_suggestions=["warm layers", "jacket", "closed shoes"],
                 special_notes="Great for indoor cultural activities"
@@ -391,7 +401,6 @@ class UnifiedGuideService:
             logger.info(f"Unified guide generated successfully for {destination} in {generation_time:.1f}s")
             return guide_data
 
-        
         except Exception as e:
             logger.error(f"Unified guide generation failed for {destination}: {e}")
             return {
@@ -505,33 +514,33 @@ class UnifiedGuideService:
                 asyncio.gather(*tasks, return_exceptions=True),
                 timeout=60  # 60 second total timeout
             )
-            
+
             weather_data, restaurants, attractions, events, perplexity_data, practical_info = results
-            
+
             if isinstance(weather_data, Exception):
                 logger.warning(f"Weather data fetch failed: {weather_data}")
                 weather_data = {"error": str(weather_data)}
-            
+
             if isinstance(restaurants, Exception):
                 logger.warning(f"Restaurants fetch failed: {restaurants}")
                 restaurants = []
-            
+
             if isinstance(attractions, Exception):
                 logger.warning(f"Attractions fetch failed: {attractions}")
                 attractions = []
-            
+
             if isinstance(events, Exception):
                 logger.warning(f"Events fetch failed: {events}")
                 events = []
-            
+
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
                 return {"error": f"Failed to fetch guide content: {str(perplexity_data)}"}
-            
+
             if isinstance(practical_info, Exception):
                 logger.warning(f"Practical info fetch failed: {practical_info}")
                 practical_info = {}
-            
+
             combined_data = perplexity_data.copy() if perplexity_data else {}
             combined_data.update({
                 "weather_data": weather_data,
@@ -546,9 +555,9 @@ class UnifiedGuideService:
                     "persona": context.persona.value
                 }
             })
-            
+
             return combined_data
-            
+
         except asyncio.TimeoutError:
             logger.error(f"Timeout fetching data for {context.destination}")
             return {"error": f"Timeout fetching data for {context.destination}"}
@@ -562,21 +571,21 @@ class UnifiedGuideService:
         progress_callback: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """Generate guide content using Perplexity with structured prompts"""
-        
+
         if not self.perplexity_api_key:
             return {"error": "Perplexity API key not configured"}
-        
+
         prompt = f"""
         {self.prompts["travel_guide"]["base_prompt"]}
-        
+
         TRAVELER PERSONA: {context.persona.value.replace('_', ' ').title()}
-        
+
         DESTINATION: {context.destination}
         DATES: {context.start_date} to {context.end_date} ({context.duration_days} days)
-        
+
         PREFERENCES:
         {json.dumps(context.preferences, indent=2)}
-        
+
         Create a comprehensive travel guide with these sections:
         1. Destination Overview & Highlights
         2. Daily Itinerary Suggestions (weather will be integrated separately)
@@ -585,13 +594,13 @@ class UnifiedGuideService:
         5. Cultural Insights & Etiquette
         6. Transportation Guide
         7. Safety & Practical Information
-        
+
         {self.prompts["travel_guide"]["weather_integration"]}
-        
+
         Provide specific addresses, phone numbers, websites, and booking information for everything.
         Make recommendations that align with the {context.persona.value.replace('_', ' ')} persona.
         """
-        
+
         try:
             timeout = aiohttp.ClientTimeout(total=90)
             async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -851,7 +860,7 @@ class UnifiedGuideService:
         if weather_data.get("error") or not weather_data.get("daily_forecasts"):
             logger.warning("No weather data available for correlation")
             return guide_data
-        
+
         daily_forecasts = weather_data.get("daily_forecasts", [])
         daily_itinerary = guide_data.get("daily_itinerary", [])
         
