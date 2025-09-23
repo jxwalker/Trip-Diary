@@ -22,7 +22,7 @@ from .google_places_enhancer import GooglePlacesEnhancer
 from .real_events_service import RealEventsService
 from .guide_validator import GuideValidator
 from ..utils.environment import load_project_env, get_api_key
-from ..utils.error_handling import safe_execute, APIError, log_and_return_error
+from ..utils.error_handling import APIError
 
 # Load environment variables
 load_project_env()
@@ -565,7 +565,7 @@ class UnifiedGuideService:
         if not self.perplexity_api_key:
             return {"error": "Perplexity API key not configured"}
         
-        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
+        self.prompts["travel_guide"]["persona_adaptation"][context.persona]
         
         prompt = f"""
         {self.prompts["travel_guide"]["base_prompt"]}
@@ -957,7 +957,7 @@ class UnifiedGuideService:
     ) -> Dict[str, Any]:
         """Apply persona-based personalization to all guide content"""
         
-        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
+        self.prompts["travel_guide"]["persona_adaptation"][context.persona]
         
         restaurants = guide_data.get("restaurants", [])
         personalized_restaurants = []

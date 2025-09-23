@@ -4,14 +4,13 @@ Provides endpoints for the new unified guide service
 """
 import logging
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
 
 from ..dependencies.services import DatabaseServiceDep
 from ...services.unified_guide_service import UnifiedGuideService
 from ...services.magazine_pdf_service import MagazinePDFService
-from ...utils.validation import validate_trip_id
-from ...utils.error_handling import create_error_response, safe_execute
+from ...utils.error_handling import create_error_response
 
 logger = logging.getLogger(__name__)
 
