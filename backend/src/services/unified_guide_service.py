@@ -737,45 +737,28 @@ class UnifiedGuideService:
             }
 
     async def _fetch_google_places_restaurants(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
-        """Fetch restaurants using Google Places API with persona-based filtering"""
+        """Fetch restaurants using Perplexity and enhance with Google Places"""
         try:
-            await self.google_places_service.initialize()
+            perplexity_prompt = f"""Find the top 10 restaurants in {context.destination}. 
+            Focus on restaurants that would appeal to a {context.persona} traveler.
+            Return as JSON array with name, address, cuisine_type, price_range, rating."""
             
-            persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
+            restaurants_data = await self.llm_parser._parse_with_perplexity(perplexity_prompt)
             
-            restaurants = []
+            if not isinstance(restaurants_data, list):
+                restaurants_data = restaurants_data.get('restaurants', []) if isinstance(restaurants_data, dict) else []
             
-            if context.persona == PersonaType.LUXURY_TRAVELER:
-                luxury_restaurants = await self.google_places_service.search_restaurants(
-                    location=context.destination,
-                    cuisine_type="fine dining",
-                    limit=8
-                )
-                restaurants.extend(luxury_restaurants)
-                
-            elif context.persona == PersonaType.BUDGET_EXPLORER:
-                budget_restaurants = await self.google_places_service.search_restaurants(
-                    location=context.destination,
-                    cuisine_type="local cuisine",
-                    limit=10
-                )
-                restaurants.extend(budget_restaurants)
-                
-            elif context.persona == PersonaType.FOODIE:
-                cuisine_types = ["local cuisine", "street food", "fine dining", "ethnic cuisine"]
-                for cuisine in cuisine_types:
-                    cuisine_restaurants = await self.google_places_service.search_restaurants(
-                        location=context.destination,
-                        cuisine_type=cuisine,
-                        limit=4
-                    )
-                    restaurants.extend(cuisine_restaurants)
+            # Enhance with Google Places data
+            enhanced_restaurants = []
+            for restaurant in restaurants_data[:10]:
+                try:
+                    enhanced = await self.places_enhancer.enhance_place_data(restaurant)
+                    enhanced_restaurants.append(enhanced)
+                except Exception as e:
+                    logger.warning(f"Failed to enhance restaurant {restaurant.get('name', 'Unknown')}: {e}")
+                    enhanced_restaurants.append(restaurant)
             
-            general_restaurants = await self.google_places_service.search_restaurants(
-                location=context.destination,
-                limit=8
-            )
-            restaurants.extend(general_restaurants)
+            restaurants = enhanced_restaurants
             
             seen_ids = set()
             unique_restaurants = []

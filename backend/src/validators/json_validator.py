@@ -38,18 +38,19 @@ Return ONLY the cleaned JSON, no other text."""
 
         try:
             import asyncio
-            if asyncio.get_event_loop().is_running():
+            try:
+                asyncio.get_running_loop()
                 json_str = json_str.replace("'", '"')
                 logger.debug(f"Basic cleaned JSON: {json_str}")
                 return json_str
-            else:
+            except RuntimeError:
                 cleaned_result = asyncio.run(llm_parser._parse_with_openai(cleaning_prompt))
                 if isinstance(cleaned_result, dict) and 'cleaned_json' in cleaned_result:
                     return cleaned_result['cleaned_json']
                 elif isinstance(cleaned_result, str):
                     return cleaned_result
         except Exception as e:
-            logger.debug(f"LLM cleaning failed, using basic cleanup: {e}")
+            logger.exception(f"LLM cleaning failed, using basic cleanup: {e}")
             json_str = json_str.replace("'", '"')
         
         logger.debug(f"Cleaned JSON: {json_str}")
