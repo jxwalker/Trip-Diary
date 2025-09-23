@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/unified-guide", tags=["unified-guide"])
 
+
 class GuideGenerationRequest(BaseModel):
     destination: str
     start_date: str
@@ -24,9 +25,11 @@ class GuideGenerationRequest(BaseModel):
     hotel_address: Optional[str] = None
     persona: Optional[str] = None
 
+
 class PDFGenerationRequest(BaseModel):
     guide_data: Dict[str, Any]
     destination: str
+
 
 @router.post("/generate")
 async def generate_unified_guide(
@@ -36,8 +39,6 @@ async def generate_unified_guide(
 ):
     """Generate a unified travel guide using the new service"""
     try:
-        unified_service = UnifiedGuideService()
-        
         context = {
             "destination": request.destination,
             "start_date": request.start_date,
@@ -47,6 +48,7 @@ async def generate_unified_guide(
             "persona": request.persona
         }
         
+        unified_service = UnifiedGuideService()
         guide = await unified_service.generate_complete_guide(
             destination=context["destination"],
             start_date=context["start_date"], 
@@ -82,6 +84,7 @@ async def generate_unified_guide(
     except Exception as e:
         logger.exception(f"Unified guide generation failed: {e}")
         return create_error_response(str(e), "unified_guide_generation")
+
 
 @router.post("/generate-pdf")
 async def generate_unified_pdf(
@@ -137,6 +140,7 @@ async def generate_unified_pdf(
         logger.exception(f"Unified PDF generation failed: {e}")
         return create_error_response(str(e), "unified_pdf_generation")
 
+
 @router.get("/personas")
 async def get_available_personas():
     """Get list of available travel personas"""
@@ -146,14 +150,14 @@ async def get_available_personas():
             {
                 "id": "luxury_traveler",
                 "name": "Luxury Traveler",
-                "description": ("High-end experiences, premium accommodations, "
-                              "fine dining")
+                "description": ("High-end experiences, premium "
+                              "accommodations, fine dining")
             },
             {
                 "id": "budget_explorer",
                 "name": "Budget Explorer", 
-                "description": ("Cost-effective options, local experiences, "
-                              "budget accommodations")
+                "description": ("Cost-effective options, local "
+                              "experiences, budget accommodations")
             },
             {
                 "id": "foodie",
@@ -179,8 +183,8 @@ async def get_available_personas():
             {
                 "id": "family_friendly",
                 "name": "Family Friendly",
-                "description": ("Kid-friendly activities, family accommodations, "
-                              "safe experiences")
+                "description": ("Kid-friendly activities, family "
+                              "accommodations, safe experiences")
             }
         ]
     }

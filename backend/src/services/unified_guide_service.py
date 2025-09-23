@@ -1,6 +1,6 @@
 """
 Unified Travel Guide Service
-Consolidates all guide generation functionality into a single, 
+Consolidates all guide generation functionality into a single,
 high-quality service
 Replaces: enhanced_guide_service, optimized_guide_service, luxury_guide_service
 """
@@ -71,7 +71,7 @@ class GuideGenerationContext:
 class UnifiedGuideService:
     """
     Unified Travel Guide Service
-    
+
     Features:
     - Single point of entry for all guide generation
     - LLM-based parsing (no regex)
@@ -85,29 +85,29 @@ class UnifiedGuideService:
     def __init__(self):
         """Initialize the unified guide service with all dependencies"""
         self.logger = logger
-        
+
         # Initialize service dependencies
         self.llm_parser = LLMParser()
         self.perplexity_search = PerplexitySearchService()
         self.weather_service = WeatherService()
         self.places_enhancer = GooglePlacesEnhancer()
         self.events_service = RealEventsService()
-        
+
         self.prompts = self._load_prompts()
         self.weather_correlations = self._load_weather_correlations()
-        
+
         self.perplexity_api_key = get_api_key("perplexity")
         self.openai_api_key = get_api_key("openai")
         self.anthropic_api_key = get_api_key("anthropic")
-        
+
         # Validate required API keys
-        if not any([self.perplexity_api_key, self.openai_api_key, 
+        if not any([self.perplexity_api_key, self.openai_api_key,
                    self.anthropic_api_key]):
             raise APIError(
                 "At least one LLM API key is required "
                 "(Perplexity, OpenAI, or Anthropic)"
             )
-        
+
         # Performance tracking
         self.generation_stats = {
             "total_requests": 0,
@@ -131,17 +131,17 @@ class UnifiedGuideService:
                 ),
                 "structured_extraction": {
                     "document_parser": """
-                    Extract travel information from the provided document 
+                    Extract travel information from the provided document
                     in this exact JSON format:
                     {
                         "flights": [
                             {
                                 "airline": "string",
-                                "flight_number": "string", 
+                                "flight_number": "string",
                                 "departure_date": "YYYY-MM-DD",
                                 "departure_time": "HH:MM",
                                 "departure_airport": "string",
-                                "arrival_date": "YYYY-MM-DD", 
+                                "arrival_date": "YYYY-MM-DD",
                                 "arrival_time": "HH:MM",
                                 "arrival_airport": "string",
                                 "confirmation_number": "string"
@@ -177,9 +177,9 @@ class UnifiedGuideService:
                             }
                         ]
                     }
-                    
+
                     If any information is not found, use null for that field.
-                    Only extract information that is explicitly stated in the 
+                    Only extract information that is explicitly stated in the
                     document.
                     """
                 },
@@ -228,7 +228,7 @@ class UnifiedGuideService:
                     }
                 },
                 "weather_integration": """
-                For each day of the itinerary, consider the weather forecast 
+                For each day of the itinerary, consider the weather forecast
                 and:
                 1. Recommend appropriate clothing and gear
                 2. Suggest indoor alternatives for bad weather days
@@ -296,7 +296,7 @@ class UnifiedGuideService:
     ) -> Dict[str, Any]:
         """
         Generate a complete, magazine-quality travel guide
-        
+
         Args:
             destination: Travel destination
             start_date: Trip start date (YYYY-MM-DD)
@@ -305,50 +305,50 @@ class UnifiedGuideService:
             preferences: User preferences dict
             extracted_data: Additional extracted data from documents
             progress_callback: Optional progress callback function
-            
+
         Returns:
             Complete travel guide dict with all sections
         """
         start_time = datetime.now()
         self.generation_stats["total_requests"] += 1
-        
+
         try:
             if progress_callback:
                 await progress_callback(5, "Initializing unified guide generation")
-            
+
             context = self._build_generation_context(
                 destination, start_date, end_date, hotel_info, preferences, extracted_data
             )
-            
+
             if progress_callback:
                 await progress_callback(15, "Fetching real-time data concurrently")
-            
+
             guide_data = await self._fetch_all_data_concurrently(context, progress_callback)
-            
+
             if guide_data.get("error"):
                 return guide_data
-            
+
             if progress_callback:
                 await progress_callback(70, "Correlating weather with activities")
             
             guide_data = await self._apply_weather_correlation(guide_data, context)
-            
+
             if progress_callback:
                 await progress_callback(85, "Applying persona-based personalization")
             
             guide_data = await self._apply_persona_personalization(guide_data, context)
-            
+
             if progress_callback:
                 await progress_callback(95, "Validating guide quality")
             
             is_valid, errors, validation_details = GuideValidator.validate_guide(guide_data)
-            
+
             if not is_valid:
                 logger.warning(f"Guide validation failed: {errors}")
                 guide_data = await self._auto_fix_guide_issues(guide_data, errors, context)
-                
+
                 is_valid, errors, validation_details = GuideValidator.validate_guide(guide_data)
-                
+
                 if not is_valid:
                     return {
                         "error": "Guide quality validation failed",
