@@ -27,7 +27,10 @@ except ImportError:
     import os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     from utils.environment import load_project_env, get_api_key
-from ..utils.error_handling import APIError
+try:
+    from ..utils.error_handling import APIError
+except ImportError:
+    from utils.error_handling import APIError
 
 # Load environment variables
 load_project_env()
