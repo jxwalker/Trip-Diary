@@ -16,7 +16,9 @@ from ..dependencies.services import (
     ImmediateGuideGeneratorDep
 )
 from ...utils.validation import validate_required_field
-from ...utils.error_handling import safe_execute, ProcessingError, create_error_response
+from ...utils.error_handling import (
+    safe_execute, ProcessingError, create_error_response
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,9 @@ async def upload_files(
 
     try:
         # Initialize processing state
-        await database_service.create_processing_state(trip_id, "Starting processing...")
+        await database_service.create_processing_state(
+            trip_id, "Starting processing..."
+        )
 
         # Process uploaded files
         extracted_data = {}
@@ -83,7 +87,8 @@ async def upload_files(
         
         if files_to_process:
             file_results = await _process_uploaded_files(
-                files_to_process, trip_id, pdf_processor, llm_extractor, use_vision
+                files_to_process, trip_id, pdf_processor, 
+                llm_extractor, use_vision
             )
             # Flatten the extracted data if it's wrapped in filename keys
             if file_results and isinstance(file_results, dict):
@@ -94,8 +99,12 @@ async def upload_files(
 
         # Process manual trip details
         if trip_details:
-            logger.info(f"Processing manual trip details: {trip_details[:200]}...")
-            manual_data = await _process_manual_details(trip_details, llm_extractor)
+            logger.info(
+                f"Processing manual trip details: {trip_details[:200]}..."
+            )
+            manual_data = await _process_manual_details(
+                trip_details, llm_extractor
+            )
             logger.info(f"Manual data extracted: {manual_data}")
             extracted_data.update(manual_data)
 
@@ -113,8 +122,10 @@ async def upload_files(
 
         # Generate immediate guide (commented out for now)
         # if extracted_data:
-        #     immediate_guide_data = await immediate_guide.enhance_itinerary_immediately(extracted_data)
-        #     await database_service.save_immediate_guide(trip_id, immediate_guide_data)
+        #     immediate_guide_data = await immediate_guide.\
+        #         enhance_itinerary_immediately(extracted_data)
+        #     await database_service.save_immediate_guide(
+        #     )
 
         # Mark processing as complete with proper status
         from ...models.database_models import ProcessingStatus
@@ -197,7 +208,9 @@ async def _process_uploaded_files(
         # Extract text from files
         if file.filename.lower().endswith('.pdf'):
             text = pdf_processor.extract_text(str(file_path))
-            logger.info(f"Extracted {len(text) if text else 0} characters from PDF")
+            logger.info(
+                f"Extracted {len(text) if text else 0} characters from PDF"
+            )
             if text:
                 # Extract structured data using LLM
                 file_data = await llm_extractor.extract_travel_info(text)
@@ -209,16 +222,22 @@ async def _process_uploaded_files(
             # Handle text files
             async with aiofiles.open(file_path, 'r') as f:
                 text = await f.read()
-            logger.info(f"Read {len(text) if text else 0} characters from text file")
+            logger.info(
+                f"Read {len(text) if text else 0} characters from text file"
+            )
             if text:
                 # Extract structured data using LLM
-                logger.info(f"Sending text to LLM for extraction: {text[:200]}...")
+                logger.info(
+                    f"Sending text to LLM for extraction: {text[:200]}..."
+                )
                 file_data = await llm_extractor.extract_travel_info(text)
                 logger.info(f"LLM extraction result: {file_data}")
                 if file_data:
                     extracted_data[file.filename] = file_data
                 else:
-                    logger.warning(f"LLM extraction returned None for file: {file.filename}")
+                    logger.warning(
+                        f"LLM extraction returned None for file: {file.filename}"
+                    )
             else:
                 logger.warning(f"Empty text file: {file.filename}")
 
@@ -237,7 +256,9 @@ async def _process_manual_details(
         # Try to parse as JSON first
         manual_data = json.loads(trip_details)
         # Return the data directly if it has the expected structure
-        if isinstance(manual_data, dict) and any(key in manual_data for key in ['flights', 'hotels', 'trip_details']):
+        if (isinstance(manual_data, dict) and 
+            any(key in manual_data for key in 
+                ['flights', 'hotels', 'trip_details'])):
             return manual_data
         return {"manual_details": manual_data}
     except json.JSONDecodeError:

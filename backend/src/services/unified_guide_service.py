@@ -1,7 +1,7 @@
 """
 Unified Travel Guide Service
 Consolidates all guide generation functionality into a single, high-quality service
-Replaces: enhanced_guide_service, optimized_guide_service, luxury_guide_service, etc.
+Replaces: enhanced_guide_service, optimized_guide_service, luxury_guide_service
 """
 
 import os
@@ -100,8 +100,11 @@ class UnifiedGuideService:
         self.anthropic_api_key = get_api_key("anthropic")
         
         # Validate required API keys
-        if not any([self.perplexity_api_key, self.openai_api_key, self.anthropic_api_key]):
-            raise APIError("At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)")
+        if not any([self.perplexity_api_key, self.openai_api_key, 
+                   self.anthropic_api_key]):
+            raise APIError(
+                "At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)"
+            )
         
         # Performance tracking
         self.generation_stats = {
@@ -118,13 +121,15 @@ class UnifiedGuideService:
         return {
             "travel_guide": {
                 "base_prompt": (
-                    "You are an expert travel editor creating a premium, magazine-quality travel guide. "
-                    "Use specific details, real addresses, current information, and actionable recommendations. "
+                    "You are an expert travel editor creating a premium, "
+                    "magazine-quality travel guide. Use specific details, real addresses, "
+                    "current information, and actionable recommendations. "
                     "Adapt your tone and recommendations to the traveler's persona and preferences."
                 ),
                 "structured_extraction": {
                     "document_parser": """
-                    Extract travel information from the provided document in this exact JSON format:
+                    Extract travel information from the provided document in this 
+                    exact JSON format:
                     {
                         "flights": [
                             {
@@ -171,43 +176,50 @@ class UnifiedGuideService:
                     }
                     
                     If any information is not found, use null for that field.
-                    Only extract information that is explicitly stated in the document.
+                    Only extract information that is explicitly stated in the 
+                    document.
                     """
                 },
                 "persona_adaptation": {
                     PersonaType.LUXURY_TRAVELER: {
                         "tone": "Sophisticated, exclusive, refined",
-                        "focus": "Premium experiences, fine dining, luxury accommodations, VIP access",
+                        "focus": "Premium experiences, fine dining, luxury accommodations, "
+                                 "VIP access",
                         "budget_range": "$$$-$$$$",
                         "activity_preference": "Curated, exclusive, comfort-focused"
                     },
                     PersonaType.BUDGET_EXPLORER: {
                         "tone": "Practical, resourceful, adventurous",
-                        "focus": "Value experiences, local gems, budget-friendly options, free activities",
+                        "focus": "Value experiences, local gems, budget-friendly options, "
+                                 "free activities",
                         "budget_range": "$-$$",
                         "activity_preference": "DIY, authentic, cost-effective"
                     },
                     PersonaType.FAMILY_FRIENDLY: {
                         "tone": "Warm, practical, safety-conscious",
-                        "focus": "Kid-friendly activities, family restaurants, safe neighborhoods, educational experiences",
+                        "focus": "Kid-friendly activities, family restaurants, "
+                                 "safe neighborhoods, educational experiences",
                         "budget_range": "$$-$$$",
                         "activity_preference": "Safe, engaging, age-appropriate"
                     },
                     PersonaType.ADVENTURE_SEEKER: {
                         "tone": "Energetic, bold, inspiring",
-                        "focus": "Outdoor activities, unique experiences, physical challenges, off-beaten-path",
+                        "focus": "Outdoor activities, unique experiences, "
+                                 "physical challenges, off-beaten-path",
                         "budget_range": "$$-$$$",
                         "activity_preference": "Active, challenging, unique"
                     },
                     PersonaType.CULTURAL_ENTHUSIAST: {
                         "tone": "Intellectual, curious, respectful",
-                        "focus": "Museums, historical sites, local culture, art galleries, cultural events",
+                        "focus": "Museums, historical sites, local culture, "
+                                 "art galleries, cultural events",
                         "budget_range": "$$-$$$",
                         "activity_preference": "Educational, authentic, immersive"
                     },
                     PersonaType.FOODIE: {
                         "tone": "Passionate, knowledgeable, sensory",
-                        "focus": "Restaurants, food markets, cooking classes, local specialties, wine/beer",
+                        "focus": "Restaurants, food markets, cooking classes, "
+                                 "local specialties, wine/beer",
                         "budget_range": "$$-$$$$",
                         "activity_preference": "Culinary-focused, authentic, diverse"
                     }

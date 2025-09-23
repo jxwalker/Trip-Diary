@@ -7,7 +7,9 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from ..utils.error_handling import safe_execute, ProcessingError, log_and_return_error
+from ..utils.error_handling import (
+    safe_execute, ProcessingError, log_and_return_error
+)
 from ..utils.validation import validate_pdf_file, validate_file_path
 from ..interfaces.services import PDFProcessorInterface
 
@@ -47,7 +49,9 @@ class PDFProcessor(PDFProcessorInterface):
             pdf_reader = PyPDF2.PdfReader(file)
             num_pages = len(pdf_reader.pages)
 
-            self.logger.info(f"Processing PDF with {num_pages} pages: {file_path}")
+            self.logger.info(
+                f"Processing PDF with {num_pages} pages: {file_path}"
+            )
 
             for page_num in range(num_pages):
                 page = pdf_reader.pages[page_num]
@@ -55,10 +59,15 @@ class PDFProcessor(PDFProcessorInterface):
 
                 if page_text.strip():  # Only add non-empty pages
                     text_content.append(page_text)
-                    self.logger.debug(f"Extracted {len(page_text)} characters from page {page_num + 1}")
+                    self.logger.debug(
+                        f"Extracted {len(page_text)} characters from page "
+                        f"{page_num + 1}"
+                    )
 
         full_text = "\n".join(text_content)
-        self.logger.info(f"Successfully extracted {len(full_text)} characters from PDF")
+        self.logger.info(
+            f"Successfully extracted {len(full_text)} characters from PDF"
+        )
 
         return full_text
     
@@ -98,7 +107,10 @@ class PDFProcessor(PDFProcessorInterface):
                     "modification_date": str(pdf_meta.get('/ModDate', ''))
                 })
 
-            self.logger.info(f"Extracted metadata for PDF: {metadata['pages']} pages, {metadata['file_size']} bytes")
+            self.logger.info(
+                f"Extracted metadata for PDF: {metadata['pages']} pages, "
+                f"{metadata['file_size']} bytes"
+            )
 
         return metadata
 
@@ -116,7 +128,8 @@ class PDFProcessor(PDFProcessorInterface):
             file_path_obj = Path(file_path)
 
             # Check file exists and has PDF extension
-            if not file_path_obj.exists() or file_path_obj.suffix.lower() != '.pdf':
+            if (not file_path_obj.exists() or 
+                    file_path_obj.suffix.lower() != '.pdf'):
                 return False
 
             # Try to read the PDF

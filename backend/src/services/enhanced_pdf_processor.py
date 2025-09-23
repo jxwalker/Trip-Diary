@@ -55,7 +55,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         """Initialize the PDF processor"""
         try:
             if not self._pdf_libraries_available:
-                raise ProcessingError("Required PDF processing libraries not available")
+                raise ProcessingError(
+                    "Required PDF processing libraries not available"
+                )
             
             logger.info("Enhanced PDF processor initialized successfully")
             
@@ -69,7 +71,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             return {
                 "status": "healthy",
                 "processing_type": self.processing_type.value,
-                "supported_file_types": [ft.value for ft in self.supported_file_types],
+                "supported_file_types": [
+                    ft.value for ft in self.supported_file_types
+                ],
                 "max_file_size_mb": self.max_file_size_mb,
                 "libraries_available": self._pdf_libraries_available,
                 "cache_enabled": self.config.cache_enabled,
@@ -89,7 +93,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         self._cache.clear()
         logger.info("Enhanced PDF processor cleanup completed")
     
-    async def process_file(self, request: ProcessingRequest) -> ProcessingResult:
+    async def process_file(
+        self, request: ProcessingRequest
+    ) -> ProcessingResult:
         """Process a PDF file with Redis caching"""
         try:
             start_time = datetime.now()
@@ -100,7 +106,10 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             
             # Generate cache key based on file content hash and options
             file_path = Path(request.file_path)
-            file_hash = hashlib.md5(file_path.read_bytes()).hexdigest() if file_path.exists() else ""
+            file_hash = (
+                hashlib.md5(file_path.read_bytes()).hexdigest()
+                if file_path.exists() else ""
+            )
             
             cache_key_data = {
                 "file_hash": file_hash,
@@ -110,19 +119,29 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             
             # Check Redis cache first
             if self.config.cache_enabled:
-                cached_result = await cache_manager.get("pdf_extraction", cache_key_data)
+                cached_result = await cache_manager.get(
+                    "pdf_extraction", cache_key_data
+                )
                 if cached_result:
-                    logger.info(f"Redis cache HIT for PDF: {request.file_path}")
+                    logger.info(
+                        f"Redis cache HIT for PDF: {request.file_path}"
+                    )
                     # Convert dict back to ProcessingResult
                     return ProcessingResult(**cached_result)
             
             # Check local memory cache as fallback
-            local_cache_key = f"{request.file_path}_{hash(str(request.options))}"
+            local_cache_key = (
+                f"{request.file_path}_{hash(str(request.options))}"
+            )
             if self.config.cache_enabled and local_cache_key in self._cache:
                 cached_result = self._cache[local_cache_key]
-                logger.debug(f"Memory cache HIT for PDF: {request.file_path}")
+                logger.debug(
+                    f"Memory cache HIT for PDF: {request.file_path}"
+                )
                 # Also store in Redis for next time
-                await cache_manager.set("pdf_extraction", cache_key_data, cached_result.__dict__)
+                await cache_manager.set(
+                    "pdf_extraction", cache_key_data, cached_result.__dict__
+                )
                 return cached_result
             
             # Extract text and metadata
@@ -142,7 +161,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             if request.options.get("extract_images", False):
                 images = await self.extract_images(request.file_path)
             
-            processing_time = (datetime.now() - start_time).total_seconds() * 1000
+            processing_time = (
+                (datetime.now() - start_time).total_seconds() * 1000
+            )
             
             result = ProcessingResult.success_result(
                 extracted_text=extracted_text,
@@ -159,7 +180,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             # Cache result in both Redis and memory
             if self.config.cache_enabled:
                 # Store in Redis
-                await cache_manager.set("pdf_extraction", cache_key_data, result.__dict__)
+                await cache_manager.set(
+                    "pdf_extraction", cache_key_data, result.__dict__
+                )
                 # Store in memory cache
                 self._cache[local_cache_key] = result
             
@@ -187,7 +210,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             logger.error(f"Failed to extract text from {file_path}: {e}")
             raise ProcessingError(f"Text extraction failed: {e}")
     
-    async def extract_metadata(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    async def extract_metadata(
+        self, file_path: Union[str, Path]
+    ) -> Dict[str, Any]:
         """Extract metadata from PDF"""
         try:
             file_path = Path(file_path)
@@ -197,7 +222,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             metadata = {
                 "file_size": stat.st_size,
                 "file_size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "created_time": datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                "created_time": datetime.fromtimestamp(
+                    stat.st_ctime
+                ).isoformat(),
                 "modified_time": datetime.fromtimestamp(stat.st_mtime).isoformat()
             }
             

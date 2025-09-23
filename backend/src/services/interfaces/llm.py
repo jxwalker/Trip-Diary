@@ -144,7 +144,9 @@ class LLMServiceInterface(BaseService):
         self,
         destination: str,
         preferences: Dict[str, Any],
-        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None
+        progress_callback: Optional[
+            Callable[[int, str], Awaitable[None]]
+        ] = None
     ) -> Dict[str, Any]:
         """Generate comprehensive travel guide"""
         if progress_callback:
@@ -187,7 +189,8 @@ class LLMServiceInterface(BaseService):
         Text: {text}
         
         Extract:
-        - flights (flight_number, airline, departure/arrival airports and times)
+        - flights (flight_number, airline, departure/arrival airports and 
+          times)
         - hotels (name, location, check-in/out dates, confirmation codes)
         - passengers (names, contact info)
         - activities (if mentioned)
@@ -225,10 +228,13 @@ class LLMServiceInterface(BaseService):
         
         return prompt.strip()
     
-    def _build_guide_prompt(self, destination: str, preferences: Dict[str, Any]) -> str:
+    def _build_guide_prompt(
+        self, destination: str, preferences: Dict[str, Any]
+    ) -> str:
         """Build prompt for travel guide generation"""
         return f"""
-        Create a comprehensive travel guide for {destination} based on these preferences:
+        Create a comprehensive travel guide for {destination} based on these 
+        preferences:
         
         Preferences: {preferences}
         

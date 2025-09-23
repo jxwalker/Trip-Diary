@@ -109,16 +109,25 @@ class YelpService:
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, headers=headers, timeout=30) as response:
+                async with session.get(
+                    url, params=params, headers=headers, timeout=30
+                ) as response:
                     if response.status == 200:
                         return True
                     elif response.status == 401:
-                        raise ConfigurationError("Invalid Yelp API key: Unauthorized")
+                        raise ConfigurationError(
+                            "Invalid Yelp API key: Unauthorized"
+                        )
                     elif response.status == 403:
-                        raise ConfigurationError("Invalid Yelp API key: Forbidden")
+                        raise ConfigurationError(
+                            "Invalid Yelp API key: Forbidden"
+                        )
                     else:
                         error_text = await response.text()
-                        raise ConfigurationError(f"Yelp API validation failed: {response.status} - {error_text}")
+                        raise ConfigurationError(
+                            f"Yelp API validation failed: {response.status} - "
+                            f"{error_text}"
+                        )
 
         except ConfigurationError:
             # Re-raise configuration errors
@@ -127,7 +136,9 @@ class YelpService:
             logger.error(f"Yelp API key validation failed: {e}")
             raise ConfigurationError(f"Yelp API key validation error: {e}")
 
-    async def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def _make_request(
+        self, endpoint: str, params: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """Make a request to the Yelp API"""
         url = f"{self.base_url}/{endpoint}"
         headers = {
@@ -148,7 +159,9 @@ class YelpService:
                         return await response.json()
                     else:
                         error_data = await response.json()
-                        error_msg = error_data.get("error", {}).get("description", "Unknown error")
+                        error_msg = error_data.get("error", {}).get(
+                            "description", "Unknown error"
+                        )
                         raise ServiceError(f"Yelp API error: {error_msg}")
 
         except asyncio.TimeoutError:
@@ -201,13 +214,20 @@ class YelpService:
             params["radius"] = min(radius, 40000)  # Yelp API limit
         
         # Check cache first
-        cache_key = f"yelp_restaurants_{hashlib.md5(str(params).encode()).hexdigest()}"
+        cache_key = (
+            f"yelp_restaurants_"
+            f"{hashlib.md5(str(params).encode()).hexdigest()}"
+        )
         if cache_key in self._cache:
-            logger.info(f"Returning cached Yelp restaurant search for {location}")
+            logger.info(
+                f"Returning cached Yelp restaurant search for {location}"
+            )
             return self._cache[cache_key]
 
         try:
-            response_data = await self._make_request("businesses/search", params)
+            response_data = await self._make_request(
+                "businesses/search", params
+            )
 
             # Parse and format restaurant data
             restaurants = []
@@ -225,14 +245,20 @@ class YelpService:
             logger.error(f"Yelp restaurant search failed: {e}")
             raise ServiceError(f"Restaurant search failed: {e}")
     
-    def _format_restaurant_data(self, business: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_restaurant_data(
+        self, business: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Format Yelp business data into standardized restaurant format"""
         return {
             "id": business.get("id"),
             "name": business.get("name"),
-            "cuisine": ", ".join([cat.get("title", "") for cat in business.get("categories", [])]),
+            "cuisine": ", ".join([
+                cat.get("title", "") for cat in business.get("categories", [])
+            ]),
             "address": business.get("location", {}).get("display_address", []),
-            "formatted_address": ", ".join(business.get("location", {}).get("display_address", [])),
+            "formatted_address": ", ".join(
+                business.get("location", {}).get("display_address", [])
+            ),
             "phone": business.get("phone", ""),
             "rating": business.get("rating", 0),
             "review_count": business.get("review_count", 0),
@@ -241,7 +267,9 @@ class YelpService:
             "website": business.get("url", ""),
             "yelp_url": business.get("url", ""),
             "image_url": business.get("image_url", ""),
-            "photos": [business.get("image_url")] if business.get("image_url") else [],
+            "photos": (
+                [business.get("image_url")] if business.get("image_url") else []
+            ),
             "coordinates": {
                 "latitude": business.get("coordinates", {}).get("latitude"),
                 "longitude": business.get("coordinates", {}).get("longitude")
@@ -303,7 +331,9 @@ class YelpService:
             params["categories"] = f"restaurants,{place_type.lower()}"
 
         try:
-            response_data = await self._make_request("businesses/search", params)
+            response_data = await self._make_request(
+                "businesses/search", params
+            )
 
             restaurants = []
             for business in response_data.get("businesses", []):
@@ -343,7 +373,9 @@ class YelpService:
         """Get reviews for a specific restaurant"""
         try:
             params = {"limit": min(limit, 3)}  # Yelp API limit is 3
-            response_data = await self._make_request(f"businesses/{business_id}/reviews", params)
+            response_data = await self._make_request(
+                f"businesses/{business_id}/reviews", params
+            )
 
             reviews = []
             for review in response_data.get("reviews", []):
@@ -354,7 +386,9 @@ class YelpService:
                     "time_created": review.get("time_created"),
                     "user": {
                         "name": review.get("user", {}).get("name", ""),
-                        "image_url": review.get("user", {}).get("image_url", "")
+                        "image_url": review.get("user", {}).get(
+                            "image_url", ""
+                        )
                     },
                     "source": "yelp"
                 }

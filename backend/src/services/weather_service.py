@@ -24,9 +24,12 @@ class WeatherService:
         
         # If no API key, provide helpful error message
         if not self.api_key:
-            print("[WARNING] OPENWEATHER_API_KEY not found in environment variables")
-            print("[INFO] To enable weather forecasts, get a free API key from: https://openweathermap.org/api")
-            print("[INFO] Then set OPENWEATHER_API_KEY in your environment or .env file")
+            print("[WARNING] OPENWEATHER_API_KEY not found in environment "
+                  "variables")
+            print("[INFO] To enable weather forecasts, get a free API key "
+                  "from: https://openweathermap.org/api")
+            print("[INFO] Then set OPENWEATHER_API_KEY in your environment "
+                  "or .env file")
         
     async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
         """
@@ -49,8 +52,11 @@ class WeatherService:
                 "daily_forecasts": [],
                 "summary": {
                     "setup_required": True,
-                    "message": "Weather forecasts require an OpenWeatherMap API key",
-                    "instructions": "Get a free API key from https://openweathermap.org/api and set OPENWEATHER_API_KEY in your environment"
+                    "message": "Weather forecasts require an OpenWeatherMap "
+                               "API key",
+                    "instructions": "Get a free API key from "
+                                    "https://openweathermap.org/api and set "
+                                    "OPENWEATHER_API_KEY in your environment"
                 },
                 "error": "OPENWEATHER_API_KEY not configured"
             }
@@ -67,8 +73,11 @@ class WeatherService:
                 "forecast_period": {"start": start_date, "end": end_date},
                 "daily_forecasts": [],
                 "summary": {
-                    "message": f"Historical weather data for {destination} during {start_date} to {end_date}",
-                    "note": "This trip occurred in the past. For current weather forecasts, please use current or future dates.",
+                    "message": f"Historical weather data for {destination} "
+                               f"during {start_date} to {end_date}",
+                    "note": "This trip occurred in the past. For current "
+                            "weather forecasts, please use current or future "
+                            "dates.",
                     "typical_weather": self._get_typical_weather(destination, start_dt.month)
                 },
                 "historical": True
@@ -81,22 +90,26 @@ class WeatherService:
                 "forecast_period": {"start": start_date, "end": end_date},
                 "daily_forecasts": [],
                 "summary": {
-                    "message": f"Typical weather for {destination} during {start_date} to {end_date}",
-                    "note": "Detailed forecasts are only available for the next 5 days. Showing typical weather patterns.",
+                    "message": f"Typical weather for {destination} during "
+                               f"{start_date} to {end_date}",
+                    "note": "Detailed forecasts are only available for the "
+                            "next 5 days. Showing typical weather patterns.",
                     "typical_weather": self._get_typical_weather(destination, start_dt.month)
                 },
                 "typical_weather": True
             }
         
         try:
-            # Check if dates are within 5-day forecast range (OpenWeather free tier limitation)
+            # Check if dates are within 5-day forecast range
+            # (OpenWeather free tier limitation)
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             today = datetime.now()
             days_ahead = (start_dt - today).days
 
             if days_ahead > 5:
                 # For dates beyond 5 days, provide seasonal weather estimates
-                return await self._get_seasonal_weather_estimate(destination, start_date, end_date)
+                return await self._get_seasonal_weather_estimate(
+                    destination, start_date, end_date)
 
             # Get coordinates for the destination
             coords = await self._get_coordinates(destination)
@@ -110,13 +123,16 @@ class WeatherService:
                 }
             
             # Get forecast data
-            forecast_url = f"{self.base_url}/forecast?lat={coords['lat']}&lon={coords['lon']}&appid={self.api_key}&units=metric"
+            forecast_url = (f"{self.base_url}/forecast?"
+                            f"lat={coords['lat']}&lon={coords['lon']}&"
+                            f"appid={self.api_key}&units=metric")
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(forecast_url) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return self._format_forecast(data, destination, start_date, end_date)
+                        return self._format_forecast(
+                            data, destination, start_date, end_date)
                     else:
                         return {
                             "destination": destination,
@@ -138,7 +154,8 @@ class WeatherService:
     
     async def _get_coordinates(self, location: str) -> Optional[Dict]:
         """Get latitude and longitude for a location"""
-        geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={self.api_key}"
+        geo_url = (f"http://api.openweathermap.org/geo/1.0/direct?"
+                   f"q={location}&limit=1&appid={self.api_key}")
         
         try:
             async with aiohttp.ClientSession() as session:

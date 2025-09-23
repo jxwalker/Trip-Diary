@@ -1,6 +1,7 @@
 """
 Multimodal LLM Extractor Service
-Uses vision-capable models to extract travel information directly from images/PDFs
+Uses vision-capable models to extract travel information directly from
+images/PDFs
 """
 import os
 import json
@@ -25,11 +26,16 @@ class MultimodalLLMExtractor:
         self.claude_client = None
         
         if os.getenv("OPENAI_API_KEY"):
-            self.openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.openai_client = AsyncOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
         if os.getenv("ANTHROPIC_API_KEY"):
-            self.claude_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            self.claude_client = anthropic.AsyncAnthropic(
+                api_key=os.getenv("ANTHROPIC_API_KEY")
+            )
     
-    def pdf_to_images_base64(self, pdf_path: str, max_pages: int = 10) -> List[str]:
+    def pdf_to_images_base64(self, pdf_path: str, 
+                             max_pages: int = 10) -> List[str]:
         """Convert PDF pages to base64 encoded images."""
         images = []
         try:
@@ -52,18 +58,21 @@ class MultimodalLLMExtractor:
     
     async def extract_from_image(self, 
                                  file_path: Optional[str] = None,
-                                 image_bytes: Optional[bytes] = None) -> Dict[str, Any]:
+                                 image_bytes: Optional[bytes] = None
+                                 ) -> Dict[str, Any]:
         """
         Extract travel information using multimodal vision capabilities.
         """
         
-        system_prompt = """You are an expert travel document analyzer with perfect OCR capabilities.
-        Extract ALL travel information from the document image(s) with 100% accuracy.
+        system_prompt = """You are an expert travel document analyzer with 
+        perfect OCR capabilities. Extract ALL travel information from the 
+        document image(s) with 100% accuracy.
         
         CRITICAL REQUIREMENTS:
         - Extract ALL flights (both outbound AND return flights)
         - Parse dates EXACTLY - "09 Aug 25" means August 9, 2025
-        - Extract passenger names EXACTLY as shown (e.g., "MR PETER JAMES LLOYD WALKER")
+        - Extract passenger names EXACTLY as shown 
+          (e.g., "MR PETER JAMES LLOYD WALKER")
         - For hotel dates, find actual check-in and check-out dates
         - Identify the destination city from the travel documents
         - Return dates in YYYY-MM-DD format (2025-08-09 not 2024-08-09)
@@ -75,7 +84,8 @@ class MultimodalLLMExtractor:
         user_prompt = """Extract ALL travel information from this document.
         
         CRITICAL INSTRUCTIONS:
-        1. Extract EXACT dates as shown in document (e.g., "09 Aug 25" becomes "2025-08-09")
+        1. Extract EXACT dates as shown in document 
+           (e.g., "09 Aug 25" becomes "2025-08-09")
         2. Extract FULL passenger names exactly as written
         3. For dates, if you see "09 Aug" assume current or next year (2025)
         4. Include ALL flight segments (outbound AND return)
@@ -148,11 +158,13 @@ class MultimodalLLMExtractor:
                 if file_ext == '.pdf':
                     # Convert PDF to images
                     images = self.pdf_to_images_base64(file_path)
-                    image_data_list = [{"base64": img, "type": "image/png"} for img in images]
+                    image_data_list = [{"base64": img, "type": "image/png"} 
+                                       for img in images]
                 elif file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']:
                     # Direct image
                     img_base64 = self.image_to_base64(file_path)
-                    image_data_list = [{"base64": img_base64, "type": f"image/{file_ext[1:]}"}]
+                    image_data_list = [{"base64": img_base64, 
+                                        "type": f"image/{file_ext[1:]}"}]
             elif image_bytes:
                 # Raw bytes
                 img_base64 = base64.b64encode(image_bytes).decode('utf-8')
@@ -178,7 +190,8 @@ class MultimodalLLMExtractor:
                     messages[1]["content"].append({
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:{img_data['type']};base64,{img_data['base64']}",
+                            "url": f"data:{img_data['type']};base64,"
+                                   f"{img_data['base64']}",
                             "detail": "high"  # High detail for better OCR
                         }
                     })

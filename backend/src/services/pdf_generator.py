@@ -4,7 +4,10 @@ Creates beautiful PDF travel packs with enhanced guide content
 """
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image, KeepTogether
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, 
+    Image, KeepTogether
+)
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
@@ -143,7 +146,8 @@ class TravelPackGenerator:
             textColor=colors.HexColor('#666666')
         ))
     
-    async def generate(self, trip_id: str, itinerary: Dict, recommendations: Dict, enhanced_guide: Dict = None) -> str:
+    async def generate(self, trip_id: str, itinerary: Dict, 
+                      recommendations: Dict, enhanced_guide: Dict = None) -> str:
         """
         Generate PDF travel pack with enhanced guide content
         """
@@ -185,36 +189,50 @@ class TravelPackGenerator:
         
         # Accommodation information
         if itinerary.get("accommodations"):
-            story.extend(self._create_accommodation_section(itinerary["accommodations"]))
+            story.extend(
+                self._create_accommodation_section(itinerary["accommodations"])
+            )
             story.append(PageBreak())
         
         # Weather (from enhanced guide if available)
         if enhanced_guide and enhanced_guide.get("weather"):
-            story.extend(self._create_weather_section(enhanced_guide["weather"]))
+            story.extend(
+                self._create_weather_section(enhanced_guide["weather"])
+            )
             story.append(PageBreak())
 
         # Static Map (hotel + key POIs) if Maps API configured
-        static_map = await self._maybe_create_static_map(itinerary, enhanced_guide)
+        static_map = await self._maybe_create_static_map(
+            itinerary, enhanced_guide
+        )
         if static_map:
             story.extend(static_map)
             story.append(PageBreak())
 
         # Daily Itinerary (from enhanced guide or basic schedule)
         if enhanced_guide and enhanced_guide.get("daily_itinerary"):
-            story.extend(await self._create_enhanced_itinerary(enhanced_guide["daily_itinerary"], enhanced_guide))
+            story.extend(await self._create_enhanced_itinerary(
+                enhanced_guide["daily_itinerary"], enhanced_guide
+            ))
             story.append(PageBreak())
         elif itinerary.get("daily_schedule"):
-            story.extend(self._create_daily_schedule(itinerary["daily_schedule"]))
+            story.extend(
+                self._create_daily_schedule(itinerary["daily_schedule"])
+            )
             story.append(PageBreak())
         
         # Restaurant Recommendations (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("restaurants"):
-            story.extend(self._create_restaurant_section(enhanced_guide["restaurants"]))
+            story.extend(
+                self._create_restaurant_section(enhanced_guide["restaurants"])
+            )
             story.append(PageBreak())
         
         # Attractions (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("attractions"):
-            story.extend(self._create_attractions_section(enhanced_guide["attractions"]))
+            story.extend(
+                self._create_attractions_section(enhanced_guide["attractions"])
+            )
             story.append(PageBreak())
         
         # Basic Recommendations (fallback)
@@ -224,12 +242,16 @@ class TravelPackGenerator:
         
         # Practical Information
         if enhanced_guide and enhanced_guide.get("practical_info"):
-            story.extend(self._create_practical_info(enhanced_guide["practical_info"]))
+            story.extend(
+                self._create_practical_info(enhanced_guide["practical_info"])
+            )
             story.append(PageBreak())
         
         # Important information
         if itinerary.get("important_info"):
-            story.extend(self._create_important_info(itinerary["important_info"]))
+            story.extend(
+                self._create_important_info(itinerary["important_info"])
+            )
         
         # Build PDF
         try:
@@ -244,7 +266,10 @@ class TravelPackGenerator:
                 Paragraph("Travel Pack", self.styles['CustomTitle']),
                 Spacer(1, 0.5*inch),
                 Paragraph(f"Trip ID: {trip_id}", self.styles['InfoText']),
-                Paragraph("Your travel pack is being prepared. Please try again later.", self.styles['InfoText'])
+                Paragraph(
+                    "Your travel pack is being prepared. Please try again later.", 
+                    self.styles['InfoText']
+                )
             ]
             doc.build(story)
             return str(pdf_path)
@@ -257,7 +282,9 @@ class TravelPackGenerator:
         # Escape HTML entities
         text_str = html.escape(text_str)
         # Remove any control characters
-        text_str = ''.join(char for char in text_str if ord(char) >= 32 or char == '\n')
+        text_str = ''.join(
+            char for char in text_str if ord(char) >= 32 or char == '\n'
+        )
         return text_str
     
     async def _create_cover_page(self, itinerary: Dict, enhanced_guide: Optional[Dict]) -> List:

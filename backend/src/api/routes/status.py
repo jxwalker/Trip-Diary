@@ -34,10 +34,15 @@ async def get_processing_status(
         # Validate trip ID format
         validated_trip_id = validate_trip_id(trip_id)
 
-        logger.info(f"Status check requested", extra={"trip_id": validated_trip_id})
+        logger.info(
+            f"Status check requested", 
+            extra={"trip_id": validated_trip_id}
+        )
 
         # Get processing state
-        processing_state = await database_service.get_processing_state(validated_trip_id)
+        processing_state = await database_service.get_processing_state(
+            validated_trip_id
+        )
 
         if not processing_state:
             raise HTTPException(

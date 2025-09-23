@@ -30,27 +30,27 @@ class CacheConfig:
     # TTL configurations in seconds
     TTL_CONFIG = {
         # API Response Caching
-        "perplexity_search": 3600 * 6,     # 6 hours - search results don't change often
-        "weather_data": 1800,               # 30 minutes - weather updates frequently
+        "perplexity_search": 3600 * 6,     # 6 hours - search results stable
+        "weather_data": 1800,               # 30 minutes - frequent updates
         "google_places": 3600 * 24,        # 24 hours - place info is stable
-        "maps_directions": 3600 * 12,      # 12 hours - routes are relatively stable
+        "maps_directions": 3600 * 12,      # 12 hours - routes stable
         
         # Processed Data Caching
         "pdf_extraction": 3600 * 24 * 7,   # 1 week - PDFs don't change
         "parsed_travel_data": 3600 * 24,   # 24 hours - parsed data is stable
-        "generated_guide": 3600 * 4,       # 4 hours - guides can be regenerated
-        "enhanced_guide": 3600 * 2,        # 2 hours - enhanced guides update more
-        "itinerary": 3600 * 6,             # 6 hours - itineraries are semi-stable
+        "generated_guide": 3600 * 4,       # 4 hours - regeneratable
+        "enhanced_guide": 3600 * 2,        # 2 hours - frequent updates
+        "itinerary": 3600 * 6,             # 6 hours - semi-stable
         
         # User Data Caching
-        "user_preferences": 3600 * 24,     # 24 hours - preferences don't change often
+        "user_preferences": 3600 * 24,     # 24 hours - stable prefs
         "trip_data": 3600 * 12,            # 12 hours - trip data updates
-        "processing_status": 300,           # 5 minutes - status updates frequently
+        "processing_status": 300,           # 5 minutes - frequent updates
         
         # System Caching
-        "llm_response": 3600,               # 1 hour - LLM responses can be cached
-        "events_data": 3600 * 6,           # 6 hours - events update periodically
-        "neighborhoods": 3600 * 24 * 7,    # 1 week - neighborhood info is stable
+        "llm_response": 3600,               # 1 hour - cacheable responses
+        "events_data": 3600 * 6,           # 6 hours - periodic updates
+        "neighborhoods": 3600 * 24 * 7,    # 1 week - stable info
         "recommendations": 3600 * 12,      # 12 hours - recommendations update
     }
 
@@ -64,7 +64,9 @@ class EnhancedRedisCache:
         self.redis_port = int(os.getenv("REDIS_PORT", 6379))
         self.redis_db = int(os.getenv("REDIS_DB", 0))
         self.redis_password = os.getenv("REDIS_PASSWORD", None)
-        self.redis_max_connections = int(os.getenv("REDIS_MAX_CONNECTIONS", 50))
+        self.redis_max_connections = int(
+            os.getenv("REDIS_MAX_CONNECTIONS", 50)
+        )
         
         self.redis_client = None
         self.connection_pool = None
@@ -96,7 +98,9 @@ class EnhancedRedisCache:
                 health_check_interval=30
             )
             
-            self.redis_client = redis_async.Redis(connection_pool=self.connection_pool)
+            self.redis_client = redis_async.Redis(
+                connection_pool=self.connection_pool
+            )
             
             # Test connection
             await self.redis_client.ping()

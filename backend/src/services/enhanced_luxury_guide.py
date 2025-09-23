@@ -31,7 +31,9 @@ class EnhancedLuxuryGuideService:
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         
         # Supported languages for multi-language support
-        self.supported_languages = ["en", "es", "fr", "it", "de", "ja", "zh", "pt"]
+        self.supported_languages = [
+            "en", "es", "fr", "it", "de", "ja", "zh", "pt"
+        ]
     
     async def generate_enhanced_guide(
         self,
@@ -55,7 +57,8 @@ class EnhancedLuxuryGuideService:
             "en": "Creating your enhanced luxury travel guide...",
             "es": "Creando su guía de viaje de lujo mejorada...",
             "fr": "Création de votre guide de voyage de luxe amélioré...",
-            "it": "Creazione della tua guida di viaggio di lusso migliorata...",
+            "it": "Creazione della tua guida di viaggio di lusso "
+                  "migliorata...",
             "de": "Erstelle Ihren erweiterten Luxus-Reiseführer...",
             "ja": "高級旅行ガイドを作成中...",
             "zh": "正在创建您的豪华旅行指南...",
@@ -63,11 +66,15 @@ class EnhancedLuxuryGuideService:
         }
         
         if progress_callback:
-            await progress_callback(5, progress_messages.get(language, progress_messages["en"]))
+            await progress_callback(
+                5, progress_messages.get(language, progress_messages["en"])
+            )
         
         # Extract passenger info
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (
+            passengers[0]["full_name"] if passengers else "Traveler"
+        )
         
         # Calculate trip duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -78,19 +85,31 @@ class EnhancedLuxuryGuideService:
         tasks = []
         
         # Original tasks
-        tasks.append(self._get_premium_content(destination, start_date, end_date, preferences, primary_traveler))
-        tasks.append(self._get_detailed_weather(destination, start_date, end_date))
+        tasks.append(self._get_premium_content(
+            destination, start_date, end_date, preferences, primary_traveler
+        ))
+        tasks.append(self._get_detailed_weather(
+            destination, start_date, end_date
+        ))
         
         # New enhanced tasks
-        tasks.append(self._get_flight_status(extracted_data.get("flights", [])))
-        tasks.append(self._generate_smart_packing_list(destination, start_date, end_date, preferences))
+        tasks.append(self._get_flight_status(
+            extracted_data.get("flights", [])
+        ))
+        tasks.append(self._generate_smart_packing_list(
+            destination, start_date, end_date, preferences
+        ))
         tasks.append(self._get_accessibility_info(destination))
         tasks.append(self._get_local_transportation(destination))
-        tasks.append(self._calculate_budget_estimates(destination, num_days, preferences))
+        tasks.append(self._calculate_budget_estimates(
+            destination, num_days, preferences
+        ))
         tasks.append(self._get_emergency_contacts(destination))
         
         if progress_callback:
-            await progress_callback(20, "Gathering enhanced travel intelligence...")
+            await progress_callback(
+                20, "Gathering enhanced travel intelligence..."
+            )
         
         try:
             results = await asyncio.wait_for(
@@ -102,9 +121,15 @@ class EnhancedLuxuryGuideService:
             results = [None] * len(tasks)
         
         # Unpack results
-        premium_content = results[0] if not isinstance(results[0], Exception) else {}
-        weather_data = results[1] if not isinstance(results[1], Exception) else {}
-        flight_status = results[2] if not isinstance(results[2], Exception) else {}
+        premium_content = (
+            results[0] if not isinstance(results[0], Exception) else {}
+        )
+        weather_data = (
+            results[1] if not isinstance(results[1], Exception) else {}
+        )
+        flight_status = (
+            results[2] if not isinstance(results[2], Exception) else {}
+        )
         packing_list = results[3] if not isinstance(results[3], Exception) else {}
         accessibility = results[4] if not isinstance(results[4], Exception) else {}
         transportation = results[5] if not isinstance(results[5], Exception) else {}

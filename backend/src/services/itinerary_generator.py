@@ -59,7 +59,8 @@ class ItineraryGenerator:
                     # Get earliest departure date
                     for flight in all_flights:
                         if flight.get("departure_date"):
-                            if not dates.get("start") or flight["departure_date"] < dates["start"]:
+                            if (not dates.get("start") or 
+                                flight["departure_date"] < dates["start"]):
                                 dates["start"] = flight["departure_date"]
                         
                 # Try to infer dates from hotels if not set
@@ -87,10 +88,12 @@ class ItineraryGenerator:
         
         # Build trip summary
         itinerary["trip_summary"] = {
-            "destination": destination or self._infer_destination(all_flights, all_hotels),
+            "destination": (destination or 
+                           self._infer_destination(all_flights, all_hotels)),
             "start_date": dates.get("start", ""),
             "end_date": dates.get("end", ""),
-            "duration": self._calculate_duration(dates.get("start"), dates.get("end")),
+            "duration": self._calculate_duration(
+                dates.get("start"), dates.get("end")),
             "total_flights": len(all_flights),
             "total_hotels": len(all_hotels),
             "total_passengers": len(all_passengers)
@@ -123,19 +126,23 @@ class ItineraryGenerator:
         
         return itinerary
     
-    def _infer_destination(self, flights: List[Dict], hotels: List[Dict]) -> str:
+    def _infer_destination(self, flights: List[Dict], 
+                          hotels: List[Dict]) -> str:
         """Infer destination from flights and hotels"""
 
         print(f"[DESTINATION] 🎯 Inferring destination from extracted data...")
-        print(f"[DESTINATION] 📊 Input: {len(flights)} flights, {len(hotels)} hotels")
+        print(f"[DESTINATION] 📊 Input: {len(flights)} flights, "
+              f"{len(hotels)} hotels")
 
         # Try to get destination from hotels first
         if hotels:
             for i, hotel in enumerate(hotels):
                 city = hotel.get("city")
-                print(f"[DESTINATION] 🏨 Hotel {i+1}: {hotel.get('name')} in city '{city}'")
+                print(f"[DESTINATION] 🏨 Hotel {i+1}: "
+                      f"{hotel.get('name')} in city '{city}'")
                 if city:
-                    print(f"[DESTINATION] ✅ Found destination from hotel: '{city}'")
+                    print(f"[DESTINATION] ✅ Found destination from hotel: "
+                          f"'{city}'")
                     return city
 
         # Try to get from flight arrival
@@ -143,15 +150,19 @@ class ItineraryGenerator:
             for i, flight in enumerate(flights):
                 arrival_city = flight.get("arrival_city")
                 arrival_airport = flight.get("arrival_airport")
-                print(f"[DESTINATION] ✈️  Flight {i+1}: {flight.get('flight_number')} → {arrival_airport} (city: {arrival_city})")
+                print(f"[DESTINATION] ✈️  Flight {i+1}: "
+                      f"{flight.get('flight_number')} → {arrival_airport} "
+                      f"(city: {arrival_city})")
 
                 if arrival_city:
-                    print(f"[DESTINATION] ✅ Found destination from flight arrival city: '{arrival_city}'")
+                    print(f"[DESTINATION] ✅ Found destination from flight "
+                          f"arrival city: '{arrival_city}'")
                     return arrival_city
                 elif arrival_airport:
                     # Map common airport codes to cities
                     airport_map = {
-                        "JFK": "New York", "LGA": "New York", "EWR": "New York",
+                        "JFK": "New York", "LGA": "New York", 
+                        "EWR": "New York",
                         "LAX": "Los Angeles", "SFO": "San Francisco",
                         "ORD": "Chicago", "MDW": "Chicago",
                         "LHR": "London", "LGW": "London", "STN": "London",
@@ -160,10 +171,13 @@ class ItineraryGenerator:
                     }
                     if arrival_airport in airport_map:
                         destination = airport_map[arrival_airport]
-                        print(f"[DESTINATION] ✅ Mapped airport '{arrival_airport}' to destination: '{destination}'")
+                        print(f"[DESTINATION] ✅ Mapped airport "
+                              f"'{arrival_airport}' to destination: "
+                              f"'{destination}'")
                         return destination
                     else:
-                        print(f"[DESTINATION] ❓ Airport '{arrival_airport}' not in mapping")
+                        print(f"[DESTINATION] ❓ Airport '{arrival_airport}' "
+                              f"not in mapping")
 
         print(f"[DESTINATION] ⚠️  Could not determine destination, using 'Unknown Destination'")
         return "Unknown Destination"

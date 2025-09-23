@@ -71,7 +71,9 @@ class ServiceFactory:
             
         except Exception as e:
             logger.error(f"Failed to initialize service factory: {e}")
-            raise ConfigurationError(f"Service factory initialization failed: {e}")
+            raise ConfigurationError(
+                f"Service factory initialization failed: {e}"
+            )
     
     async def create_storage_service(
         self,
@@ -88,7 +90,9 @@ class ServiceFactory:
             service = EnhancedDatabaseService(config)
             
             # Register the service
-            service_registry.register(f"storage_{service_name}", service, config)
+            service_registry.register(
+                f"storage_{service_name}", service, config
+            )
             
             return service
             
@@ -124,7 +128,9 @@ class ServiceFactory:
             return service
             
         except Exception as e:
-            raise ServiceError(f"Failed to create LLM service for {provider}: {e}")
+            raise ServiceError(
+                f"Failed to create LLM service for {provider}: {e}"
+            )
     
     async def create_weather_service(
         self,
@@ -143,7 +149,9 @@ class ServiceFactory:
             service = GoogleWeatherService()
 
             # Register the service
-            service_registry.register(f"weather_{service_name}", service, config)
+            service_registry.register(
+                f"weather_{service_name}", service, config
+            )
 
             return service
 
@@ -164,10 +172,14 @@ class ServiceFactory:
             if processing_type == "pdf":
                 service = EnhancedPDFProcessor(config)
             else:
-                raise ConfigurationError(f"Unsupported processing type: {processing_type}")
+                raise ConfigurationError(
+                    f"Unsupported processing type: {processing_type}"
+                )
 
             # Register the service
-            service_registry.register(f"processing_{processing_type}_{service_name}", service, config)
+            service_registry.register(
+                f"processing_{processing_type}_{service_name}", service, config
+            )
 
             return service
 
@@ -182,20 +194,26 @@ class ServiceFactory:
     ) -> ExternalServiceInterface:
         """Create an external service"""
         # This would be implemented based on specific external service needs
-        raise NotImplementedError("External service creation not yet implemented")
+        raise NotImplementedError(
+            "External service creation not yet implemented"
+        )
     
     def get_service(self, service_name: str) -> Optional[BaseService]:
         """Get a service by name"""
         return service_registry.get(service_name)
     
-    def get_storage_service(self, service_name: str = "default") -> Optional[StorageServiceInterface]:
+    def get_storage_service(
+        self, service_name: str = "default"
+    ) -> Optional[StorageServiceInterface]:
         """Get a storage service"""
         service = service_registry.get(f"storage_{service_name}")
         if service and isinstance(service, StorageServiceInterface):
             return service
         return None
     
-    def get_llm_service(self, provider: Union[LLMProvider, str]) -> Optional[LLMServiceInterface]:
+    def get_llm_service(
+        self, provider: Union[LLMProvider, str]
+    ) -> Optional[LLMServiceInterface]:
         """Get an LLM service"""
         if isinstance(provider, LLMProvider):
             provider = provider.value
@@ -205,16 +223,22 @@ class ServiceFactory:
             return service
         return None
 
-    def get_weather_service(self, service_name: str = "default") -> Optional[WeatherServiceInterface]:
+    def get_weather_service(
+        self, service_name: str = "default"
+    ) -> Optional[WeatherServiceInterface]:
         """Get a weather service"""
         service = service_registry.get(f"weather_{service_name}")
         if service and isinstance(service, WeatherServiceInterface):
             return service
         return None
 
-    def get_processing_service(self, processing_type: str, service_name: str = "default") -> Optional[ProcessingServiceInterface]:
+    def get_processing_service(
+        self, processing_type: str, service_name: str = "default"
+    ) -> Optional[ProcessingServiceInterface]:
         """Get a processing service"""
-        service = service_registry.get(f"processing_{processing_type}_{service_name}")
+        service = service_registry.get(
+            f"processing_{processing_type}_{service_name}"
+        )
         if service and isinstance(service, ProcessingServiceInterface):
             return service
         return None
@@ -262,7 +286,9 @@ class ServiceFactory:
         if service:
             return service
 
-        return await self.create_processing_service(processing_type, service_name)
+        return await self.create_processing_service(
+            processing_type, service_name
+        )
     
     async def health_check_all(self) -> Dict[str, Dict[str, Any]]:
         """Health check all services"""

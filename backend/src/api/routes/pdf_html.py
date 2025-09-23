@@ -22,25 +22,44 @@ router = APIRouter(prefix="/api", tags=["pdf-html"])
 
 @router.post("/generate-pdf-html/{trip_id}")
 async def generate_pdf_html(
-    trip_id: str = FPath(..., description="Trip ID to generate HTML-based PDF for"),
+    trip_id: str = FPath(
+        ..., description="Trip ID to generate HTML-based PDF for"
+    ),
     database_service: DatabaseServiceDep = None,
     guide_service: OptimizedGuideServiceDep = None,
 ) -> Any:
     try:
         trip_data = await database_service.get_trip_data(trip_id)
         if not trip_data:
-            raise HTTPException(status_code=404, detail=f"Trip not found: {trip_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Trip not found: {trip_id}"
+            )
 
         if not trip_data.enhanced_guide:
             itinerary = trip_data.itinerary or {}
-            destination = itinerary.get("trip_summary", {}).get("destination") or itinerary.get("destination") or ""
-            start_date = itinerary.get("trip_summary", {}).get("start_date") or itinerary.get("start_date") or ""
-            end_date = itinerary.get("trip_summary", {}).get("end_date") or itinerary.get("end_date") or ""
+            destination = (
+                itinerary.get("trip_summary", {}).get("destination") or
+                itinerary.get("destination") or ""
+            )
+            start_date = (
+                itinerary.get("trip_summary", {}).get("start_date") or
+                itinerary.get("start_date") or ""
+            )
+            end_date = (
+                itinerary.get("trip_summary", {}).get("end_date") or
+                itinerary.get("end_date") or ""
+            )
             if not (destination and start_date and end_date):
-                raise HTTPException(status_code=400, detail="Trip is missing destination or dates required to generate guide")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Trip is missing destination or dates required to generate guide"
+                )
 
             hotel_info = {}
-            hotels = itinerary.get("accommodations") or itinerary.get("hotels") or []
+            hotels = (
+                itinerary.get("accommodations") or
+                itinerary.get("hotels") or []
+            )
             if hotels:
                 h = hotels[0]
                 hotel_info = {
@@ -77,16 +96,25 @@ async def generate_pdf_html(
 
         renderer = HTMLPDFRenderer()
         try:
-            out = renderer.render_magazine_pdf(guide=trip_data.enhanced_guide, itinerary=itinerary, output_path=pdf_path)
+            out = renderer.render_magazine_pdf(
+                guide=trip_data.enhanced_guide,
+                itinerary=itinerary,
+                output_path=pdf_path
+            )
         except RuntimeError as e:
             # Playwright not installed
             raise HTTPException(status_code=500, detail=str(e))
 
-        return FileResponse(path=str(out), filename=out.name, media_type="application/pdf")
+        return FileResponse(
+            path=str(out), filename=out.name, media_type="application/pdf"
+        )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to generate HTML PDF for trip {trip_id}: {e}")
-        raise HTTPException(status_code=500, detail=create_error_response(e, "HTML PDF generation"))
+        raise HTTPException(
+            status_code=500,
+            detail=create_error_response(e, "HTML PDF generation")
+        )
 

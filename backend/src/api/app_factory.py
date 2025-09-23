@@ -11,11 +11,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies.container import container
 from .routes import upload, status
-from ..middleware import LoggingMiddleware, ErrorHandlingMiddleware, setup_error_handlers, log_startup_info
+from ..middleware import (
+    LoggingMiddleware, ErrorHandlingMiddleware, setup_error_handlers,
+    log_startup_info
+)
 from ..utils.logging_config import setup_logging
 from ..utils.environment import load_project_env, is_development
 from ..config import get_settings
-from ..services.service_factory import service_factory, initialize_services, cleanup_services
+from ..services.service_factory import (
+    service_factory, initialize_services, cleanup_services
+)
 from ..services.enhanced_redis_cache import cache_manager
 from ..core.middleware import (
     CorrelationIdMiddleware,
@@ -63,8 +68,12 @@ def create_app(config: Optional[object] = None) -> FastAPI:
         version=settings.api.version,
         description=settings.api.description,
         docs_url=settings.api.docs_url if settings.api.docs_enabled else None,
-        redoc_url=settings.api.redoc_url if settings.api.docs_enabled else None,
-        openapi_url=settings.api.openapi_url if settings.api.docs_enabled else None
+        redoc_url=(
+            settings.api.redoc_url if settings.api.docs_enabled else None
+        ),
+        openapi_url=(
+            settings.api.openapi_url if settings.api.docs_enabled else None
+        )
     )
 
     # Initialize service container (legacy)
@@ -139,7 +148,10 @@ def _configure_routes(app: FastAPI) -> None:
     """Configure application routes"""
 
     # Import route modules
-    from .routes import upload, status, enhanced_guide, preferences, generation, pdf, pdf_html, health, debug, places
+    from .routes import (
+        upload, status, enhanced_guide, preferences, generation, pdf,
+        pdf_html, health, debug, places
+    )
 
     # Add route modules
     app.include_router(upload.router)
@@ -187,21 +199,30 @@ def _configure_enhanced_events(app: FastAPI, settings) -> None:
                 stats = await cache_manager.get_stats()
                 logger.info(f"Redis stats: {stats}")
             else:
-                logger.warning("Redis cache not available - continuing without caching")
+                logger.warning(
+                    "Redis cache not available - continuing without caching"
+                )
             
             # Initialize new service system
             await initialize_services()
             logger.info("Enhanced service system initialized")
             
             # Ensure container database service is not overridden
-            # The enhanced service system should not interfere with the legacy container
+            # The enhanced service system should not interfere with the
+            # legacy container
             logger.info("Database service isolation verified")
 
             # Health check all services
             health_status = await service_factory.health_check_all()
-            healthy_services = sum(1 for status in health_status.values() if status.get("status") == "healthy")
+            healthy_services = sum(
+                1 for status in health_status.values()
+                if status.get("status") == "healthy"
+            )
             total_services = len(health_status)
-            logger.info(f"Service health check: {healthy_services}/{total_services} services healthy")
+            logger.info(
+                f"Service health check: {healthy_services}/{total_services} "
+                f"services healthy"
+            )
 
             # Start legacy cleanup service for backward compatibility
             try:
@@ -209,7 +230,10 @@ def _configure_enhanced_events(app: FastAPI, settings) -> None:
                 asyncio.create_task(cleanup_service.start_periodic_cleanup(
                     interval_hours=settings.cleanup_interval_hours
                 ))
-                logger.info(f"Legacy cleanup service started - will run every {settings.cleanup_interval_hours} hours")
+                logger.info(
+                    f"Legacy cleanup service started - will run every "
+                    f"{settings.cleanup_interval_hours} hours"
+                )
             except Exception as e:
                 logger.warning(f"Failed to start legacy cleanup service: {e}")
 
@@ -256,7 +280,9 @@ def _configure_events(app: FastAPI, config: object) -> None:
         # Start cleanup service
         try:
             cleanup_service = container.get_cleanup_service()
-            asyncio.create_task(cleanup_service.start_periodic_cleanup(interval_hours=1))
+            asyncio.create_task(
+                cleanup_service.start_periodic_cleanup(interval_hours=1)
+            )
             logger.info("Legacy cleanup service started - will run every hour")
         except Exception as e:
             logger.warning(f"Failed to start cleanup service: {e}")

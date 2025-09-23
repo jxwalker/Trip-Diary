@@ -1,6 +1,7 @@
 """
 Optimized Perplexity Service
-High-performance service with concurrent processing, smart caching, and optimized timeouts
+High-performance service with concurrent processing, smart caching, and
+optimized timeouts
 """
 import os
 import json
@@ -47,7 +48,8 @@ class OptimizedPerplexityService:
         self.config = PerplexityConfig(
             api_key=os.getenv("PERPLEXITY_API_KEY", ""),
             model=os.getenv("PERPLEXITY_MODEL", "sonar"),
-            timeout=int(os.getenv("PERPLEXITY_TIMEOUT", "30")),  # Increased from 20 to 30 seconds
+            timeout=int(os.getenv("PERPLEXITY_TIMEOUT", "30")),
+            # Increased from 20 to 30 seconds
             max_tokens=int(os.getenv("PERPLEXITY_MAX_TOKENS", "3000")),
             temperature=float(os.getenv("PERPLEXITY_TEMPERATURE", "0.3"))
         )
@@ -71,21 +73,33 @@ class OptimizedPerplexityService:
         start_date: str,
         end_date: str,
         preferences: Dict,
-        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None
+        progress_callback: Optional[
+            Callable[[int, str], Awaitable[None]]
+        ] = None
     ) -> Dict:
         """
         Generate complete guide data using concurrent API calls
         This is the main entry point for optimized guide generation
         """
         if not self.config.api_key:
-            return self._create_error_response("Perplexity API key not configured")
+            return self._create_error_response(
+                "Perplexity API key not configured"
+            )
         
-        logger.debug(f"generate_complete_guide_data called with callback: {progress_callback}")
+        logger.debug(
+            f"generate_complete_guide_data called with callback: "
+            f"{progress_callback}"
+        )
         
         if progress_callback:
             try:
-                logger.debug(f"Calling progress_callback with (10, 'Starting concurrent data fetching')")
-                await progress_callback(10, "Starting concurrent data fetching")
+                logger.debug(
+                    "Calling progress_callback with "
+                    "(10, 'Starting concurrent data fetching')"
+                )
+                await progress_callback(
+                    10, "Starting concurrent data fetching"
+                )
             except Exception as e:
                 logger.error(f"Error calling progress_callback: {e}")
                 raise
@@ -108,13 +122,19 @@ class OptimizedPerplexityService:
         tasks.append(self._fetch_attractions(destination, preferences))
         
         # Task 3: Events and entertainment
-        tasks.append(self._fetch_events(destination, start_date, end_date, preferences))
+        tasks.append(
+            self._fetch_events(destination, start_date, end_date, preferences)
+        )
         
         # Task 4: Practical information
         tasks.append(self._fetch_practical_info(destination))
         
         # Task 5: Daily itinerary suggestions
-        tasks.append(self._fetch_daily_suggestions(destination, start_date, end_date, preferences))
+        tasks.append(
+            self._fetch_daily_suggestions(
+                destination, start_date, end_date, preferences
+            )
+        )
         
         if progress_callback:
             await progress_callback(30, "Fetching data concurrently")
@@ -123,14 +143,16 @@ class OptimizedPerplexityService:
             # Execute all tasks concurrently with timeout
             results = await asyncio.wait_for(
                 asyncio.gather(*tasks, return_exceptions=True),
-                timeout=self.config.timeout * 2  # Allow extra time for concurrent requests
+                timeout=self.config.timeout * 2
+                # Allow extra time for concurrent requests
             )
             
             if progress_callback:
                 await progress_callback(80, "Processing results")
             
             # Process results
-            restaurants, attractions, events, practical_info, daily_suggestions = results
+            (restaurants, attractions, events, 
+             practical_info, daily_suggestions) = results
             
             # Handle any exceptions
             for i, result in enumerate(results):
@@ -143,8 +165,12 @@ class OptimizedPerplexityService:
                 "destination": destination,
                 "start_date": start_date,
                 "end_date": end_date,
-                "restaurants": restaurants if not isinstance(restaurants, Exception) else [],
-                "attractions": attractions if not isinstance(attractions, Exception) else [],
+                "restaurants": (
+                    restaurants if not isinstance(restaurants, Exception) else []
+                ),
+                "attractions": (
+                    attractions if not isinstance(attractions, Exception) else []
+                ),
                 "events": events if not isinstance(events, Exception) else [],
                 "practical_info": practical_info if not isinstance(practical_info, Exception) else {},
                 "daily_suggestions": daily_suggestions if not isinstance(daily_suggestions, Exception) else [],

@@ -51,47 +51,64 @@ class EnhancedGuideService:
         self.anthropic_api_key = get_api_key("anthropic")
 
         # Validate required API keys
-        if not any([self.perplexity_api_key, self.openai_api_key, self.anthropic_api_key]):
-            raise APIError("At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)")
+        if not any([self.perplexity_api_key, self.openai_api_key, 
+                   self.anthropic_api_key]):
+            raise APIError(
+                "At least one LLM API key is required "
+                "(Perplexity, OpenAI, or Anthropic)"
+            )
 
     def _load_prompts(self) -> Dict[str, Any]:
-        """Load prompts configuration from JSON file, with a safe default fallback.
-        Returns a dict that contains the keys expected by _construct_master_prompt
-        so single-pass generation never crashes if the file is missing.
+        """Load prompts configuration from JSON file, with safe fallback.
+        Returns a dict that contains the keys expected by 
+        _construct_master_prompt so single-pass generation never crashes 
+        if the file is missing.
         """
         def default_prompts() -> Dict[str, Any]:
             return {
                 "travel_guide": {
                     "base_prompt": (
-                        "You are a seasoned travel editor crafting a glossy magazine-style, personalized guide. "
-                        "Use rich, specific details, real addresses, times, booking links, and actionable tips."
+                        "You are a seasoned travel editor crafting a glossy "
+                        "magazine-style, personalized guide. Use rich, specific "
+                        "details, real addresses, times, booking links, and "
+                        "actionable tips."
                     ),
                     "components": {
                         "destination_overview": (
-                            "Provide a vivid destination overview for {destination} during {month_year}, "
-                            "considering the travel pace ({pace}), group ({group_type}), and interests."
+                            "Provide a vivid destination overview for "
+                            "{destination} during {month_year}, considering the "
+                            "travel pace ({pace}), group ({group_type}), and "
+                            "interests."
                         ),
                         "weather_analysis": (
-                            "Summarize the likely weather for {destination} from {start_date} to {end_date}, "
-                            "including packing and what-to-wear guidance."
+                            "Summarize the likely weather for {destination} "
+                            "from {start_date} to {end_date}, including packing "
+                            "and what-to-wear guidance."
                         ),
                         "personalized_recommendations": {
                             "template": (
-                                "Curate recommendations tailored to this traveler. Reflect preferences: {preferences_summary}."
+                                "Curate recommendations tailored to this "
+                                "traveler. Reflect preferences: "
+                                "{preferences_summary}."
                             )
                         },
                         "daily_itinerary": {
                             "template": (
-                                "Build a detailed day-by-day itinerary ({duration} total) with specific times and places; "
-                                "balance walking level ({walking_level}) and interests."
+                                "Build a detailed day-by-day itinerary "
+                                "({duration} total) with specific times and "
+                                "places; balance walking level ({walking_level}) "
+                                "and interests."
                             )
                         },
                         "events_search": (
-                            "Include real events that align with dates ({dates}) and interests, with ticket links."
+                            "Include real events that align with dates "
+                            "({dates}) and interests, with ticket links."
                         ),
                         "restaurant_guide": {
                             "template": (
-                                "List restaurants with address, phone, cuisine, price, booking link, hours, and why it fits."
+                                "List restaurants with address, phone, "
+                                "cuisine, price, booking link, hours, and "
+                                "why it fits."
                             )
                         },
                         "local_insights": (

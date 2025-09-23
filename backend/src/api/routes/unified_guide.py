@@ -105,14 +105,23 @@ async def generate_unified_pdf(
                     pdf_bytes = f.read()
             else:
                 logger.error("PDF service returned unexpected dict format")
-                return create_error_response("PDF generation failed - unexpected format", "unified_pdf_generation")
+                return create_error_response(
+                    "PDF generation failed - unexpected format", 
+                    "unified_pdf_generation"
+                )
         else:
             logger.error(f"PDF service returned unexpected type: {type(pdf_result)}")
-            return create_error_response("PDF generation failed - unexpected return type", "unified_pdf_generation")
+            return create_error_response(
+                "PDF generation failed - unexpected return type", 
+                "unified_pdf_generation"
+            )
         
         if not pdf_bytes:
             logger.error("Failed to generate PDF")
-            return create_error_response("PDF generation failed", "unified_pdf_generation")
+            return create_error_response(
+                "PDF generation failed", 
+                "unified_pdf_generation"
+            )
         
         return {
             "success": True,
@@ -133,12 +142,14 @@ async def get_available_personas():
             {
                 "id": "luxury_traveler",
                 "name": "Luxury Traveler",
-                "description": "High-end experiences, premium accommodations, fine dining"
+                "description": ("High-end experiences, premium accommodations, "
+                              "fine dining")
             },
             {
                 "id": "budget_explorer",
                 "name": "Budget Explorer", 
-                "description": "Cost-effective options, local experiences, budget accommodations"
+                "description": ("Cost-effective options, local experiences, "
+                              "budget accommodations")
             },
             {
                 "id": "foodie",
@@ -158,7 +169,8 @@ async def get_available_personas():
             {
                 "id": "family_friendly",
                 "name": "Family Friendly",
-                "description": "Kid-friendly activities, family accommodations, safe experiences"
+                "description": ("Kid-friendly activities, family accommodations, "
+                              "safe experiences")
             }
         ]
     }

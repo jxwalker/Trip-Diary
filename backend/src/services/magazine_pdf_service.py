@@ -1,6 +1,7 @@
 """
 Magazine-Quality PDF Generation Service
-Creates stunning, magazine-style travel guides with beautiful layouts and photographs
+Creates stunning, magazine-style travel guides with beautiful layouts and 
+photographs
 """
 import os
 import json
@@ -15,7 +16,9 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
 from reportlab.lib.colors import Color, black, white, HexColor
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak, KeepTogether
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, 
+                                      Image, Table, TableStyle, PageBreak, 
+                                      KeepTogether)
 from reportlab.platypus.flowables import HRFlowable
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib import colors
@@ -50,7 +53,8 @@ class MagazinePDFService:
         self.color_palette = self._generate_destination_colors(destination)
         self.colors = {
             "primary": self.color_palette.get('primary', HexColor("#1a365d")),
-            "secondary": self.color_palette.get('secondary', HexColor("#2d3748")),
+            "secondary": self.color_palette.get('secondary', 
+                                                   HexColor("#2d3748")),
             "accent": self.color_palette.get('accent', HexColor("#e53e3e")),
             "gold": self.color_palette.get('gold', HexColor("#d69e2e")),
             "light_gray": self.color_palette.get('light', HexColor("#f7fafc")),
@@ -226,7 +230,8 @@ class MagazinePDFService:
                 "success": True,
                 "file_path": output_path,
                 "file_size": os.path.getsize(output_path),
-                "pages": len([item for item in story if isinstance(item, PageBreak)]) + 1,
+                "pages": len([item for item in story 
+                             if isinstance(item, PageBreak)]) + 1,
                 "generated_at": datetime.now().isoformat()
             }
             
@@ -238,7 +243,8 @@ class MagazinePDFService:
                 "generated_at": datetime.now().isoformat()
             }
     
-    async def _add_cover_page(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_cover_page(self, story: List, 
+                              guide_data: Dict[str, Any]) -> None:
         """Add a stunning cover page"""
         destination = guide_data.get("destination", "Your Destination")
         summary = guide_data.get("summary", "Your Personalized Travel Guide")
@@ -254,7 +260,8 @@ class MagazinePDFService:
         story.append(Spacer(1, 20))
         
         # Subtitle
-        story.append(Paragraph("Your Personalized Travel Guide", self.styles['subtitle']))
+        story.append(Paragraph("Your Personalized Travel Guide", 
+                               self.styles['subtitle']))
         story.append(Spacer(1, 30))
         
         # Quote
@@ -264,9 +271,11 @@ class MagazinePDFService:
         
         # Generated date
         date_str = datetime.now().strftime("%B %d, %Y")
-        story.append(Paragraph(f"Generated on {date_str}", self.styles['caption']))
+        story.append(Paragraph(f"Generated on {date_str}", 
+                               self.styles['caption']))
     
-    async def _add_table_of_contents(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_table_of_contents(self, story: List, 
+                                     guide_data: Dict[str, Any]) -> None:
         """Add table of contents"""
         story.append(Paragraph("Table of Contents", self.styles['section']))
         story.append(Spacer(1, 20))
@@ -286,18 +295,22 @@ class MagazinePDFService:
             story.append(Paragraph(f"{i}. {item}", self.styles['body']))
             story.append(Spacer(1, 8))
     
-    async def _add_weather_section(self, story: List, guide_data: Dict[str, Any]) -> None:
+    async def _add_weather_section(self, story: List, 
+                                   guide_data: Dict[str, Any]) -> None:
         """Add weather forecast section with beautiful layout"""
         story.append(Paragraph("Weather Forecast", self.styles['section']))
         story.append(Spacer(1, 15))
         
         weather_data = guide_data.get("weather", [])
         if not weather_data:
-            story.append(Paragraph("Weather information will be available closer to your travel date.", self.styles['body']))
+            story.append(Paragraph(
+                "Weather information will be available closer to your travel date.", 
+                self.styles['body']))
             return
         
         # Create weather table
-        weather_table_data = [["Date", "Conditions", "High", "Low", "Description"]]
+        weather_table_data = [["Date", "Conditions", "High", "Low", 
+                               "Description"]]
         
         for day in weather_data[:5]:  # Show 5 days
             date = day.get("date", "")
@@ -306,7 +319,8 @@ class MagazinePDFService:
             low = day.get("temperature", {}).get("low", "--")
             description = day.get("description", "")
             
-            weather_table_data.append([date, conditions, high, low, description])
+            weather_table_data.append([date, conditions, high, low, 
+                                       description])
         
         weather_table = Table(weather_table_data, colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 2.7*inch])
         weather_table.setStyle(TableStyle([

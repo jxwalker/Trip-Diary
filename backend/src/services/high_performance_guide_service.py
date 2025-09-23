@@ -24,7 +24,8 @@ load_dotenv(env_path)
 logger = logging.getLogger(__name__)
 
 class HighPerformanceGuideService:
-    """Ultra-fast guide generation with Redis caching and parallel processing"""
+    """Ultra-fast guide generation with Redis caching and parallel 
+    processing"""
     
     def __init__(self):
         load_dotenv(env_path, override=True)
@@ -61,11 +62,13 @@ class HighPerformanceGuideService:
         await cache_service.connect()
         
         if progress_callback:
-            await progress_callback(5, "Initializing high-performance generation...")
+            await progress_callback(5, 
+                                   "Initializing high-performance generation...")
         
         # Extract traveler info
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (passengers[0]["full_name"] if passengers 
+                            else "Traveler")
         
         # Calculate duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -80,9 +83,11 @@ class HighPerformanceGuideService:
             "budget": preferences.get("budget", "moderate")
         }
         
-        cached_guide = await cache_service.get("complete_guide", **guide_cache_key)
+        cached_guide = await cache_service.get("complete_guide", 
+                                               **guide_cache_key)
         if cached_guide:
-            logger.info(f"Complete guide cache hit! Saved {time.time() - start_time:.1f}s")
+            logger.info(f"Complete guide cache hit! Saved "
+                       f"{time.time() - start_time:.1f}s")
             cached_guide["from_cache"] = True
             cached_guide["performance_metrics"] = {
                 "total_time": time.time() - start_time,
@@ -131,7 +136,8 @@ class HighPerformanceGuideService:
                 timeout=self.timeouts["parallel"]
             )
         except asyncio.TimeoutError:
-            logger.warning("Parallel execution timeout - using partial results")
+            logger.warning("Parallel execution timeout - using partial "
+                           "results")
             results = [None] * len(tasks)
         
         # Process results
@@ -186,8 +192,10 @@ class HighPerformanceGuideService:
             "weather_forecast": weather,
             
             "destination_intelligence": {
-                "map_url": f"https://maps.google.com/maps?q={destination}&z=13",
-                "interactive_map": f"https://www.openstreetmap.org/search?query={destination}",
+                "map_url": (f"https://maps.google.com/maps?q={destination}"
+                           f"&z=13"),
+                "interactive_map": (f"https://www.openstreetmap.org/search"
+                                   f"?query={destination}"),
                 "neighborhoods": neighborhoods,
                 "photos": self._generate_photo_urls(destination, neighborhoods)
             },
@@ -227,17 +235,22 @@ class HighPerformanceGuideService:
         }
         
         # Cache the complete guide
-        await cache_service.set("complete_guide", guide, ttl=7200, **guide_cache_key)
+        await cache_service.set("complete_guide", guide, ttl=7200, 
+                                **guide_cache_key)
         
         if progress_callback:
-            await progress_callback(100, f"Guide ready in {guide['generation_time_seconds']}s!")
+            await progress_callback(100, 
+                                   f"Guide ready in "
+                                   f"{guide['generation_time_seconds']}s!")
         
         logger.info(f"Guide generated in {guide['generation_time_seconds']}s "
-                   f"(Cache hits: {metrics['cache_hits']}, API calls: {metrics['api_calls']})")
+                   f"(Cache hits: {metrics['cache_hits']}, "
+                   f"API calls: {metrics['api_calls']})")
         
         return guide
     
-    async def _get_cached_content(self, destination: str, preferences: Dict, metrics: Dict) -> Dict:
+    async def _get_cached_content(self, destination: str, 
+                                  preferences: Dict, metrics: Dict) -> Dict:
         """Get restaurants and attractions with caching"""
         
         # Check cache

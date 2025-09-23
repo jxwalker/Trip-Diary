@@ -19,7 +19,9 @@ from .interfaces import (
     QueryOperator,
     ServiceConfig
 )
-from ..models.database_models import TripData, ProcessingState, ProcessingStatus, TripMetadata
+from ..models.database_models import (
+    TripData, ProcessingState, ProcessingStatus, TripMetadata
+)
 from ..core.exceptions import DatabaseError, NotFoundError, ValidationError
 from ..config import get_settings
 
@@ -63,13 +65,18 @@ class EnhancedDatabaseService(StorageServiceInterface):
         """Initialize the database service"""
         try:
             # Create directories
-            for path in [self.trips_path, self.processing_path, self.metadata_path, self.backups_path]:
+            for path in [
+                self.trips_path, self.processing_path, 
+                self.metadata_path, self.backups_path
+            ]:
                 path.mkdir(parents=True, exist_ok=True)
             
             # Load caches
             await self._load_caches()
             
-            logger.info(f"Enhanced database service initialized at {self.base_path}")
+            logger.info(
+                f"Enhanced database service initialized at {self.base_path}"
+            )
             
         except Exception as e:
             logger.error(f"Failed to initialize database service: {e}")
@@ -129,12 +136,16 @@ class EnhancedDatabaseService(StorageServiceInterface):
         except Exception as e:
             return StorageResult.error_result(str(e))
     
-    async def create_backup(self, backup_path: Optional[str] = None) -> StorageResult:
+    async def create_backup(
+        self, backup_path: Optional[str] = None
+    ) -> StorageResult:
         """Create a backup of the storage"""
         try:
             if backup_path is None:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup_path = str(self.backups_path / f"backup_{timestamp}.json")
+                backup_path = str(
+                    self.backups_path / f"backup_{timestamp}.json"
+                )
             
             backup_data = {
                 "timestamp": datetime.now().isoformat(),
@@ -153,7 +164,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             for proc_file in self.processing_path.glob("*.json"):
                 async with aiofiles.open(proc_file, 'r') as f:
                     content = await f.read()
-                    backup_data["processing_states"][proc_file.stem] = json.loads(content)
+                    backup_data["processing_states"][proc_file.stem] = (
+                        json.loads(content)
+                    )
             
             # Save backup
             async with aiofiles.open(backup_path, 'w') as f:
@@ -184,7 +197,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
                 restored_count += 1
             
             # Restore processing states
-            for proc_id, proc_data in backup_data.get("processing_states", {}).items():
+            for proc_id, proc_data in backup_data.get(
+                "processing_states", {}
+            ).items():
                 proc_file = self.processing_path / f"{proc_id}.json"
                 async with aiofiles.open(proc_file, 'w') as f:
                     await f.write(json.dumps(proc_data, indent=2))
@@ -226,7 +241,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             logger.error(f"Failed to save trip data {trip_data.trip_id}: {e}")
             return StorageResult.error_result(f"Save failed: {e}")
     
-    async def save_enhanced_guide(self, trip_id: str, guide: Dict[str, Any]) -> bool:
+    async def save_enhanced_guide(
+        self, trip_id: str, guide: Dict[str, Any]
+    ) -> bool:
         """Save enhanced guide for a trip"""
         try:
             # Get existing trip data
@@ -335,7 +352,10 @@ class EnhancedDatabaseService(StorageServiceInterface):
             # Apply sorting
             if options and options.sort_by:
                 reverse = options.sort_desc
-                trips.sort(key=lambda x: getattr(x, options.sort_by, ""), reverse=reverse)
+                trips.sort(
+                    key=lambda x: getattr(x, options.sort_by, ""), 
+                    reverse=reverse
+                )
             
             # Apply pagination
             if options and options.offset:
@@ -362,7 +382,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
             matching_trips = []
             for trip in all_trips:
                 # Search in destination, title, and tags
-                searchable_text = f"{trip.destination} {trip.title} {' '.join(trip.tags)}".lower()
+                searchable_text = (
+                    f"{trip.destination} {trip.title} {' '.join(trip.tags)}"
+                ).lower()
                 if query_lower in searchable_text:
                     matching_trips.append(trip)
             
@@ -415,7 +437,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
                     self._metadata_cache[metadata.trip_id] = metadata
             
             self._cache_loaded = True
-            logger.info(f"Loaded {len(self._metadata_cache)} trip metadata into cache")
+            logger.info(
+                f"Loaded {len(self._metadata_cache)} trip metadata into cache"
+            )
             
         except Exception as e:
             logger.error(f"Failed to load caches: {e}")
@@ -437,7 +461,9 @@ class EnhancedDatabaseService(StorageServiceInterface):
                 self._metadata_cache[metadata.trip_id] = metadata
                 
         except Exception as e:
-            logger.error(f"Failed to save metadata for {metadata.trip_id}: {e}")
+            logger.error(
+                f"Failed to save metadata for {metadata.trip_id}: {e}"
+            )
     
     def _apply_filters(self, trips: List[TripMetadata], filters: List[QueryFilter]) -> List[TripMetadata]:
         """Apply query filters to trip list"""

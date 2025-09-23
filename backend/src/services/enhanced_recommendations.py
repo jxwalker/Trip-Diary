@@ -18,7 +18,8 @@ class EnhancedRecommendationsService:
     def __init__(self):
         self.perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
     
-    def generate_search_url(self, name: str, address: str, category: str) -> str:
+    def generate_search_url(self, name: str, address: str, 
+                           category: str) -> str:
         """Generate a Google search URL for finding the venue"""
         query = f"{name} {address} {category}"
         encoded_query = urllib.parse.quote(query)
@@ -42,13 +43,19 @@ class EnhancedRecommendationsService:
         location_query = urllib.parse.quote(f"{name} {address}")
         
         urls = {
-            "google_maps": f"https://www.google.com/maps/search/{location_query}",
-            "opentable": f"https://www.opentable.com/s?term={encoded_name}&location={encoded_address}",
-            "yelp": f"https://www.yelp.com/search?find_desc={encoded_name}&find_loc={encoded_address}",
-            "tripadvisor": f"https://www.tripadvisor.com/Search?q={encoded_name}+{encoded_address}",
-            "google_search": f"https://www.google.com/search?q={location_query}+reservation",
+            "google_maps": f"https://www.google.com/maps/search/"
+                          f"{location_query}",
+            "opentable": f"https://www.opentable.com/s?term={encoded_name}"
+                        f"&location={encoded_address}",
+            "yelp": f"https://www.yelp.com/search?find_desc={encoded_name}"
+                   f"&find_loc={encoded_address}",
+            "tripadvisor": f"https://www.tripadvisor.com/Search?q="
+                          f"{encoded_name}+{encoded_address}",
+            "google_search": f"https://www.google.com/search?q="
+                            f"{location_query}+reservation",
             "resy": f"https://resy.com/cities/search?query={encoded_name}",
-            "website_search": f"https://www.google.com/search?q={location_query}+official+website"
+            "website_search": f"https://www.google.com/search?q="
+                             f"{location_query}+official+website"
         }
         
         return urls
@@ -64,22 +71,33 @@ class EnhancedRecommendationsService:
         location_query = urllib.parse.quote(f"{name} {address}")
         
         urls = {
-            "google_maps": f"https://www.google.com/maps/search/{location_query}",
-            "tripadvisor": f"https://www.tripadvisor.com/Search?q={encoded_name}+{encoded_address}",
-            "viator": f"https://www.viator.com/searchResults/all?text={encoded_name}",
-            "get_your_guide": f"https://www.getyourguide.com/s/?q={encoded_name}",
-            "google_search": f"https://www.google.com/search?q={location_query}+tickets",
-            "official_website": f"https://www.google.com/search?q={location_query}+official+website",
-            "klook": f"https://www.klook.com/en-US/search/?query={encoded_name}"
+            "google_maps": f"https://www.google.com/maps/search/"
+                          f"{location_query}",
+            "tripadvisor": f"https://www.tripadvisor.com/Search?q="
+                          f"{encoded_name}+{encoded_address}",
+            "viator": f"https://www.viator.com/searchResults/all?"
+                     f"text={encoded_name}",
+            "get_your_guide": f"https://www.getyourguide.com/s/?"
+                             f"q={encoded_name}",
+            "google_search": f"https://www.google.com/search?q="
+                            f"{location_query}+tickets",
+            "official_website": f"https://www.google.com/search?q="
+                                f"{location_query}+official+website",
+            "klook": f"https://www.klook.com/en-US/search/?"
+                    f"query={encoded_name}"
         }
         
         # Add specific URLs based on attraction type
         if "museum" in attraction_type.lower():
-            urls["museum_tickets"] = f"https://www.google.com/search?q={location_query}+museum+tickets+online"
+            urls["museum_tickets"] = (f"https://www.google.com/search?q="
+                                     f"{location_query}+museum+tickets+online")
         elif "park" in attraction_type.lower():
-            urls["park_info"] = f"https://www.google.com/search?q={location_query}+park+hours+admission"
-        elif "theater" in attraction_type.lower() or "show" in attraction_type.lower():
-            urls["ticketmaster"] = f"https://www.ticketmaster.com/search?q={encoded_name}"
+            urls["park_info"] = (f"https://www.google.com/search?q="
+                                f"{location_query}+park+hours+admission")
+        elif ("theater" in attraction_type.lower() or 
+              "show" in attraction_type.lower()):
+            urls["ticketmaster"] = (f"https://www.ticketmaster.com/"
+                                   f"search?q={encoded_name}")
         
         return urls
     
@@ -106,7 +124,8 @@ class EnhancedRecommendationsService:
                 date_params = ""
         
         urls = {
-            "google_maps": f"https://www.google.com/maps/search/{location_query}",
+            "google_maps": f"https://www.google.com/maps/search/"
+                          f"{location_query}",
             "booking_com": f"https://www.booking.com/search.html?ss={encoded_name}{date_params}",
             "hotels_com": f"https://www.hotels.com/search.do?q={encoded_name}{date_params}",
             "expedia": f"https://www.expedia.com/Hotel-Search?destination={encoded_name}{date_params}",

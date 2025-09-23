@@ -1,7 +1,8 @@
 """
 Enhanced Google Places Service
 Comprehensive restaurant and attraction data using Google Places API
-Cost-effective alternative to Yelp with rich data including photos, reviews, and booking info
+Cost-effective alternative to Yelp with rich data including photos, 
+reviews, and booking info
 """
 import asyncio
 import aiohttp
@@ -33,7 +34,8 @@ class ConfigurationError(Exception):
 
 
 class EnhancedGooglePlacesService:
-    """Enhanced Google Places API service for comprehensive restaurant and attraction data"""
+    """Enhanced Google Places API service for comprehensive restaurant 
+    and attraction data"""
     
     def __init__(self):
         """Initialize Google Places service"""
@@ -103,7 +105,9 @@ class EnhancedGooglePlacesService:
         
         try:
             # Test with a simple place search
-            result = self.client.places(query="restaurant", location="New York, NY")
+            result = self.client.places(
+                query="restaurant", location="New York, NY"
+            )
             return bool(result.get('results'))
             
         except Exception as e:
@@ -140,9 +144,14 @@ class EnhancedGooglePlacesService:
             query = f"{cuisine_type} restaurant in {location}"
         
         # Check cache first
-        cache_key = f"google_restaurants_{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()}"
+        cache_key = (
+            f"google_restaurants_"
+            f"{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()}"
+        )
         if cache_key in self._cache:
-            logger.info(f"Returning cached Google Places restaurant search for {location}")
+            logger.info(
+                f"Returning cached Google Places restaurant search for {location}"
+            )
             return self._cache[cache_key]
         
         try:
@@ -174,30 +183,43 @@ class EnhancedGooglePlacesService:
                     details = self.client.place(
                         place_id,
                         fields=[
-                            'name', 'formatted_address', 'formatted_phone_number',
-                            'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
+                            'name', 'formatted_address', 
+                            'formatted_phone_number', 'rating', 
+                            'user_ratings_total', 'price_level', 'website',
+                            'opening_hours', 'photo', 'reviews', 'url', 
+                            'geometry',
                             'type', 'business_status'
                         ]
                     )['result']
                     
                     # Format restaurant data
-                    restaurant = await self._format_restaurant_data(details, place_id)
+                    restaurant = await self._format_restaurant_data(
+                        details, place_id
+                    )
                     
                     # Filter by price range if specified
                     if price_range and restaurant.get('price_level_numeric'):
-                        target_price = self._convert_price_range_to_numeric(price_range)
-                        if target_price and restaurant['price_level_numeric'] != target_price:
+                        target_price = self._convert_price_range_to_numeric(
+                            price_range
+                        )
+                        if (target_price and 
+                            restaurant['price_level_numeric'] != target_price):
                             continue
                     
                     restaurants.append(restaurant)
                     
                 except Exception as e:
-                    logger.warning(f"Failed to process restaurant {place.get('name', 'unknown')}: {e}")
+                    logger.warning(
+                        f"Failed to process restaurant "
+                        f"{place.get('name', 'unknown')}: {e}"
+                    )
                     continue
             
             # Sort by rating and review count
-            restaurants.sort(key=lambda x: (x.get('rating', 0), x.get('review_count', 0)), reverse=True)
+            restaurants.sort(
+                key=lambda x: (x.get('rating', 0), x.get('review_count', 0)), 
+                reverse=True
+            )
             
             # Cache the results
             self._cache[cache_key] = restaurants
@@ -209,7 +231,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places restaurant search failed: {e}")
             raise ServiceError(f"Restaurant search failed: {e}")
     
-    async def _format_restaurant_data(self, details: Dict[str, Any], place_id: str) -> Dict[str, Any]:
+    async def _format_restaurant_data(
+        self, details: Dict[str, Any], place_id: str
+    ) -> Dict[str, Any]:
         """Format Google Places data into standardized restaurant format"""
         
         # Extract cuisine types from Google Places types
@@ -252,7 +276,7 @@ class EnhancedGooglePlacesService:
                 reviews.append({
                     'author_name': review.get('author_name', ''),
                     'rating': review.get('rating', 0),
-                    'text': review.get('text', '')[:300],  # Truncate long reviews
+                    'text': review.get('text', '')[:300],  # Truncate reviews
                     'time': review.get('relative_time_description', ''),
                     'source': 'google'
                 })
@@ -275,7 +299,9 @@ class EnhancedGooglePlacesService:
             "phone": details.get('formatted_phone_number', ''),
             "rating": details.get('rating', 0),
             "review_count": details.get('user_ratings_total', 0),
-            "price_level": self._format_price_level(details.get('price_level')),
+            "price_level": self._format_price_level(
+                details.get('price_level')
+            ),
             "price_level_numeric": details.get('price_level'),
             "website": details.get('website', ''),
             "google_maps_url": details.get('url', ''),
@@ -290,7 +316,10 @@ class EnhancedGooglePlacesService:
             },
             "business_status": details.get('business_status', ''),
             "booking_urls": booking_urls,
-            "primary_booking_url": booking_urls.get('opentable') or booking_urls.get('google_maps'),
+            "primary_booking_url": (
+                booking_urls.get('opentable') or 
+                booking_urls.get('google_maps')
+            ),
             "source": "google_places"
         }
     
@@ -300,12 +329,16 @@ class EnhancedGooglePlacesService:
             return ""  # No fallback - return empty string if no price data
         return "$" * (price_level + 1) if price_level >= 0 else ""
     
-    def _convert_price_range_to_numeric(self, price_range: str) -> Optional[int]:
+    def _convert_price_range_to_numeric(
+        self, price_range: str
+    ) -> Optional[int]:
         """Convert price range string to Google's numeric format"""
         mapping = {"$": 0, "$$": 1, "$$$": 2, "$$$$": 3}
         return mapping.get(price_range)
     
-    async def _generate_booking_urls(self, details: Dict[str, Any]) -> Dict[str, str]:
+    async def _generate_booking_urls(
+        self, details: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate booking URLs for the restaurant"""
         name = details.get('name', '')
         website = details.get('website', '')
@@ -331,7 +364,9 @@ class EnhancedGooglePlacesService:
         # Generate OpenTable search URL
         if name:
             clean_name = name.replace(' ', '+').replace('&', 'and')
-            booking_urls['opentable_search'] = f"https://www.opentable.com/s/?term={clean_name}"
+            booking_urls['opentable_search'] = (
+                f"https://www.opentable.com/s/?term={clean_name}"
+            )
         
         return booking_urls
 
@@ -385,14 +420,18 @@ class EnhancedGooglePlacesService:
                     details = self.client.place(
                         place_id,
                         fields=[
-                            'name', 'formatted_address', 'formatted_phone_number',
-                            'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
+                            'name', 'formatted_address', 
+                            'formatted_phone_number', 'rating', 
+                            'user_ratings_total', 'price_level', 'website',
+                            'opening_hours', 'photo', 'reviews', 'url', 
+                            'geometry',
                             'type', 'business_status'
                         ]
                     )['result']
 
-                    restaurant = await self._format_restaurant_data(details, place_id)
+                    restaurant = await self._format_restaurant_data(
+                        details, place_id
+                    )
                     restaurants.append(restaurant)
 
                 except Exception as e:

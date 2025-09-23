@@ -23,7 +23,7 @@ class PerplexitySearchService:
         self.api_key = os.getenv("PERPLEXITY_API_KEY", "")
         self.api_url = "https://api.perplexity.ai/chat/completions"
         # Use the pro model for better results if available
-        self.model = os.getenv("PERPLEXITY_MODEL", "sonar-pro")  # sonar-pro has better web search
+        self.model = os.getenv("PERPLEXITY_MODEL", "sonar-pro")
 
         # Initialize OpenAI client for LLM parsing
         openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -33,10 +33,12 @@ class PerplexitySearchService:
         else:
             self.openai_client = None
 
-    async def _parse_with_llm(self, content: str, data_type: str) -> List[Dict]:
+    async def _parse_with_llm(self, content: str, 
+                             data_type: str) -> List[Dict]:
         """Parse Perplexity response using LLM instead of regex"""
         if not self.openai_client:
-            print(f"[DEBUG] No OpenAI client available for parsing {data_type}")
+            print(f"[DEBUG] No OpenAI client available for parsing "
+                  f"{data_type}")
             return []
 
         try:
@@ -97,7 +99,10 @@ Return ONLY the JSON array, no markdown, no explanations."""
             response = await self.openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": f"You are a travel data parser. Extract {data_type} information and return only valid JSON."},
+                    {"role": "system", 
+                     "content": f"You are a travel data parser. Extract "
+                               f"{data_type} information and return only "
+                               f"valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.1,
@@ -140,7 +145,8 @@ Return ONLY the JSON array, no markdown, no explanations."""
         """Search for real restaurants based on destination and preferences"""
         
         if not self.api_key:
-            print(f"[WARNING] Perplexity API key not configured, returning empty list")
+            print("[WARNING] Perplexity API key not configured, "
+                  "returning empty list")
             return []
         
         # Build dynamic search query based on actual preferences
@@ -156,7 +162,8 @@ Return ONLY the JSON array, no markdown, no explanations."""
             "$$$": "upscale restaurants $40-80 per person",
             "$$$$": "luxury fine dining over $80 per person"
         }
-        price_desc = price_descriptions.get(price_range, "mid-range restaurants")
+        price_desc = price_descriptions.get(price_range, 
+                                           "mid-range restaurants")
         
         prompt = f"""Search the web for the BEST restaurants in {destination} operating in {dates.get('formatted', 'the current season')}.
 
@@ -197,7 +204,8 @@ IMPORTANT:
             filtered = [
                 r for r in items
                 if r.get('name') and r.get('address') and 
-                not str(r.get('name')).lower().startswith(('sample', 'placeholder', 'example'))
+                not str(r.get('name')).lower().startswith(
+                    ('sample', 'placeholder', 'example'))
             ]
             print(f"[DEBUG] Filtered to {len(filtered)} valid restaurants")
             return filtered
@@ -214,7 +222,8 @@ IMPORTANT:
         """Search for real attractions based on interests"""
         
         if not self.api_key:
-            print(f"[WARNING] Perplexity API key not configured, returning empty list")
+            print("[WARNING] Perplexity API key not configured, "
+                  "returning empty list")
             return []
         
         interests = preferences.get("specialInterests", [])
@@ -236,7 +245,8 @@ IMPORTANT:
             "theater": "theater and performing arts"
         }
         
-        formatted_interests = [interest_descriptions.get(i, i) for i in interests]
+        formatted_interests = [interest_descriptions.get(i, i) 
+                              for i in interests]
         
         prompt = f"""Search the web for the TOP tourist attractions and things to do in {destination}.
 
@@ -273,7 +283,8 @@ Focus on places that are CURRENTLY OPEN and accessible."""
         try:
             print(f"[DEBUG] Searching attractions in {destination}...")
             response = await self._make_perplexity_request(prompt)
-            print(f"[DEBUG] Got Perplexity response for attractions, parsing...")
+            print("[DEBUG] Got Perplexity response for attractions, "
+                  "parsing...")
             items = await self._parse_with_llm(response, "attractions")
             print(f"[DEBUG] Parsed {len(items)} attractions")
             
@@ -295,7 +306,8 @@ Focus on places that are CURRENTLY OPEN and accessible."""
         """Search for real events happening during the travel dates"""
         
         if not self.api_key:
-            print(f"[WARNING] Perplexity API key not configured, returning empty list")
+            print("[WARNING] Perplexity API key not configured, "
+                  "returning empty list")
             return []
         
         interests = preferences.get("specialInterests", [])
@@ -358,14 +370,16 @@ CRITICAL:
         IMPORTANT: Only include REAL events actually happening during these specific dates."""
         
         try:
-            print(f"[DEBUG] Searching events in {destination} from {start_date} to {end_date}...")
+            print(f"[DEBUG] Searching events in {destination} from "
+                  f"{start_date} to {end_date}...")
             response = await self._make_perplexity_request(prompt)
             print(f"[DEBUG] Got Perplexity response for events, parsing...")
             items = await self._parse_with_llm(response, "events")
             print(f"[DEBUG] Parsed {len(items)} events")
             
             # More lenient filtering - just need a name and either date or description
-            filtered = [e for e in items if e.get('name') and (e.get('date') or e.get('description'))]
+            filtered = [e for e in items if e.get('name') and 
+                       (e.get('date') or e.get('description'))]
             print(f"[DEBUG] Filtered to {len(filtered)} valid events")
             return filtered
         except Exception as e:

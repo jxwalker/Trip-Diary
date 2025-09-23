@@ -76,19 +76,25 @@ class EnhancedWeatherService(WeatherServiceInterface):
             
         except Exception as e:
             logger.error(f"Failed to initialize enhanced weather service: {e}")
-            raise ConfigurationError(f"Enhanced weather service initialization failed: {e}")
+            raise ConfigurationError(
+                f"Enhanced weather service initialization failed: {e}"
+            )
     
     async def health_check(self) -> Dict[str, Any]:
         """Check weather service health"""
         try:
             # Test with a simple weather request
-            test_weather = await self.get_current_weather("London", units="metric")
+            test_weather = await self.get_current_weather(
+                "London", units="metric"
+            )
             
             return {
                 "status": "healthy",
                 "service_name": self.service_name,
                 "base_url": self.base_url,
-                "api_key_configured": bool(self.settings.services.weather_api_key),
+                "api_key_configured": bool(
+                    self.settings.services.weather_api_key
+                ),
                 "test_request_success": "main" in test_weather,
                 "cache_size": len(self._cache),
                 "cache_enabled": self.config.cache_enabled,
@@ -129,7 +135,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
                 json=request.data if request.method != RequestMethod.GET else None,
                 headers=request.headers
             ) as response:
-                response_time = (datetime.now() - start_time).total_seconds() * 1000
+                response_time = (
+                    (datetime.now() - start_time).total_seconds() * 1000
+                )
                 
                 if response.status == 200:
                     data = await response.json()
@@ -147,9 +155,15 @@ class EnhancedWeatherService(WeatherServiceInterface):
                     )
                     
         except asyncio.TimeoutError:
-            raise ServiceError("Weather service request timeout", service_name=self.service_name)
+            raise ServiceError(
+                "Weather service request timeout", 
+                service_name=self.service_name
+            )
         except Exception as e:
-            raise ServiceError(f"Weather service request failed: {e}", service_name=self.service_name)
+            raise ServiceError(
+                f"Weather service request failed: {e}", 
+                service_name=self.service_name
+            )
     
     async def validate_api_key(self) -> bool:
         """Validate the API key"""
@@ -176,7 +190,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             
             # Check Redis cache first
             if self.config.cache_enabled:
-                cached_data = await cache_manager.get("weather_data", cache_key_data)
+                cached_data = await cache_manager.get(
+                    "weather_data", cache_key_data
+                )
                 if cached_data:
                     logger.info(f"Redis cache HIT for weather: {location}")
                     return cached_data
@@ -185,10 +201,13 @@ class EnhancedWeatherService(WeatherServiceInterface):
             memory_cache_key = f"current_{location}_{units}"
             if self.config.cache_enabled and memory_cache_key in self._cache:
                 cached_data = self._cache[memory_cache_key]
-                if datetime.now() - cached_data["timestamp"] < timedelta(seconds=self.config.cache_ttl_seconds):
+                if (datetime.now() - cached_data["timestamp"] < 
+                    timedelta(seconds=self.config.cache_ttl_seconds)):
                     logger.debug(f"Memory cache HIT for weather: {location}")
                     # Also store in Redis for next time
-                    await cache_manager.set("weather_data", cache_key_data, cached_data["data"])
+                    await cache_manager.set(
+                        "weather_data", cache_key_data, cached_data["data"]
+                    )
                     return cached_data["data"]
             
             # Build request
@@ -235,14 +254,19 @@ class EnhancedWeatherService(WeatherServiceInterface):
         try:
             # Validate days parameter
             if days < 1 or days > 5:
-                raise ValidationError("Days must be between 1 and 5 for free tier")
+                raise ValidationError(
+                    "Days must be between 1 and 5 for free tier"
+                )
             
             # Check cache first
             cache_key = f"forecast_{location}_{days}_{units}"
             if self.config.cache_enabled and cache_key in self._cache:
                 cached_data = self._cache[cache_key]
-                if datetime.now() - cached_data["timestamp"] < timedelta(seconds=self.config.cache_ttl_seconds):
-                    logger.debug(f"Returning cached forecast data for {location}")
+                if (datetime.now() - cached_data["timestamp"] < 
+                    timedelta(seconds=self.config.cache_ttl_seconds)):
+                    logger.debug(
+                        f"Returning cached forecast data for {location}"
+                    )
                     return cached_data["data"]
             
             # Build request
@@ -287,20 +311,27 @@ class EnhancedWeatherService(WeatherServiceInterface):
         """Get weather for specific date range"""
         try:
             # Parse dates
-            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            start_dt = datetime.fromisoformat(
+                start_date.replace('Z', '+00:00')
+            )
+            end_dt = datetime.fromisoformat(
+                end_date.replace('Z', '+00:00')
+            )
             
             # Check if dates are in the future (use forecast)
             now = datetime.now()
             if start_dt > now:
                 days = min((end_dt - start_dt).days + 1, 5)
-                forecast_data = await self.get_weather_forecast(location, days, units)
+                forecast_data = await self.get_weather_forecast(
+                    location, days, units
+                )
                 
                 # Filter forecast to date range
                 filtered_forecasts = []
                 for daily in forecast_data.get("daily_forecasts", []):
                     forecast_date = datetime.fromisoformat(daily["date"])
-                    if start_dt.date() <= forecast_date.date() <= end_dt.date():
+                    if (start_dt.date() <= forecast_date.date() <= 
+                        end_dt.date()):
                         filtered_forecasts.append(daily)
                 
                 return {
@@ -325,7 +356,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             }
             
         except Exception as e:
-            logger.error(f"Failed to get weather for date range {start_date} to {end_date}: {e}")
+            logger.error(
+                f"Failed to get weather for date range {start_date} to {end_date}: {e}"
+            )
             raise ServiceError(f"Weather date range request failed: {e}")
     
     async def get_travel_weather_summary(

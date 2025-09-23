@@ -80,11 +80,15 @@ class OptimizedGuideService:
         
         try:
             if progress_callback:
-                await progress_callback(5, "Initializing optimized guide generation")
+                await progress_callback(
+                    5, "Initializing optimized guide generation"
+                )
             
             # Validate inputs
             if not destination or not start_date or not end_date:
-                return self._create_error_response("Missing required parameters")
+                return self._create_error_response(
+                    "Missing required parameters"
+                )
             
             # Build context for generation
             context = self._build_context(
@@ -93,11 +97,14 @@ class OptimizedGuideService:
             )
             
             if progress_callback:
-                await progress_callback(15, "Starting concurrent data fetching")
+                await progress_callback(
+                    15, "Starting concurrent data fetching"
+                )
             
             # Execute concurrent tasks
             guide_data = await self._fetch_all_data_concurrently(
-                destination, start_date, end_date, preferences, progress_callback
+                destination, start_date, end_date, preferences, 
+                progress_callback
             )
             
             if guide_data.get("error"):
@@ -112,13 +119,18 @@ class OptimizedGuideService:
             )
             
             # Validate guide completeness
-            is_valid, errors, validation_details = GuideValidator.validate_guide(complete_guide)
+            is_valid, errors, validation_details = (
+                GuideValidator.validate_guide(complete_guide)
+            )
             
             if not is_valid:
                 logger.warning(f"Guide validation failed: {errors}")
                 return {
                     "error": "Guide validation failed",
-                    "message": f"Generated guide for {destination} is incomplete: {', '.join(errors)}",
+                    "message": (
+                        f"Generated guide for {destination} is incomplete: "
+                        f"{', '.join(errors)}"
+                    ),
                     "validation_errors": errors,
                     "validation_details": validation_details,
                     "destination": destination,
@@ -142,19 +154,28 @@ class OptimizedGuideService:
             # Update stats
             self.generation_stats["successful_requests"] += 1
             self.generation_stats["average_time"] = (
-                (self.generation_stats["average_time"] * (self.generation_stats["successful_requests"] - 1) + generation_time) 
-                / self.generation_stats["successful_requests"]
+                (self.generation_stats["average_time"] * 
+                 (self.generation_stats["successful_requests"] - 1) + 
+                 generation_time) / 
+                self.generation_stats["successful_requests"]
             )
             
             if progress_callback:
-                await progress_callback(100, f"Guide ready! Generated in {generation_time:.1f}s")
+                await progress_callback(
+                    100, f"Guide ready! Generated in {generation_time:.1f}s"
+                )
             
-            logger.info(f"Guide generated successfully for {destination} in {generation_time:.1f}s")
+            logger.info(
+                f"Guide generated successfully for {destination} in "
+                f"{generation_time:.1f}s"
+            )
             return complete_guide
             
         except Exception as e:
             logger.error(f"Guide generation failed for {destination}: {e}")
-            return self._create_error_response(f"Guide generation failed: {str(e)}")
+            return self._create_error_response(
+                f"Guide generation failed: {str(e)}"
+            )
     
     async def _fetch_all_data_concurrently(
         self,

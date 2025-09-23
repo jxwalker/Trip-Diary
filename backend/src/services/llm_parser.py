@@ -54,7 +54,8 @@ class LLMParser:
     def _create_extraction_prompt(self, content: str) -> str:
         """Create prompt for structured data extraction"""
         
-        prompt = f"""Extract structured information from this travel guide and return it as JSON.
+        prompt = f"""Extract structured information from this travel guide and \
+return it as JSON.
         
 CONTENT TO PARSE:
 {content}
@@ -206,20 +207,24 @@ Return ONLY the JSON object, no other text."""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a data extraction expert. Extract structured data from travel guides and return valid JSON."
+                            "content": "You are a data extraction expert. Extract "
+                                       "structured data from travel guides and "
+                                       "return valid JSON."
                         },
                         {
                             "role": "user",
                             "content": prompt
                         }
                     ],
-                    "temperature": 0.1,  # Low temperature for consistent extraction
+                    "temperature": 0.1,  # Low temperature for consistent
                     "response_format": {"type": "json_object"}
                 }
                 
                 url = "https://api.openai.com/v1/chat/completions"
                 
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         result_text = data["choices"][0]["message"]["content"]
@@ -257,7 +262,9 @@ Return ONLY the JSON object, no other text."""
                 
                 url = "https://api.anthropic.com/v1/messages"
                 
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         result_text = data["content"][0]["text"]

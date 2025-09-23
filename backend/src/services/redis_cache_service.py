@@ -61,11 +61,15 @@ class RedisCacheService:
             # Test connection
             await self.redis_client.ping()
             self.connected = True
-            logger.info(f"Connected to Redis at {self.redis_host}:{self.redis_port}")
+            logger.info(
+                f"Connected to Redis at {self.redis_host}:{self.redis_port}"
+            )
             return True
             
         except Exception as e:
-            logger.warning(f"Redis connection failed: {e}. Continuing without cache.")
+            logger.warning(
+                f"Redis connection failed: {e}. Continuing without cache."
+            )
             self.connected = False
             return False
     
@@ -105,7 +109,10 @@ class RedisCacheService:
             logger.error(f"Redis get error: {e}")
             return None
     
-    async def set(self, prefix: str, data: Dict[str, Any], ttl: Optional[int] = None, **kwargs):
+    async def set(
+        self, prefix: str, data: Dict[str, Any], 
+        ttl: Optional[int] = None, **kwargs
+    ):
         """Cache data with TTL"""
         if not self.connected:
             await self.connect()
@@ -160,12 +167,16 @@ class RedisCacheService:
         try:
             # Find all keys matching pattern
             keys = []
-            async for key in self.redis_client.scan_iter(f"tripdiary:{pattern}:*"):
+            async for key in self.redis_client.scan_iter(
+                f"tripdiary:{pattern}:*"
+            ):
                 keys.append(key)
             
             if keys:
                 deleted = await self.redis_client.delete(*keys)
-                logger.info(f"Cache CLEAR: Deleted {deleted} keys matching {pattern}")
+                logger.info(
+                    f"Cache CLEAR: Deleted {deleted} keys matching {pattern}"
+                )
                 return deleted
             return 0
             
@@ -186,12 +197,16 @@ class RedisCacheService:
             memory = await self.redis_client.info("memory")
             
             # Count keys by pattern
-            patterns = ["perplexity_content", "weather", "neighborhoods", "complete_guide"]
+            patterns = [
+                "perplexity_content", "weather", "neighborhoods", "complete_guide"
+            ]
             key_counts = {}
             
             for pattern in patterns:
                 count = 0
-                async for _ in self.redis_client.scan_iter(f"tripdiary:{pattern}:*"):
+                async for _ in self.redis_client.scan_iter(
+                    f"tripdiary:{pattern}:*"
+                ):
                     count += 1
                 key_counts[pattern] = count
             
@@ -202,7 +217,8 @@ class RedisCacheService:
                 "misses": info.get("keyspace_misses", 0),
                 "hit_rate": round(
                     info.get("keyspace_hits", 0) / 
-                    (info.get("keyspace_hits", 0) + info.get("keyspace_misses", 1)) * 100, 
+                    (info.get("keyspace_hits", 0) + 
+                     info.get("keyspace_misses", 1)) * 100, 
                     2
                 ),
                 "memory_used": memory.get("used_memory_human", "0"),

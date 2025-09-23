@@ -24,10 +24,12 @@ class GooglePlacesEnhancer:
         else:
             self.client = None
             print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment variables")
-            print("[INFO] To enable enhanced maps and attraction details, get a free API key from: https://developers.google.com/maps/documentation/places/web-service/get-api-key")
+            print("[INFO] To enable enhanced maps and attraction details, get a free API key from:")
+            print("https://developers.google.com/maps/documentation/places/web-service/get-api-key")
             print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment or .env file")
             
-    async def enhance_restaurant(self, restaurant: Dict, destination: str) -> Dict:
+    async def enhance_restaurant(self, restaurant: Dict, 
+                                 destination: str) -> Dict:
         """
         Enhance a restaurant with Google Places data including photos and booking URLs
         """
@@ -37,7 +39,8 @@ class GooglePlacesEnhancer:
             
         try:
             # Search for the restaurant
-            query = f"{restaurant.get('name', '')} restaurant {restaurant.get('address', '')} {destination}"
+            query = (f"{restaurant.get('name', '')} restaurant "
+                    f"{restaurant.get('address', '')} {destination}")
             places_result = self.client.places(query=query)
             
             if not places_result.get('results'):
@@ -55,8 +58,10 @@ class GooglePlacesEnhancer:
             
             # Add Google data
             enhanced['google_place_id'] = place_id
-            enhanced['rating'] = details.get('rating', restaurant.get('rating'))
-            enhanced['user_ratings_total'] = details.get('user_ratings_total', 0)
+            enhanced['rating'] = details.get('rating', 
+                                            restaurant.get('rating'))
+            enhanced['user_ratings_total'] = details.get('user_ratings_total', 
+                                                        0)
             enhanced['price_level'] = details.get('price_level', '')
             
             # Full address
@@ -98,7 +103,8 @@ class GooglePlacesEnhancer:
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
                 # Store coordinates instead of full URL to avoid exposing API key
-                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=restaurant"
+                static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
+                                f"&type=restaurant")
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 
@@ -115,20 +121,23 @@ class GooglePlacesEnhancer:
                 enhanced['reviews'] = [
                     {
                         'rating': r.get('rating'),
-                        'text': r.get('text', '')[:200],  # Truncate long reviews
+                        'text': r.get('text', '')[:200],  # Truncate reviews
                         'time': r.get('relative_time_description', '')
                     }
                     for r in reviews
                 ]
                 
-            print(f"[DEBUG] Enhanced {restaurant.get('name')} with Google Places data")
+            print(f"[DEBUG] Enhanced {restaurant.get('name')} with "
+                  f"Google Places data")
             return enhanced
             
         except Exception as e:
-            print(f"[ERROR] Failed to enhance restaurant {restaurant.get('name')}: {e}")
+            print(f"[ERROR] Failed to enhance restaurant "
+                  f"{restaurant.get('name')}: {e}")
             return restaurant
             
-    async def _find_booking_url(self, restaurant_name: str, city: str, website: str = "") -> str:
+    async def _find_booking_url(self, restaurant_name: str, city: str, 
+                                website: str = "") -> str:
         """
         Try to find or construct a booking URL for the restaurant
         """
@@ -138,31 +147,37 @@ class GooglePlacesEnhancer:
         
         # Check if website is already a booking platform
         if website:
-            if 'opentable.com' in website or 'resy.com' in website or 'yelp.com/biz' in website:
+            if ('opentable.com' in website or 'resy.com' in website or 
+                'yelp.com/biz' in website):
                 return website
                 
         # Try common booking platforms
         booking_urls = {
-            'opentable': f"https://www.opentable.com/s/?term={clean_name}&location={city}",
-            'resy': f"https://resy.com/cities/{city.lower()}?query={clean_name}",
-            'yelp': f"https://www.yelp.com/search?find_desc={clean_name}&find_loc={city}"
+            'opentable': (f"https://www.opentable.com/s/?term={clean_name}"
+                         f"&location={city}"),
+            'resy': (f"https://resy.com/cities/{city.lower()}"
+                    f"?query={clean_name}"),
+            'yelp': (f"https://www.yelp.com/search?find_desc={clean_name}"
+                    f"&find_loc={city}")
         }
         
         # Return OpenTable as default
         return booking_urls['opentable']
         
-    async def enhance_restaurants_batch(self, restaurants: List[Dict], destination: str) -> List[Dict]:
+    async def enhance_restaurants_batch(self, restaurants: List[Dict], 
+                                        destination: str) -> List[Dict]:
         """
         Enhance multiple restaurants in parallel
         """
         if not restaurants:
             return []
             
-        print(f"[DEBUG] Enhancing {len(restaurants)} restaurants with Google Places data...")
+        print(f"[DEBUG] Enhancing {len(restaurants)} restaurants with "
+              f"Google Places data...")
         
         # Process in parallel with rate limiting
         enhanced_restaurants = []
-        for i in range(0, len(restaurants), 3):  # Process 3 at a time to avoid rate limits
+        for i in range(0, len(restaurants), 3):  # Process 3 at a time
             batch = restaurants[i:i+3]
             tasks = [self.enhance_restaurant(r, destination) for r in batch]
             results = await asyncio.gather(*tasks)
@@ -174,7 +189,8 @@ class GooglePlacesEnhancer:
                 
         return enhanced_restaurants
         
-    async def enhance_attraction(self, attraction: Dict, destination: str) -> Dict:
+    async def enhance_attraction(self, attraction: Dict, 
+                                 destination: str) -> Dict:
         """
         Enhance an attraction with Google Places data
         """
@@ -183,7 +199,8 @@ class GooglePlacesEnhancer:
             
         try:
             # Search for the attraction
-            query = f"{attraction.get('name', '')} {attraction.get('address', '')} {destination}"
+            query = (f"{attraction.get('name', '')} "
+                    f"{attraction.get('address', '')} {destination}")
             places_result = self.client.places(query=query)
             
             if not places_result.get('results'):
@@ -200,8 +217,10 @@ class GooglePlacesEnhancer:
             
             # Add Google data
             enhanced['google_place_id'] = place_id
-            enhanced['rating'] = details.get('rating', attraction.get('rating'))
-            enhanced['user_ratings_total'] = details.get('user_ratings_total', 0)
+            enhanced['rating'] = details.get('rating', 
+                                            attraction.get('rating'))
+            enhanced['user_ratings_total'] = details.get('user_ratings_total', 
+                                                        0)
             
             # Full address
             if details.get('formatted_address'):
@@ -238,7 +257,8 @@ class GooglePlacesEnhancer:
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
                 # Store coordinates instead of full URL to avoid exposing API key
-                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=attraction"
+                static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
+                                f"&type=attraction")
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 

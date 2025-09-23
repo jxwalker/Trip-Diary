@@ -56,13 +56,20 @@ async def get_enhanced_guide(
     """
     try:
         validated_trip_id = validate_trip_id(trip_id)
-        logger.info(f"Enhanced guide requested", extra={"trip_id": validated_trip_id})
+        logger.info(
+            f"Enhanced guide requested", 
+            extra={"trip_id": validated_trip_id}
+        )
         
         # Check Redis cache first
         cache_key_data = {"trip_id": validated_trip_id}
-        cached_guide = await cache_manager.get("enhanced_guide", cache_key_data)
+        cached_guide = await cache_manager.get(
+            "enhanced_guide", cache_key_data
+        )
         if cached_guide:
-            logger.info(f"Redis cache HIT for enhanced guide: {validated_trip_id}")
+            logger.info(
+                f"Redis cache HIT for enhanced guide: {validated_trip_id}"
+            )
             return cached_guide
         
         # Get trip data from database
@@ -78,7 +85,9 @@ async def get_enhanced_guide(
         if not trip_data.enhanced_guide:
             raise HTTPException(
                 status_code=404,
-                detail=f"Enhanced guide not found for trip: {validated_trip_id}"
+                detail=(
+                    f"Enhanced guide not found for trip: {validated_trip_id}"
+                )
             )
         
         result = {
@@ -150,8 +159,11 @@ async def generate_enhanced_guide(
                 hotel_info=request.hotel_info,
                 preferences=request.preferences,
                 extracted_data=request.extracted_data,
-                progress_callback=lambda progress, message:
-                    database_service.update_processing_state(trip_id, message, progress)
+                progress_callback=lambda progress, message: (
+                    database_service.update_processing_state(
+                        trip_id, message, progress
+                    )
+                )
             )
         elif request.use_fast_generation:
             # Fast generation (10-20 seconds)
@@ -161,8 +173,14 @@ async def generate_enhanced_guide(
                 end_date=request.end_date,
                 hotel_info=request.hotel_info,
                 preferences=request.preferences,
-                progress_callback=lambda progress, message:
-                    database_service.update_processing_state(trip_id, message, progress),
+                progress_callback=lambda progress, message: (
+                    database_service.update_processing_state(
+                        trip_id, message, progress
+                progress_callback=lambda progress, message: (
+                    database_service.update_processing_state(
+                        trip_id, message, progress
+                    )
+                ),
                 timeout=45
             )
         else:
@@ -174,8 +192,14 @@ async def generate_enhanced_guide(
                 hotel_info=request.hotel_info,
                 preferences=request.preferences,
                 extracted_data=request.extracted_data,
-                progress_callback=lambda progress, message:
-                    database_service.update_processing_state(trip_id, message, progress),
+                progress_callback=lambda progress, message: (
+                    database_service.update_processing_state(
+                        trip_id, message, progress
+                progress_callback=lambda progress, message: (
+                    database_service.update_processing_state(
+                        trip_id, message, progress
+                    )
+                ),
                 single_pass=True
             )
         
@@ -220,31 +244,56 @@ async def generate_enhanced_guide(
         # Sample restaurant details
         if guide.get("restaurants") and len(guide["restaurants"]) > 0:
             sample_restaurant = guide["restaurants"][0]
-            logger.info(f"Sample Restaurant: {sample_restaurant.get('name', 'N/A')}")
-            logger.info(f"  Rating: {sample_restaurant.get('rating', 'N/A')}/5")
-            logger.info(f"  Photos: {len(sample_restaurant.get('photos', []))}")
-            logger.info(f"  Reviews: {len(sample_restaurant.get('reviews', []))}")
+            logger.info(
+                f"Sample Restaurant: {sample_restaurant.get('name', 'N/A')}"
+            )
+            logger.info(
+                f"  Rating: {sample_restaurant.get('rating', 'N/A')}/5"
+            )
+            logger.info(
+                f"  Photos: {len(sample_restaurant.get('photos', []))}"
+            )
+            logger.info(
+                f"  Reviews: {len(sample_restaurant.get('reviews', []))}"
+            )
         
         # Sample attraction details  
         if guide.get("attractions") and len(guide["attractions"]) > 0:
             sample_attraction = guide["attractions"][0]
-            logger.info(f"Sample Attraction: {sample_attraction.get('name', 'N/A')}")
-            logger.info(f"  Rating: {sample_attraction.get('rating', 'N/A')}/5")
-            logger.info(f"  Photos: {len(sample_attraction.get('photos', []))}")
-            logger.info(f"  Reviews: {len(sample_attraction.get('reviews', []))}")
+            logger.info(
+                f"Sample Attraction: {sample_attraction.get('name', 'N/A')}"
+            )
+            logger.info(
+                f"  Rating: {sample_attraction.get('rating', 'N/A')}/5"
+            )
+            logger.info(
+                f"  Photos: {len(sample_attraction.get('photos', []))}"
+            )
+            logger.info(
+                f"  Reviews: {len(sample_attraction.get('reviews', []))}"
+            )
         
         logger.info("=== END QUALITY ANALYSIS ===")
         
         # For now, skip saving to bypass database issue and return guide data
-        logger.info("Skipping database save due to persistent AttributeError - returning guide data for quality testing")
+        logger.info(
+            "Skipping database save due to persistent AttributeError - "
+            "returning guide data for quality testing"
+        )
         
         # Skip the database save for now
         # save_result = await database_service.save_enhanced_guide_data(trip_id, guide)
         # if not save_result.success:
         #     logger.error(f"Failed to save guide: {save_result.error}")
-        #     raise HTTPException(status_code=500, detail=f"Failed to save guide: {save_result.error}")
-        # logger.info(f"Enhanced guide saved successfully for trip {trip_id}")
-        await database_service.update_processing_state(trip_id, "Guide generation complete", 100)
+        #     raise HTTPException(
+        #         status_code=500, 
+        #     )
+        # logger.info(
+        #     f"Enhanced guide saved successfully for trip {trip_id}"
+        # )
+        await database_service.update_processing_state(
+            trip_id, "Guide generation complete", 100
+        )
         
         return {
             "trip_id": trip_id,
@@ -256,7 +305,9 @@ async def generate_enhanced_guide(
         }
         
     except Exception as e:
-        logger.error(f"Enhanced guide generation failed for trip {trip_id}: {e}")
+        logger.error(
+            f"Enhanced guide generation failed for trip {trip_id}: {e}"
+        )
         await database_service.update_processing_state(
             trip_id, f"Generation failed: {str(e)}"
         )
@@ -292,7 +343,10 @@ async def regenerate_enhanced_guide(
     """
     try:
         validated_trip_id = validate_trip_id(trip_id)
-        logger.info(f"Guide regeneration requested", extra={"trip_id": validated_trip_id})
+        logger.info(
+            f"Guide regeneration requested", 
+            extra={"trip_id": validated_trip_id}
+        )
         
         # Get existing trip data
         trip_data = await database_service.get_trip_data(validated_trip_id)
@@ -575,7 +629,9 @@ async def generate_magazine_pdf(
         if not guide_data:
             raise HTTPException(
                 status_code=404,
-                detail=f"Enhanced guide not found for trip: {validated_trip_id}"
+                detail=(
+                    f"Enhanced guide not found for trip: {validated_trip_id}"
+                )
             )
         
         # Generate PDF

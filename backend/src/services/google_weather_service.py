@@ -82,7 +82,9 @@ class GoogleWeatherService(WeatherServiceInterface):
                         status_code=response.status,
                         data=data,
                         text=text,
-                        error=None if response.status < 400 else f"HTTP {response.status}"
+                        error=None if response.status < 400 else (
+                            f"HTTP {response.status}"
+                        )
                     )
         except Exception as e:
             return ExternalResponse(
@@ -135,13 +137,19 @@ class GoogleWeatherService(WeatherServiceInterface):
                 "timestamp": datetime.now().isoformat()
             }
 
-    async def get_current_weather(self, location: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_current_weather(
+        self, location: str, units: str = "metric"
+    ) -> Dict[str, Any]:
         """Get current weather for location"""
         # For current weather, just return the first day of forecast
         try:
             today = datetime.now().strftime("%Y-%m-%d")
-            tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-            forecast = await self.get_weather_for_dates(location, today, tomorrow, units)
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime(
+                "%Y-%m-%d"
+            )
+            forecast = await self.get_weather_for_dates(
+                location, today, tomorrow, units
+            )
 
             if forecast.get("daily_forecasts"):
                 current = forecast["daily_forecasts"][0]
@@ -159,16 +167,25 @@ class GoogleWeatherService(WeatherServiceInterface):
         except Exception as e:
             return {"error": str(e)}
 
-    async def get_weather_forecast(self, location: str, start_date: str, end_date: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_weather_forecast(
+        self, location: str, start_date: str, end_date: str, 
+        units: str = "metric"
+    ) -> Dict[str, Any]:
         """Get weather forecast for location between start and end dates"""
         try:
-            return await self.get_weather_for_dates(location, start_date, end_date, units)
+            return await self.get_weather_for_dates(
+                location, start_date, end_date, units
+            )
         except Exception as e:
             return {"error": str(e)}
 
-    async def get_weather_for_dates(self, location: str, start_date: str, end_date: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_weather_for_dates(
+        self, location: str, start_date: str, end_date: str, 
+        units: str = "metric"
+    ) -> Dict[str, Any]:
         """
-        Get weather forecast for a destination during trip dates using Google services
+        Get weather forecast for a destination during trip dates using 
+        Google services
 
         Args:
             location: City name or location
@@ -223,15 +240,23 @@ class GoogleWeatherService(WeatherServiceInterface):
                 }
             
             # Create summary
-            avg_high = sum(d["temperature"]["high"] for d in daily_forecasts) / len(daily_forecasts)
-            avg_low = sum(d["temperature"]["low"] for d in daily_forecasts) / len(daily_forecasts)
+            avg_high = sum(
+                d["temperature"]["high"] for d in daily_forecasts
+            ) / len(daily_forecasts)
+            avg_low = sum(
+                d["temperature"]["low"] for d in daily_forecasts
+            ) / len(daily_forecasts)
             
-            condition = daily_forecasts[0]["condition"] if daily_forecasts else ""
+            condition = (
+                daily_forecasts[0]["condition"] if daily_forecasts else ""
+            )
             summary = {
                 "average_high": round(avg_high, 1),
                 "average_low": round(avg_low, 1),
                 "general_conditions": condition,
-                "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
+                "packing_suggestions": self._get_packing_suggestions(
+                    avg_high, avg_low, condition
+                ),
                 "note": "Real weather data from OpenWeatherMap API"
             }
             

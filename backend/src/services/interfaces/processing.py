@@ -92,7 +92,8 @@ class ProcessingResult:
         )
     
     @classmethod
-    def error_result(cls, error: str, metadata: Optional[Dict[str, Any]] = None):
+    def error_result(cls, error: str, 
+                     metadata: Optional[Dict[str, Any]] = None):
         return cls(success=False, error=error, metadata=metadata)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -128,7 +129,8 @@ class ProcessingServiceInterface(BaseService):
         pass
     
     @abstractmethod
-    async def process_file(self, request: ProcessingRequest) -> ProcessingResult:
+    async def process_file(self, request: ProcessingRequest) -> \
+            ProcessingResult:
         """Process a file"""
         pass
     
@@ -140,7 +142,8 @@ class ProcessingServiceInterface(BaseService):
     async def process_file_with_progress(
         self,
         request: ProcessingRequest,
-        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None
+        progress_callback: Optional[Callable[[int, str], 
+                                           Awaitable[None]]] = None
     ) -> ProcessingResult:
         """Process file with progress updates"""
         if progress_callback:
@@ -158,7 +161,8 @@ class ProcessingServiceInterface(BaseService):
         
         if progress_callback:
             progress = 100 if result.success else 0
-            message = "Processing complete" if result.success else f"Processing failed: {result.error}"
+            message = ("Processing complete" if result.success 
+                      else f"Processing failed: {result.error}")
             await progress_callback(progress, message)
         
         return result
@@ -213,7 +217,8 @@ class PDFProcessorInterface(ProcessingServiceInterface):
         pass
     
     @abstractmethod
-    async def extract_metadata(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    async def extract_metadata(self, file_path: Union[str, Path]) -> \
+            Dict[str, Any]:
         """Extract metadata from PDF"""
         pass
     
@@ -237,7 +242,8 @@ class ImageProcessorInterface(ProcessingServiceInterface):
     
     @property
     def supported_file_types(self) -> List[FileType]:
-        return [FileType.JPG, FileType.JPEG, FileType.PNG, FileType.GIF, FileType.BMP, FileType.WEBP]
+        return [FileType.JPG, FileType.JPEG, FileType.PNG, 
+                FileType.GIF, FileType.BMP, FileType.WEBP]
     
     @abstractmethod
     async def extract_text_ocr(self, file_path: Union[str, Path]) -> str:
@@ -245,7 +251,8 @@ class ImageProcessorInterface(ProcessingServiceInterface):
         pass
     
     @abstractmethod
-    async def get_image_info(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    async def get_image_info(self, file_path: Union[str, Path]) -> \
+            Dict[str, Any]:
         """Get image information (dimensions, format, etc.)"""
         pass
     
@@ -312,6 +319,7 @@ class TextProcessorInterface(ProcessingServiceInterface):
         pass
     
     @abstractmethod
-    async def classify_text(self, text: str, categories: List[str]) -> Dict[str, float]:
+    async def classify_text(self, text: str, 
+                           categories: List[str]) -> Dict[str, float]:
         """Classify text into categories"""
         pass

@@ -54,7 +54,9 @@ class ServiceContainer:
             
             # Optional services - only initialize if API keys are available
             try:
-                self._services['immediate_guide_generator'] = ImmediateGuideGenerator()
+                self._services['immediate_guide_generator'] = (
+                    ImmediateGuideGenerator()
+                )
                 logger.info("Immediate guide generator initialized")
             except Exception as e:
                 logger.warning(f"Immediate guide generator not available: {e}")
@@ -92,7 +94,8 @@ class ServiceContainer:
             Service instance
 
         Raises:
-            ConfigurationError: If service not found or container not initialized
+            ConfigurationError: If service not found or container not 
+                initialized
         """
         if not self._initialized:
             raise ConfigurationError("Service container not initialized")
@@ -105,7 +108,9 @@ class ServiceContainer:
     def set_service(self, service_name: str, service: Any) -> None:
         """Set a service (with lock protection)"""
         if service_name in self._locked_services:
-            logger.warning(f"Attempted to override locked service: {service_name}")
+            logger.warning(
+                f"Attempted to override locked service: {service_name}"
+            )
             return
         self._services[service_name] = service
 
@@ -143,7 +148,10 @@ class ServiceContainer:
         # Ensure we're getting the correct DatabaseService instance
         from ...services.database_service import DatabaseService
         if not isinstance(service, DatabaseService):
-            logger.error(f"Database service type mismatch: expected DatabaseService, got {type(service)}")
+            logger.error(
+                f"Database service type mismatch: expected DatabaseService, "
+                f"got {type(service)}"
+            )
             # Force return the correct service
             return self._services['database_service']
         return service

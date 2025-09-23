@@ -48,11 +48,15 @@ class LuxuryGuideService:
         """Generate a premium travel guide with rich content"""
         
         if progress_callback:
-            await progress_callback(5, "Creating your personalized luxury travel guide...")
+            await progress_callback(
+                5, "Creating your personalized luxury travel guide..."
+            )
         
         # Extract passenger names for personalization
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (
+            passengers[0]["full_name"] if passengers else "Traveler"
+        )
         
         # Calculate trip duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -68,17 +72,22 @@ class LuxuryGuideService:
         ))
         
         # Task 2: Get detailed weather with hourly forecasts
-        tasks.append(self._get_detailed_weather(destination, start_date, end_date))
+        tasks.append(
+            self._get_detailed_weather(destination, start_date, end_date)
+        )
         
         # Task 3: Get location intelligence and maps
         tasks.append(self._get_location_intelligence(destination, hotel_info))
         
         # Task 4: Get contemporary events and news
-        tasks.append(self._get_contemporary_content(destination, start_date, end_date))
+        tasks.append(
+            self._get_contemporary_content(destination, start_date, end_date)
+        )
         
         # Task 5: Create personalized daily itinerary
         tasks.append(self._create_luxury_itinerary(
-            destination, start_date, end_date, preferences, hotel_info, primary_traveler
+            destination, start_date, end_date, preferences, 
+            hotel_info, primary_traveler
         ))
         
         if progress_callback:
@@ -102,21 +111,34 @@ class LuxuryGuideService:
                     results.append({})  # Empty dict on failure
         
         if progress_callback:
-            await progress_callback(70, "Crafting your bespoke travel experience...")
+            await progress_callback(
+                70, "Crafting your bespoke travel experience..."
+            )
         
         # Unpack results and check for failures
-        premium_content = results[0] if not isinstance(results[0], Exception) else {}
-        weather_data = results[1] if not isinstance(results[1], Exception) else {}
-        location_data = results[2] if not isinstance(results[2], Exception) else {}
-        contemporary = results[3] if not isinstance(results[3], Exception) else {}
-        luxury_itinerary = results[4] if not isinstance(results[4], Exception) else []
+        premium_content = (
+            results[0] if not isinstance(results[0], Exception) else {}
+        )
+        weather_data = (
+            results[1] if not isinstance(results[1], Exception) else {}
+        )
+        location_data = (
+            results[2] if not isinstance(results[2], Exception) else {}
+        )
+        contemporary = (
+            results[3] if not isinstance(results[3], Exception) else {}
+        )
+        luxury_itinerary = (
+            results[4] if not isinstance(results[4], Exception) else []
+        )
         
         # Check if we have minimum required content
         if not premium_content or premium_content.get("error"):
             logger.error("Failed to get premium content")
             return {
                 "error": "Content generation failed",
-                "message": "Unable to retrieve restaurant and attraction data. Please ensure API keys are configured."
+                "message": ("Unable to retrieve restaurant and attraction "
+                           "data. Please ensure API keys are configured.")
             }
         
         if not luxury_itinerary:

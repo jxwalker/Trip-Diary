@@ -21,7 +21,8 @@ class MapsService:
         else:
             self.client = None
     
-    async def get_travel_time(self, origin: str, destination: str, mode: str = "driving") -> Dict:
+    async def get_travel_time(self, origin: str, destination: str, 
+                              mode: str = "driving") -> Dict:
         """
         Get travel time between two locations
         """
@@ -100,7 +101,8 @@ class MapsService:
                     "rating": details.get('rating', 0),
                     "price_level": details.get('price_level', 0),
                     "website": details.get('website', ''),
-                    "hours": details.get('opening_hours', {}).get('weekday_text', []),
+                    "hours": details.get('opening_hours', {}).get(
+                        'weekday_text', []),
                     "location": {
                         "lat": details['geometry']['location']['lat'],
                         "lng": details['geometry']['location']['lng']
@@ -132,7 +134,8 @@ class MapsService:
                 "error": str(e)
             }
     
-    def get_static_map_url(self, locations: List[Dict], size: str = "600x400") -> str:
+    def get_static_map_url(self, locations: List[Dict], 
+                           size: str = "600x400") -> str:
         """
         Generate a static map URL with markers
         """
@@ -150,10 +153,12 @@ class MapsService:
         # Add markers for each location
         for i, loc in enumerate(locations):
             if 'lat' in loc and 'lng' in loc:
-                marker = f"markers=color:red%7Clabel:{i+1}%7C{loc['lat']},{loc['lng']}"
+                marker = (f"markers=color:red%7Clabel:{i+1}%7C"
+                         f"{loc['lat']},{loc['lng']}")
                 params.append(marker)
             elif 'address' in loc:
-                marker = f"markers=color:red%7Clabel:{i+1}%7C{loc['address'].replace(' ', '+')}"
+                marker = (f"markers=color:red%7Clabel:{i+1}%7C"
+                         f"{loc['address'].replace(' ', '+')}")
                 params.append(marker)
         
         # Set zoom to show all markers
