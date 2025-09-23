@@ -565,7 +565,7 @@ class UnifiedGuideService:
         if not self.perplexity_api_key:
             return {"error": "Perplexity API key not configured"}
         
-        self.prompts["travel_guide"]["persona_adaptation"][context.persona]
+        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
         
         prompt = f"""
         {self.prompts["travel_guide"]["base_prompt"]}
@@ -957,7 +957,7 @@ class UnifiedGuideService:
     ) -> Dict[str, Any]:
         """Apply persona-based personalization to all guide content"""
         
-        self.prompts["travel_guide"]["persona_adaptation"][context.persona]
+        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
         
         restaurants = guide_data.get("restaurants", [])
         personalized_restaurants = []
