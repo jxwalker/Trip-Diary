@@ -277,17 +277,23 @@ class UnifiedGuideService:
             WeatherActivityCorrelation(
                 temperature_range=(20, 39),
                 conditions=["cold", "winter"],
-                recommended_activities=["museums", "indoor markets", "theaters", "warm restaurants"],
-                avoid_activities=["outdoor dining", "beach", "long outdoor walks"],
-                clothing_suggestions=["heavy coat", "warm layers", "gloves", "warm hat"],
+                recommended_activities=["museums", "indoor markets", "theaters", 
+                                        "warm restaurants"],
+                avoid_activities=["outdoor dining", "beach", 
+                                 "long outdoor walks"],
+                clothing_suggestions=["heavy coat", "warm layers", "gloves", 
+                                     "warm hat"],
                 special_notes="Focus on indoor activities and warm venues"
             ),
             WeatherActivityCorrelation(
                 temperature_range=(32, 100),
                 conditions=["rain", "showers", "thunderstorms"],
-                recommended_activities=["museums", "shopping malls", "covered markets", "indoor entertainment"],
-                avoid_activities=["outdoor tours", "beach", "hiking", "outdoor dining"],
-                clothing_suggestions=["waterproof jacket", "umbrella", "waterproof shoes"],
+                recommended_activities=["museums", "shopping malls", 
+                                        "covered markets", "indoor entertainment"],
+                avoid_activities=["outdoor tours", "beach", "hiking", 
+                                 "outdoor dining"],
+                clothing_suggestions=["waterproof jacket", "umbrella", 
+                                     "waterproof shoes"],
                 special_notes="Have indoor backup plans ready"
             )
         ]
@@ -300,7 +306,8 @@ class UnifiedGuideService:
         hotel_info: Dict[str, Any],
         preferences: Dict[str, Any],
         extracted_data: Optional[Dict[str, Any]] = None,
-        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None
+        progress_callback: Optional[Callable[[int, str], 
+                                            Awaitable[None]]] = None
     ) -> Dict[str, Any]:
         """
         Generate a complete, magazine-quality travel guide
@@ -325,39 +332,47 @@ class UnifiedGuideService:
                 await progress_callback(5, "Initializing unified guide generation")
 
             context = self._build_generation_context(
-                destination, start_date, end_date, hotel_info, preferences, extracted_data
+                destination, start_date, end_date, hotel_info, preferences, 
+                extracted_data
             )
 
             if progress_callback:
                 await progress_callback(15, "Fetching real-time data concurrently")
 
-            guide_data = await self._fetch_all_data_concurrently(context, progress_callback)
+            guide_data = await self._fetch_all_data_concurrently(
+                context, progress_callback)
 
             if guide_data.get("error"):
                 return guide_data
 
             if progress_callback:
                 await progress_callback(70, "Correlating weather with activities")
-            guide_data = await self._apply_weather_correlation(guide_data, context)
+            guide_data = await self._apply_weather_correlation(
+                guide_data, context)
 
             if progress_callback:
                 await progress_callback(85, "Applying persona-based personalization")
-            guide_data = await self._apply_persona_personalization(guide_data, context)
+            guide_data = await self._apply_persona_personalization(
+                guide_data, context)
 
             if progress_callback:
                 await progress_callback(95, "Validating guide quality")
-            is_valid, errors, validation_details = GuideValidator.validate_guide(guide_data)
+            is_valid, errors, validation_details = GuideValidator.validate_guide(
+                guide_data)
 
             if not is_valid:
                 logger.warning(f"Guide validation failed: {errors}")
-                guide_data = await self._auto_fix_guide_issues(guide_data, errors, context)
+                guide_data = await self._auto_fix_guide_issues(
+                    guide_data, errors, context)
 
-                is_valid, errors, validation_details = GuideValidator.validate_guide(guide_data)
+                is_valid, errors, validation_details = GuideValidator.validate_guide(
+                    guide_data)
 
                 if not is_valid:
                     return {
                         "error": "Guide quality validation failed",
-                        "message": f"Generated guide for {destination} does not meet quality standards",
+                        "message": (f"Generated guide for {destination} does not "
+                                   f"meet quality standards"),
                         "validation_errors": errors,
                         "validation_details": validation_details,
                         "partial_guide": guide_data,
@@ -384,25 +399,31 @@ class UnifiedGuideService:
             # Update stats
             self.generation_stats["successful_requests"] += 1
             self.generation_stats["average_time"] = (
-                (self.generation_stats["average_time"] * (self.generation_stats["successful_requests"] - 1) + generation_time)
-                / self.generation_stats["successful_requests"]
+                (self.generation_stats["average_time"] * 
+                 (self.generation_stats["successful_requests"] - 1) + 
+                 generation_time) / self.generation_stats["successful_requests"]
             )
 
             persona_key = context.persona.value
             self.generation_stats["persona_distribution"][persona_key] = (
-                self.generation_stats["persona_distribution"].get(persona_key, 0) + 1
+                self.generation_stats["persona_distribution"].get(persona_key, 0) + 
+                1
             )
 
-            self.generation_stats["quality_scores"].append(guide_data["quality_score"])
+            self.generation_stats["quality_scores"].append(
+                guide_data["quality_score"])
 
             if progress_callback:
-                await progress_callback(100, f"Magazine-quality guide ready! Generated in {generation_time:.1f}s")
+                await progress_callback(100, 
+                    f"Magazine-quality guide ready! Generated in {generation_time:.1f}s")
 
-            logger.info(f"Unified guide generated successfully for {destination} in {generation_time:.1f}s")
+            logger.info(f"Unified guide generated successfully for "
+                       f"{destination} in {generation_time:.1f}s")
             return guide_data
 
         except Exception as e:
-            logger.error(f"Unified guide generation failed for {destination}: {e}")
+            logger.error(f"Unified guide generation failed for "
+                        f"{destination}: {e}")
             return {
                 "error": "Guide generation failed",
                 "message": str(e),
@@ -780,9 +801,8 @@ class UnifiedGuideService:
                 except Exception as e:
                     logger.warning(f"Failed to enhance restaurant {restaurant.get('name', 'Unknown')}: {e}")
                     enhanced_restaurants.append(restaurant)
-            
             restaurants = enhanced_restaurants
-            
+
             seen_ids = set()
             unique_restaurants = []
             for restaurant in restaurants:
@@ -790,9 +810,9 @@ class UnifiedGuideService:
                 if place_id and place_id not in seen_ids:
                     seen_ids.add(place_id)
                     unique_restaurants.append(restaurant)
-            
+
             return unique_restaurants[:15]  # Top 15 restaurants
-            
+
         except Exception as e:
             logger.error(f"Error fetching Google Places restaurants: {e}")
             return []
@@ -801,12 +821,12 @@ class UnifiedGuideService:
         """Fetch attractions using Google Places API with persona-based filtering"""
         try:
             await self.google_places_service.initialize()
-            
+
             attractions = await self.google_places_service.search_attractions(
                 location=context.destination,
                 limit=10
             )
-            
+
             if context.persona == PersonaType.CULTURAL_ENTHUSIAST:
                 cultural_attractions = [
                     attr for attr in attractions 
@@ -814,7 +834,7 @@ class UnifiedGuideService:
                 ]
                 other_attractions = [attr for attr in attractions if attr not in cultural_attractions]
                 attractions = cultural_attractions + other_attractions
-                
+
             elif context.persona == PersonaType.ADVENTURE_SEEKER:
                 adventure_attractions = [
                     attr for attr in attractions 
@@ -822,9 +842,9 @@ class UnifiedGuideService:
                 ]
                 other_attractions = [attr for attr in attractions if attr not in adventure_attractions]
                 attractions = adventure_attractions + other_attractions
-            
+
             return attractions[:8]  # Top 8 attractions
-            
+
         except Exception as e:
             logger.error(f"Error fetching Google Places attractions: {e}")
             return []
@@ -855,7 +875,7 @@ class UnifiedGuideService:
         context: GuideGenerationContext
     ) -> Dict[str, Any]:
         """Apply weather-activity correlation to the guide"""
-        
+
         weather_data = guide_data.get("weather_data", {})
         if weather_data.get("error") or not weather_data.get("daily_forecasts"):
             logger.warning("No weather data available for correlation")
@@ -863,14 +883,14 @@ class UnifiedGuideService:
 
         daily_forecasts = weather_data.get("daily_forecasts", [])
         daily_itinerary = guide_data.get("daily_itinerary", [])
-        
+
         for i, day_plan in enumerate(daily_itinerary):
             if i < len(daily_forecasts):
                 weather_day = daily_forecasts[i]
-                
+
                 temp = weather_day.get("temperature", {}).get("high", 70)
                 conditions = weather_day.get("conditions", "").lower()
-                
+
                 matching_correlation = None
                 for correlation in self.weather_correlations:
                     temp_min, temp_max = correlation.temperature_range
@@ -878,7 +898,7 @@ class UnifiedGuideService:
                         if any(condition in conditions for condition in correlation.conditions):
                             matching_correlation = correlation
                             break
-                
+
                 if matching_correlation:
                     day_plan["weather_recommendations"] = {
                         "clothing": matching_correlation.clothing_suggestions,
