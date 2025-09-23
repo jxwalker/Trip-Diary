@@ -1,31 +1,23 @@
 """
 Magazine-Quality PDF Generation Service
-Creates stunning, magazine-style travel guides with beautiful layouts and 
+Creates stunning, magazine-style travel guides with beautiful layouts and
 photographs
 """
 import os
-import json
-import asyncio
 import aiohttp
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
-from reportlab.lib.colors import Color, black, white, HexColor
-from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, 
-                                      Image, Table, TableStyle, PageBreak, 
-                                      KeepTogether)
+from reportlab.lib.units import inch
+from reportlab.lib.colors import black, white, HexColor
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                      Image, Table, TableStyle, PageBreak)
 from reportlab.platypus.flowables import HRFlowable
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
-from reportlab.lib import colors
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-import io
-from PIL import Image as PILImage
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 
 # Load environment
 root_dir = Path(__file__).parent.parent.parent.parent
@@ -44,16 +36,16 @@ class MagazinePDFService:
     - Interactive elements and QR codes
     - Magazine-style sections and layouts
     """
-    
+
     def __init__(self, destination: str = None):
         self.unsplash_access_key = os.getenv("UNSPLASH_ACCESS_KEY")
         self.unsplash_secret_key = os.getenv("UNSPLASH_SECRET_KEY")
         self.destination = destination
-        
+
         self.color_palette = self._generate_destination_colors(destination)
         self.colors = {
             "primary": self.color_palette.get('primary', HexColor("#1a365d")),
-            "secondary": self.color_palette.get('secondary', 
+            "secondary": self.color_palette.get('secondary',
                                                    HexColor("#2d3748")),
             "accent": self.color_palette.get('accent', HexColor("#e53e3e")),
             "gold": self.color_palette.get('gold', HexColor("#d69e2e")),
@@ -61,16 +53,16 @@ class MagazinePDFService:
             "text": self.color_palette.get('text', HexColor("#2d3748")),
             "muted": self.color_palette.get('muted', HexColor("#718096"))
         }
-        
+
         # Typography styles
         self.styles = self._create_styles()
-        
+
         self.photo_style = self._determine_photo_aesthetic(destination)
-    
+
     def _create_styles(self) -> Dict[str, ParagraphStyle]:
         """Create magazine-quality typography styles"""
         styles = getSampleStyleSheet()
-        
+
         # Title style
         title_style = ParagraphStyle(
             'MagazineTitle',
@@ -81,7 +73,7 @@ class MagazinePDFService:
             alignment=TA_CENTER,
             fontName='Helvetica-Bold'
         )
-        
+
         # Subtitle style
         subtitle_style = ParagraphStyle(
             'MagazineSubtitle',
@@ -92,7 +84,7 @@ class MagazinePDFService:
             alignment=TA_CENTER,
             fontName='Helvetica'
         )
-        
+
         # Section header
         section_style = ParagraphStyle(
             'MagazineSection',
@@ -103,7 +95,7 @@ class MagazinePDFService:
             spaceBefore=20,
             fontName='Helvetica-Bold'
         )
-        
+
         # Body text
         body_style = ParagraphStyle(
             'MagazineBody',
@@ -115,7 +107,7 @@ class MagazinePDFService:
             fontName='Helvetica',
             leading=14
         )
-        
+
         # Caption style
         caption_style = ParagraphStyle(
             'MagazineCaption',
@@ -126,7 +118,7 @@ class MagazinePDFService:
             alignment=TA_CENTER,
             fontName='Helvetica-Oblique'
         )
-        
+
         # Quote style
         quote_style = ParagraphStyle(
             'MagazineQuote',
@@ -140,7 +132,7 @@ class MagazinePDFService:
             leftIndent=20,
             rightIndent=20
         )
-        
+
         return {
             'title': title_style,
             'subtitle': subtitle_style,
@@ -149,7 +141,7 @@ class MagazinePDFService:
             'caption': caption_style,
             'quote': quote_style
         }
-    
+
     async def generate_magazine_pdf(
         self,
         guide_data: Dict[str, Any],
@@ -158,18 +150,18 @@ class MagazinePDFService:
     ) -> Dict[str, Any]:
         """
         Generate a magazine-quality PDF travel guide
-        
+
         Args:
             guide_data: Complete guide data from the guide service
             output_path: Path to save the PDF
             trip_id: Trip ID for caching and tracking
-            
+
         Returns:
             Dict with success status and metadata
         """
         try:
             logger.info(f"Generating magazine PDF for trip {trip_id}")
-            
+
             # Create PDF document
             doc = SimpleDocTemplate(
                 output_path,
@@ -182,59 +174,59 @@ class MagazinePDFService:
             
             # Build story (content)
             story = []
-            
+
             # Cover page
             await self._add_cover_page(story, guide_data)
             story.append(PageBreak())
-            
+
             # Table of contents
             await self._add_table_of_contents(story, guide_data)
             story.append(PageBreak())
-            
+
             # Weather section
             await self._add_weather_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Daily itinerary
             await self._add_daily_itinerary(story, guide_data)
-            
+
             # Restaurants section
             await self._add_restaurants_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Attractions section
             await self._add_attractions_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Practical information
             await self._add_practical_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Transportation
             await self._add_transportation_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Accessibility
             await self._add_accessibility_section(story, guide_data)
             story.append(PageBreak())
-            
+
             # Emergency contacts
             await self._add_emergency_section(story, guide_data)
-            
+
             # Build PDF
             doc.build(story)
-            
+
             logger.info(f"Magazine PDF generated successfully: {output_path}")
-            
+
             return {
                 "success": True,
                 "file_path": output_path,
                 "file_size": os.path.getsize(output_path),
-                "pages": len([item for item in story 
+                "pages": len([item for item in story
                              if isinstance(item, PageBreak)]) + 1,
                 "generated_at": datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to generate magazine PDF: {e}")
             return {
@@ -242,33 +234,33 @@ class MagazinePDFService:
                 "error": str(e),
                 "generated_at": datetime.now().isoformat()
             }
-    
-    async def _add_cover_page(self, story: List, 
+
+    async def _add_cover_page(self, story: List,
                               guide_data: Dict[str, Any]) -> None:
         """Add a stunning cover page"""
         destination = guide_data.get("destination", "Your Destination")
         summary = guide_data.get("summary", "Your Personalized Travel Guide")
-        
+
         # Hero image
         hero_image = await self._get_hero_image(destination)
         if hero_image:
             story.append(Image(hero_image, width=6*inch, height=4*inch))
             story.append(Spacer(1, 20))
-        
+
         # Title
         story.append(Paragraph(f"<b>{destination}</b>", self.styles['title']))
         story.append(Spacer(1, 20))
-        
+
         # Subtitle
         story.append(Paragraph("Your Personalized Travel Guide", 
                                self.styles['subtitle']))
         story.append(Spacer(1, 30))
-        
+
         # Quote
         quote = f"<i>\"{summary}\"</i>"
         story.append(Paragraph(quote, self.styles['quote']))
         story.append(Spacer(1, 40))
-        
+
         # Generated date
         date_str = datetime.now().strftime("%B %d, %Y")
         story.append(Paragraph(f"Generated on {date_str}", 
