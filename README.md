@@ -125,3 +125,7 @@ DATABASE_URL=sqlite:///./trip_diary.db
 LOG_LEVEL=INFO
 ENABLE_JSON_LOGGING=true
 ```
+
+## 🔧 Development
+
+This project supports multiple development workflows and has been verified for repository access, linting capabilities, and pull request creation.
