@@ -94,6 +94,9 @@ async def generate_unified_pdf(
         
         pdf_result = pdf_service.create_magazine_pdf(request.guide_data)
         
+        if hasattr(pdf_result, '__await__'):
+            pdf_result = await pdf_result
+        
         if isinstance(pdf_result, bytes):
             pdf_bytes = pdf_result
         elif isinstance(pdf_result, dict):
@@ -103,13 +106,13 @@ async def generate_unified_pdf(
                 with open(pdf_result["output_path"], "rb") as f:
                     pdf_bytes = f.read()
             else:
-                logger.error("PDF service returned unexpected dict format")
+                logger.exception("PDF service returned unexpected dict format")
                 return create_error_response(
                     "PDF generation failed - unexpected format", 
                     "unified_pdf_generation"
                 )
         else:
-            logger.error(f"PDF service returned unexpected type: {type(pdf_result)}")
+            logger.exception(f"PDF service returned unexpected type: {type(pdf_result)}")
             return create_error_response(
                 "PDF generation failed - unexpected return type", 
                 "unified_pdf_generation"
