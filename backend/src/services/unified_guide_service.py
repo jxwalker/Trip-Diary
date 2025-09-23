@@ -5,13 +5,11 @@ high-quality service
 Replaces: enhanced_guide_service, optimized_guide_service, luxury_guide_service
 """
 
-import os
 import json
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Callable, Awaitable, Union
-from pathlib import Path
+from typing import Dict, List, Optional, Any, Callable, Awaitable
 from dataclasses import dataclass
 from enum import Enum
 import aiohttp
@@ -330,17 +328,14 @@ class UnifiedGuideService:
 
             if progress_callback:
                 await progress_callback(70, "Correlating weather with activities")
-            
             guide_data = await self._apply_weather_correlation(guide_data, context)
 
             if progress_callback:
                 await progress_callback(85, "Applying persona-based personalization")
-            
             guide_data = await self._apply_persona_personalization(guide_data, context)
 
             if progress_callback:
                 await progress_callback(95, "Validating guide quality")
-            
             is_valid, errors, validation_details = GuideValidator.validate_guide(guide_data)
 
             if not is_valid:
@@ -358,7 +353,7 @@ class UnifiedGuideService:
                         "partial_guide": guide_data,
                         "generated_at": datetime.now().isoformat()
                     }
-            
+
             generation_time = (datetime.now() - start_time).total_seconds()
             guide_data.update({
                 "validation_passed": True,
@@ -375,27 +370,28 @@ class UnifiedGuideService:
                     "cache_used": guide_data.get("cache_key") is not None
                 }
             })
-            
+
             # Update stats
             self.generation_stats["successful_requests"] += 1
             self.generation_stats["average_time"] = (
-                (self.generation_stats["average_time"] * (self.generation_stats["successful_requests"] - 1) + generation_time) 
+                (self.generation_stats["average_time"] * (self.generation_stats["successful_requests"] - 1) + generation_time)
                 / self.generation_stats["successful_requests"]
             )
-            
+
             persona_key = context.persona.value
             self.generation_stats["persona_distribution"][persona_key] = (
                 self.generation_stats["persona_distribution"].get(persona_key, 0) + 1
             )
-            
+
             self.generation_stats["quality_scores"].append(guide_data["quality_score"])
-            
+
             if progress_callback:
                 await progress_callback(100, f"Magazine-quality guide ready! Generated in {generation_time:.1f}s")
-            
+
             logger.info(f"Unified guide generated successfully for {destination} in {generation_time:.1f}s")
             return guide_data
-            
+
+        
         except Exception as e:
             logger.error(f"Unified guide generation failed for {destination}: {e}")
             return {
@@ -415,14 +411,15 @@ class UnifiedGuideService:
         extracted_data: Optional[Dict[str, Any]]
     ) -> GuideGenerationContext:
         """Build comprehensive generation context"""
-        
+
         # Calculate trip duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
         duration = (end - start).days + 1
-        
+
         persona = self._detect_persona(preferences)
-        
+
+
         return GuideGenerationContext(
             destination=destination,
             start_date=start_date,
@@ -436,21 +433,21 @@ class UnifiedGuideService:
 
     def _detect_persona(self, preferences: Dict[str, Any]) -> PersonaType:
         """Detect user persona from preferences using structured analysis"""
-        
+
         persona_scores = {persona: 0 for persona in PersonaType}
-        
+
         budget = preferences.get("priceRange", "$$")
         if budget in ["$$$$", "$$$"]:
             persona_scores[PersonaType.LUXURY_TRAVELER] += 3
         elif budget in ["$", "$$"]:
             persona_scores[PersonaType.BUDGET_EXPLORER] += 3
-        
+
         group_type = preferences.get("groupType", "")
         if group_type == "family":
             persona_scores[PersonaType.FAMILY_FRIENDLY] += 4
         elif group_type == "couple":
             persona_scores[PersonaType.ROMANTIC_COUPLE] += 2
-        
+
         interests = preferences.get("specialInterests", [])
         for interest in interests:
             interest_lower = interest.lower()
@@ -462,13 +459,13 @@ class UnifiedGuideService:
                 persona_scores[PersonaType.CULTURAL_ENTHUSIAST] += 2
             elif any(word in interest_lower for word in ["luxury", "spa", "premium", "exclusive"]):
                 persona_scores[PersonaType.LUXURY_TRAVELER] += 2
-        
+
         adventure_level = preferences.get("adventureLevel", 3)
         if adventure_level >= 4:
             persona_scores[PersonaType.ADVENTURE_SEEKER] += 2
         elif adventure_level <= 2:
             persona_scores[PersonaType.LUXURY_TRAVELER] += 1
-        
+
         return max(persona_scores, key=persona_scores.get)
 
     async def _fetch_all_data_concurrently(
@@ -477,31 +474,31 @@ class UnifiedGuideService:
         progress_callback: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """Fetch all guide data using concurrent API calls"""
-        
+
         tasks = []
-        
+
         weather_task = self.weather_service.get_weather_forecast(
             context.destination, context.start_date, context.end_date
         )
         tasks.append(weather_task)
-        
+
         restaurants_task = self._fetch_google_places_restaurants(context)
         tasks.append(restaurants_task)
-        
+
         attractions_task = self._fetch_google_places_attractions(context)
         tasks.append(attractions_task)
-        
+
         events_task = self.events_service.get_events_for_dates(
             context.destination, context.start_date, context.end_date, context.preferences
         )
         tasks.append(events_task)
-        
+
         perplexity_task = self._generate_with_perplexity(context, progress_callback)
         tasks.append(perplexity_task)
-        
+
         practical_task = self._fetch_practical_info(context)
         tasks.append(practical_task)
-        
+
         try:
             # Execute all tasks concurrently with timeout
             results = await asyncio.wait_for(
@@ -569,16 +566,10 @@ class UnifiedGuideService:
         if not self.perplexity_api_key:
             return {"error": "Perplexity API key not configured"}
         
-        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
-        
         prompt = f"""
         {self.prompts["travel_guide"]["base_prompt"]}
         
         TRAVELER PERSONA: {context.persona.value.replace('_', ' ').title()}
-        - Tone: {persona_config['tone']}
-        - Focus: {persona_config['focus']}
-        - Budget Range: {persona_config['budget_range']}
-        - Activity Preference: {persona_config['activity_preference']}
         
         DESTINATION: {context.destination}
         DATES: {context.start_date} to {context.end_date} ({context.duration_days} days)
@@ -755,14 +746,21 @@ class UnifiedGuideService:
     async def _fetch_google_places_restaurants(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
         """Fetch restaurants using Perplexity and enhance with Google Places"""
         try:
-            perplexity_prompt = f"""Find the top 10 restaurants in {context.destination}. 
-            Focus on restaurants that would appeal to a {context.persona} traveler.
-            Return as JSON array with name, address, cuisine_type, price_range, rating."""
+            perplexity_prompt = (
+                f"Find the top 10 restaurants in {context.destination}. "
+                f"Focus on restaurants that would appeal to a "
+                f"{context.persona} traveler. "
+                "Return as JSON array with name, address, cuisine_type, "
+                "price_range, rating."
+            )
             
             restaurants_data = await self.llm_parser._parse_with_perplexity(perplexity_prompt)
             
             if not isinstance(restaurants_data, list):
-                restaurants_data = restaurants_data.get('restaurants', []) if isinstance(restaurants_data, dict) else []
+                restaurants_data = (
+                restaurants_data.get('restaurants', []) 
+                if isinstance(restaurants_data, dict) else []
+            )
             
             # Enhance with Google Places data
             enhanced_restaurants = []
@@ -961,8 +959,6 @@ class UnifiedGuideService:
     ) -> Dict[str, Any]:
         """Apply persona-based personalization to all guide content"""
         
-        persona_config = self.prompts["travel_guide"]["persona_adaptation"][context.persona]
-        
         restaurants = guide_data.get("restaurants", [])
         personalized_restaurants = []
         
@@ -1081,7 +1077,8 @@ class UnifiedGuideService:
         if persona == PersonaType.CULTURAL_ENTHUSIAST:
             return f"Essential for culture lovers. {name} offers deep insights into local history and art."
         elif persona == PersonaType.ADVENTURE_SEEKER:
-            return f"Perfect for adventure enthusiasts. {name} provides exciting outdoor experiences."
+            return (f"Perfect for adventure enthusiasts. {name} provides "
+                    f"exciting outdoor experiences.")
         elif persona == PersonaType.FAMILY_FRIENDLY:
             return f"Great for families. {name} offers engaging activities for all ages."
         elif persona == PersonaType.LUXURY_TRAVELER:
