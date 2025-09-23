@@ -1246,12 +1246,14 @@ class UnifiedGuideService:
         
         if guide_data.get("persona_tips"):
             score += 10
-        if any("persona_match" in item for item in guide_data.get("restaurants", [])):
+        restaurants = guide_data.get("restaurants", [])
+        if any("persona_match" in item for item in restaurants):
             score += 10
         
         if guide_data.get("weather_summary"):
             score += 5
-        if any("weather_recommendations" in day for day in guide_data.get("daily_itinerary", [])):
+        daily_itinerary = guide_data.get("daily_itinerary", [])
+        if any("weather_recommendations" in day for day in daily_itinerary):
             score += 5
         
         return min(score, max_score)
@@ -1276,7 +1278,10 @@ class UnifiedGuideService:
             Structured travel information
         """
         try:
-            extraction_prompt = self.prompts["travel_guide"]["structured_extraction"]["document_parser"]
+            extraction_prompt = (
+                self.prompts["travel_guide"]["structured_extraction"]
+                ["document_parser"]
+            )
             
             full_prompt = f"""
             {extraction_prompt}
