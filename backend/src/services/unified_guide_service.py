@@ -199,8 +199,8 @@ class UnifiedGuideService:
                     },
                     PersonaType.FAMILY_FRIENDLY: {
                         "tone": "Warm, practical, safety-conscious",
-                        "focus": "Kid-friendly activities, family restaurants, "
-                                 "safe neighborhoods, educational experiences",
+                        "focus": ("Kid-friendly activities, family restaurants, "
+                                 "safe neighborhoods, educational experiences"),
                         "budget_range": "$$-$$$",
                         "activity_preference": ("Safe, engaging, "
                                          "age-appropriate")
@@ -277,8 +277,8 @@ class UnifiedGuideService:
             WeatherActivityCorrelation(
                 temperature_range=(20, 39),
                 conditions=["cold", "winter"],
-                recommended_activities=["museums", "indoor markets", "theaters", 
-                                        "warm restaurants"],
+                recommended_activities=["museums", "indoor markets",
+                                        "theaters", "warm restaurants"],
                 avoid_activities=["outdoor dining", "beach", 
                                  "long outdoor walks"],
                 clothing_suggestions=["heavy coat", "warm layers", "gloves", 
@@ -288,11 +288,12 @@ class UnifiedGuideService:
             WeatherActivityCorrelation(
                 temperature_range=(32, 100),
                 conditions=["rain", "showers", "thunderstorms"],
-                recommended_activities=["museums", "shopping malls", 
-                                        "covered markets", "indoor entertainment"],
-                avoid_activities=["outdoor tours", "beach", "hiking", 
+                recommended_activities=["museums", "shopping malls",
+                                        "covered markets",
+                                        "indoor entertainment"],
+                avoid_activities=["outdoor tours", "beach", "hiking",
                                  "outdoor dining"],
-                clothing_suggestions=["waterproof jacket", "umbrella", 
+                clothing_suggestions=["waterproof jacket", "umbrella",
                                      "waterproof shoes"],
                 special_notes="Have indoor backup plans ready"
             )
@@ -306,7 +307,7 @@ class UnifiedGuideService:
         hotel_info: Dict[str, Any],
         preferences: Dict[str, Any],
         extracted_data: Optional[Dict[str, Any]] = None,
-        progress_callback: Optional[Callable[[int, str], 
+        progress_callback: Optional[Callable[[int, str],
                                             Awaitable[None]]] = None
     ) -> Dict[str, Any]:
         """
@@ -329,15 +330,17 @@ class UnifiedGuideService:
 
         try:
             if progress_callback:
-                await progress_callback(5, "Initializing unified guide generation")
+                await progress_callback(5,
+                    "Initializing unified guide generation")
 
             context = self._build_generation_context(
-                destination, start_date, end_date, hotel_info, preferences, 
+                destination, start_date, end_date, hotel_info, preferences,
                 extracted_data
             )
 
             if progress_callback:
-                await progress_callback(15, "Fetching real-time data concurrently")
+                await progress_callback(15,
+                    "Fetching real-time data concurrently")
 
             guide_data = await self._fetch_all_data_concurrently(
                 context, progress_callback)
@@ -346,12 +349,14 @@ class UnifiedGuideService:
                 return guide_data
 
             if progress_callback:
-                await progress_callback(70, "Correlating weather with activities")
+                await progress_callback(70,
+                    "Correlating weather with activities")
             guide_data = await self._apply_weather_correlation(
                 guide_data, context)
 
             if progress_callback:
-                await progress_callback(85, "Applying persona-based personalization")
+                await progress_callback(85,
+                    "Applying persona-based personalization")
             guide_data = await self._apply_persona_personalization(
                 guide_data, context)
 
@@ -365,14 +370,14 @@ class UnifiedGuideService:
                 guide_data = await self._auto_fix_guide_issues(
                     guide_data, errors, context)
 
-                is_valid, errors, validation_details = GuideValidator.validate_guide(
-                    guide_data)
+                (is_valid, errors,
+                 validation_details) = GuideValidator.validate_guide(guide_data)
 
                 if not is_valid:
                     return {
                         "error": "Guide quality validation failed",
-                        "message": (f"Generated guide for {destination} does not "
-                                   f"meet quality standards"),
+                        "message": (f"Generated guide for {destination} does "
+                                   f"not meet quality standards"),
                         "validation_errors": errors,
                         "validation_details": validation_details,
                         "partial_guide": guide_data,
@@ -399,8 +404,8 @@ class UnifiedGuideService:
             # Update stats
             self.generation_stats["successful_requests"] += 1
             self.generation_stats["average_time"] = (
-                (self.generation_stats["average_time"] * 
-                 (self.generation_stats["successful_requests"] - 1) + 
+                (self.generation_stats["average_time"] *
+                 (self.generation_stats["successful_requests"] - 1) +
                  generation_time) / self.generation_stats["successful_requests"]
             )
 
