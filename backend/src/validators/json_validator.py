@@ -1,37 +1,56 @@
 import json
 import logging
 from typing import Dict, Any, Optional, List
-import re
 
 logger = logging.getLogger(__name__)
+
 
 class JSONValidator:
     """Validates and cleans JSON data from GPT responses."""
     
     @staticmethod
     def clean_json_string(json_str: str) -> str:
-        """Clean a JSON string to remove common issues."""
+        """Clean a JSON string using LLM-based parsing instead of regex."""
+        from ..services.llm_parser import LLMParser
+        
         # Remove any leading/trailing whitespace
         json_str = json_str.strip()
         
         # Remove any control characters
         json_str = ''.join(char for char in json_str if ord(char) >= 32)
         
-        # Remove double array brackets around passengers
-        json_str = re.sub(r'"passengers":\s*\[\s*\[', '"passengers": [', json_str)
-        json_str = re.sub(r'\]\s*\](?=\s*,\s*")', ']', json_str)
+        llm_parser = LLMParser()
         
-        # Fix common quote issues
-        json_str = json_str.replace("'", '"')
-        
-        # Fix missing quotes around property names
-        json_str = re.sub(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1"\2":', json_str)
-        
-        # Remove trailing commas
-        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
-        
-        # Fix line breaks in property values
-        json_str = re.sub(r':\s*"([^"]*)\n([^"]*)"', r':"\1 \2"', json_str)
+        cleaning_prompt = f"""Fix this JSON string to be valid JSON format:
+
+INPUT JSON:
+{json_str}
+
+INSTRUCTIONS:
+- Fix quote issues (convert single quotes to double quotes)
+- Add missing quotes around property names
+- Remove trailing commas
+- Fix line breaks in property values
+- Fix array bracket issues
+- Ensure valid JSON structure
+
+Return ONLY the cleaned JSON, no other text."""
+
+        try:
+            import asyncio
+            if asyncio.get_event_loop().is_running():
+                json_str = json_str.replace("'", '"')
+                logger.debug(f"Basic cleaned JSON: {json_str}")
+                return json_str
+            else:
+                cleaned_result = asyncio.run(llm_parser._parse_with_openai(cleaning_prompt))
+                if isinstance(cleaned_result, dict) and 'cleaned_json' in cleaned_result:
+                    return cleaned_result['cleaned_json']
+                elif isinstance(cleaned_result, str):
+                    return cleaned_result
+        except Exception as e:
+            logger.debug(f"LLM cleaning failed, using basic cleanup: {e}")
+            json_str = json_str.replace("'", '"')
         
         logger.debug(f"Cleaned JSON: {json_str}")
         return json_str

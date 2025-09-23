@@ -277,11 +277,34 @@ IMPORTANT: Only include REAL events with specific dates during {start_date} to {
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
                         
-                        # Clean and parse JSON
-                        import re
-                        content = re.sub(r'\[\d+\]', '', content)
+                        from .llm_parser import LLMParser
+                        llm_parser = LLMParser()
+                        
+                        citation_cleaning_prompt = f"""Remove citation markers from this text and return clean JSON:
+
+INPUT:
+{content}
+
+INSTRUCTIONS:
+- Remove all citation markers like [1], [2], etc.
+- Keep the JSON structure intact
+- Return only the cleaned JSON
+
+OUTPUT:"""
                         
                         try:
+                            try:
+                                cleaned_content = await llm_parser._parse_with_openai(citation_cleaning_prompt)
+                                if isinstance(cleaned_content, str):
+                                    content = cleaned_content
+                                elif isinstance(cleaned_content, dict) and 'events' in cleaned_content:
+                                    events = cleaned_content['events']
+                                    return events[:10] if len(events) > 10 else events
+                            except:
+                                # Fallback to basic cleaning
+                                import re
+                                content = re.sub(r'\[\d+\]', '', content)
+                            
                             events = json.loads(content)
                             if isinstance(events, list):
                                 # Add source info

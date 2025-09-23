@@ -42,23 +42,26 @@ class MagazinePDFService:
     - Magazine-style sections and layouts
     """
     
-    def __init__(self):
+    def __init__(self, destination: str = None):
         self.unsplash_access_key = os.getenv("UNSPLASH_ACCESS_KEY")
         self.unsplash_secret_key = os.getenv("UNSPLASH_SECRET_KEY")
+        self.destination = destination
         
-        # Magazine color palette
+        self.color_palette = self._generate_destination_colors(destination)
         self.colors = {
-            "primary": HexColor("#1a365d"),      # Deep blue
-            "secondary": HexColor("#2d3748"),    # Dark gray
-            "accent": HexColor("#e53e3e"),       # Red accent
-            "gold": HexColor("#d69e2e"),         # Gold
-            "light_gray": HexColor("#f7fafc"),   # Light background
-            "text": HexColor("#2d3748"),         # Dark text
-            "muted": HexColor("#718096")         # Muted text
+            "primary": self.color_palette.get('primary', HexColor("#1a365d")),
+            "secondary": self.color_palette.get('secondary', HexColor("#2d3748")),
+            "accent": self.color_palette.get('accent', HexColor("#e53e3e")),
+            "gold": self.color_palette.get('gold', HexColor("#d69e2e")),
+            "light_gray": self.color_palette.get('light', HexColor("#f7fafc")),
+            "text": self.color_palette.get('text', HexColor("#2d3748")),
+            "muted": self.color_palette.get('muted', HexColor("#718096"))
         }
         
         # Typography styles
         self.styles = self._create_styles()
+        
+        self.photo_style = self._determine_photo_aesthetic(destination)
     
     def _create_styles(self) -> Dict[str, ParagraphStyle]:
         """Create magazine-quality typography styles"""
@@ -619,3 +622,89 @@ class MagazinePDFService:
         except Exception as e:
             logger.error(f"Failed to download image: {e}")
             return None
+    
+    def _generate_destination_colors(self, destination: str) -> Dict[str, Any]:
+        """Generate destination-specific color palette"""
+        if not destination:
+            return {
+                'primary': HexColor('#1a365d'),
+                'secondary': HexColor('#2d3748'),
+                'accent': HexColor('#e53e3e'),
+                'gold': HexColor('#d69e2e'),
+                'light': HexColor('#f7fafc'),
+                'text': HexColor('#2d3748'),
+                'muted': HexColor('#718096')
+            }
+        
+        destination_lower = destination.lower()
+        
+        if any(place in destination_lower for place in ['paris', 'france']):
+            return {
+                'primary': HexColor('#8B4513'),  # Warm brown
+                'secondary': HexColor('#2F4F4F'), # Dark slate gray
+                'accent': HexColor('#DAA520'),   # Golden
+                'gold': HexColor('#FFD700'),     # Gold
+                'light': HexColor('#F5F5DC'),    # Beige
+                'text': HexColor('#2F4F4F'),     # Dark slate gray
+                'muted': HexColor('#696969')     # Dim gray
+            }
+        elif any(place in destination_lower for place in ['tokyo', 'japan']):
+            return {
+                'primary': HexColor('#DC143C'),  # Crimson
+                'secondary': HexColor('#2F2F2F'), # Dark gray
+                'accent': HexColor('#FFB6C1'),   # Light pink
+                'gold': HexColor('#FF69B4'),     # Hot pink
+                'light': HexColor('#F8F8FF'),    # Ghost white
+                'text': HexColor('#2F2F2F'),     # Dark gray
+                'muted': HexColor('#808080')     # Gray
+            }
+        elif any(place in destination_lower for place in ['bali', 'indonesia']):
+            return {
+                'primary': HexColor('#228B22'),  # Forest green
+                'secondary': HexColor('#8B4513'), # Saddle brown
+                'accent': HexColor('#FF6347'),   # Tomato
+                'gold': HexColor('#FFA500'),     # Orange
+                'light': HexColor('#F0FFF0'),    # Honeydew
+                'text': HexColor('#8B4513'),     # Saddle brown
+                'muted': HexColor('#A0522D')     # Sienna
+            }
+        elif any(place in destination_lower for place in ['santorini', 'greece']):
+            return {
+                'primary': HexColor('#4169E1'),  # Royal blue
+                'secondary': HexColor('#191970'), # Midnight blue
+                'accent': HexColor('#FFFFFF'),   # White
+                'gold': HexColor('#87CEEB'),     # Sky blue
+                'light': HexColor('#F0F8FF'),    # Alice blue
+                'text': HexColor('#191970'),     # Midnight blue
+                'muted': HexColor('#6495ED')     # Cornflower blue
+            }
+        else:
+            return {
+                'primary': HexColor('#1a365d'),
+                'secondary': HexColor('#2d3748'),
+                'accent': HexColor('#e53e3e'),
+                'gold': HexColor('#d69e2e'),
+                'light': HexColor('#f7fafc'),
+                'text': HexColor('#2d3748'),
+                'muted': HexColor('#718096')
+            }
+    
+    def _determine_photo_aesthetic(self, destination: str) -> Dict[str, str]:
+        """Determine photo aesthetic based on destination"""
+        if not destination:
+            return {'style': 'modern', 'filter': 'none'}
+        
+        destination_lower = destination.lower()
+        
+        if any(place in destination_lower for place in ['paris', 'rome', 'london']):
+            return {'style': 'classic', 'filter': 'warm'}
+        elif any(place in destination_lower for place in ['tokyo', 'seoul', 'singapore']):
+            return {'style': 'modern', 'filter': 'vibrant'}
+        elif any(place in destination_lower for place in ['bali', 'thailand', 'maldives']):
+            return {'style': 'tropical', 'filter': 'bright'}
+        else:
+            return {'style': 'contemporary', 'filter': 'natural'}
+    
+    def create_magazine_pdf(self, guide_data: Dict[str, Any]) -> bytes:
+        """Create magazine-quality PDF with enhanced design"""
+        return self.generate_magazine_pdf(guide_data)

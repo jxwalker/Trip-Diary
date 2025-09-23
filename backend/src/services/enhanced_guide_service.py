@@ -934,11 +934,15 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if isinstance(attractions, Exception):
                     print(f"[GUIDE] ❌ Attractions search failed: {attractions}")
                     attractions = []
+                elif attractions is None:
+                    attractions = []
                 else:
                     print(f"[GUIDE] ✅ Attractions search succeeded: {len(attractions)} items")
 
                 if isinstance(restaurants, Exception):
                     print(f"[GUIDE] ❌ Restaurants search failed: {restaurants}")
+                    restaurants = []
+                elif restaurants is None:
                     restaurants = []
                 else:
                     print(f"[GUIDE] ✅ Restaurants search succeeded: {len(restaurants)} items")
@@ -946,17 +950,23 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if isinstance(events, Exception):
                     print(f"[GUIDE] ❌ Events search failed: {events}")
                     events = []
+                elif events is None:
+                    events = []
                 else:
                     print(f"[GUIDE] ✅ Events search succeeded: {len(events)} items")
 
                 if isinstance(weather, Exception):
                     print(f"[GUIDE] ❌ Weather search failed: {weather}")
                     weather = []
+                elif weather is None:
+                    weather = []
                 else:
                     print(f"[GUIDE] ✅ Weather search succeeded: {len(weather) if isinstance(weather, list) else 'data available'}")
 
                 if isinstance(insights, Exception):
                     print(f"[GUIDE] ❌ Insights search failed: {insights}")
+                    insights = {}
+                elif insights is None:
                     insights = {}
                 else:
                     print(f"[GUIDE] ✅ Insights search succeeded")
@@ -970,16 +980,22 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 await progress_callback(50, "Adding photos and booking links")
             
             # Enhance restaurants with photos and booking URLs
-            if restaurants:
-                restaurants = await self.places_enhancer.enhance_restaurants_batch(
-                    restaurants, context["destination"]
-                )
+            if restaurants and isinstance(restaurants, list):
+                try:
+                    restaurants = await self.places_enhancer.enhance_restaurants_batch(
+                        restaurants, context["destination"]
+                    )
+                except Exception as e:
+                    print(f"[GUIDE] ⚠️ Restaurant enhancement failed: {e}")
             
             # Enhance attractions with photos and details
-            if attractions:
-                attractions = await self.places_enhancer.enhance_attractions_batch(
-                    attractions, context["destination"]
-                )
+            if attractions and isinstance(attractions, list):
+                try:
+                    attractions = await self.places_enhancer.enhance_attractions_batch(
+                        attractions, context["destination"]
+                    )
+                except Exception as e:
+                    print(f"[GUIDE] ⚠️ Attraction enhancement failed: {e}")
             
             if progress_callback:
                 await progress_callback(55, "Creating personalized daily itineraries")
@@ -1017,7 +1033,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             # Ensure we have weather for all days
             weather_data = []
             weather_summary = {}
-            if weather and not weather.get("error"):
+            if weather and isinstance(weather, dict) and not weather.get("error"):
                 weather_data = weather.get("daily_forecasts", [])
                 weather_summary = weather.get("summary", {})
                 
