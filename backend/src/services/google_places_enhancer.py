@@ -43,21 +43,39 @@ class GooglePlacesEnhancer:
             return []
         
         try:
-            # Search for tourist attractions using Text Search API
-            places_result = self.client.places(
-                query=f"tourist attractions in {location}"
-            )
+            # Search for tourist attractions using Places API (New)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.types,places.id,places.photos,places.regularOpeningHours,places.priceLevel"
+                }
+                payload = {
+                    "textQuery": f"tourist attractions in {location}",
+                    "maxResultCount": limit
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        print(f"Places API (New) search failed: {error_text}")
+                        return []
+                    
+                    data = await response.json()
+                    places_result = {"results": data.get("places", [])}
             
             attractions = []
             for place in places_result.get('results', [])[:limit]:
                 attraction = {
-                    "name": place.get('name', ''),
-                    "address": place.get('formatted_address', ''),
+                    "name": place.get('displayName', {}).get('text', ''),
+                    "address": place.get('formattedAddress', ''),
                     "rating": place.get('rating', 0),
                     "types": place.get('types', []),
-                    "place_id": place.get('place_id', ''),
-                    "price_level": place.get('price_level'),
-                    "opening_hours": place.get('opening_hours', {}),
+                    "place_id": place.get('id', ''),
+                    "price_level": place.get('priceLevel'),
+                    "opening_hours": place.get('regularOpeningHours', {}),
                     "photos": []
                 }
                 

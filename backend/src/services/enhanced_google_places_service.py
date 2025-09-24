@@ -104,11 +104,26 @@ class EnhancedGooglePlacesService:
             raise ConfigurationError("GOOGLE_MAPS_API_KEY not configured")
         
         try:
-            # Test with a simple place search
-            result = self.client.places(
-                query="restaurant", location="New York, NY"
-            )
-            return bool(result.get('results'))
+            # Test with Places API (New) Text Search
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.id"
+                }
+                payload = {
+                    "textQuery": "restaurant in New York"
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return bool(data.get("places"))
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"Places API (New) validation failed: {error_text}")
             
         except Exception as e:
             logger.error(f"Google Places API key validation failed: {e}")
@@ -171,7 +186,27 @@ class EnhancedGooglePlacesService:
             search_radius = radius if radius else 5000  # Default 5km radius
             query = f"restaurant {cuisine_type} near {location}" if cuisine_type else f"restaurant near {location}"
             
-            places_result = self.client.places(query=query)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                }
+                payload = {
+                    "textQuery": query,
+                    "maxResultCount": limit if 'limit' in locals() else 20
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Places API (New) search failed: {error_text}")
+                        places_result = {"results": [], "status": "FAILED"}
+                    else:
+                        data = await response.json()
+                        places_result = {"results": data.get("places", []), "status": "OK"}
             
             if places_result.get('status') == 'OK':
                 results = places_result.get('results', [])
@@ -219,7 +254,7 @@ class EnhancedGooglePlacesService:
                 except Exception as e:
                     logger.warning(
                         f"Failed to process restaurant "
-                        f"{place.get('name', 'unknown')}: {e}"
+                        f"{place.get('displayName', {}).get('text', 'unknown')}: {e}"
                     )
                     continue
             
@@ -420,7 +455,27 @@ class EnhancedGooglePlacesService:
         try:
             # Use Text Search API (Places API New) instead of legacy nearby search
             query = f"restaurant {cuisine_type} near {lat},{lng}" if cuisine_type else f"restaurant near {lat},{lng}"
-            places_result = self.client.places(query=query)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                }
+                payload = {
+                    "textQuery": query,
+                    "maxResultCount": limit if 'limit' in locals() else 20
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Places API (New) search failed: {error_text}")
+                        places_result = {"results": [], "status": "FAILED"}
+                    else:
+                        data = await response.json()
+                        places_result = {"results": data.get("places", []), "status": "OK"}
 
             restaurants = []
             for place in places_result.get('results', [])[:limit]:
@@ -550,7 +605,27 @@ class EnhancedGooglePlacesService:
                     )
                     # Use Text Search API (Places API New) for attractions
                     query = f"{attraction_type.replace('_', ' ')} near {location}"
-                    places_result = self.client.places(query=query)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                }
+                payload = {
+                    "textQuery": query,
+                    "maxResultCount": limit if 'limit' in locals() else 20
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Places API (New) search failed: {error_text}")
+                        places_result = {"results": [], "status": "FAILED"}
+                    else:
+                        data = await response.json()
+                        places_result = {"results": data.get("places", []), "status": "OK"}
 
                     if places_result.get('status') != 'OK':
                         logger.warning(
