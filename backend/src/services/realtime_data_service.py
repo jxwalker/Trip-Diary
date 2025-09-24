@@ -82,9 +82,11 @@ class RealtimeDataService:
         forecast_list = weather_data.get("list", [])
         
         if not forecast_list:
-            return self._get_typical_weather(
-                weather_data.get("city", {}).get("name", ""), start_date
-            )
+            return {
+                "error": "No forecast data available",
+                "message": "Weather forecast data is not available for this location and date range",
+                "fallback": True
+            }
         
         # Get average conditions
         temps = []
