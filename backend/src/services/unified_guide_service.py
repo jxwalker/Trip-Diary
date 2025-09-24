@@ -780,7 +780,11 @@ class UnifiedGuideService:
             logger.error(f"Error parsing guide content with LLM: {e}")
             return {
                 "summary": "Travel guide generated successfully",
-                "destination_insights": guide_content[:500] + "..." if len(guide_content) > 500 else guide_content,
+                "destination_insights": (
+                    guide_content[:500] + "..." 
+                    if len(guide_content) > 500 
+                    else guide_content
+                ),
                 "daily_itinerary": [],
                 "neighborhoods": [],
                 "hidden_gems": [],
@@ -790,7 +794,9 @@ class UnifiedGuideService:
                 "parsing_error": str(e)
             }
 
-    async def _fetch_google_places_restaurants(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
+    async def _fetch_google_places_restaurants(
+        self, context: GuideGenerationContext
+    ) -> List[Dict[str, Any]]:
         """Fetch restaurants using Perplexity and enhance with Google Places"""
         try:
             perplexity_prompt = (
@@ -834,7 +840,9 @@ class UnifiedGuideService:
             logger.error(f"Error fetching Google Places restaurants: {e}")
             return []
 
-    async def _fetch_google_places_attractions(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
+    async def _fetch_google_places_attractions(
+        self, context: GuideGenerationContext
+    ) -> List[Dict[str, Any]]:
         """Fetch attractions using Google Places API with persona-based filtering"""
         try:
             await self.google_places_service.initialize()
@@ -847,8 +855,8 @@ class UnifiedGuideService:
             if context.persona == PersonaType.CULTURAL_ENTHUSIAST:
                 cultural_attractions = [
                     attr for attr in attractions
-                    if any(keyword in attr.get("types", []) 
-                           for keyword in ["museum", "art_gallery", "church", 
+                    if any(keyword in attr.get("types", [])
+                           for keyword in ["museum", "art_gallery", "church",
                                           "historical"])
                 ]
                 other_attractions = [attr for attr in attractions if attr not in cultural_attractions]
@@ -857,8 +865,8 @@ class UnifiedGuideService:
             elif context.persona == PersonaType.ADVENTURE_SEEKER:
                 adventure_attractions = [
                     attr for attr in attractions
-                    if any(keyword in attr.get("types", []) 
-                           for keyword in ["park", "natural_feature", 
+                    if any(keyword in attr.get("types", [])
+                           for keyword in ["park", "natural_feature",
                                           "amusement_park"])
                 ]
                 other_attractions = [attr for attr in attractions if attr not in adventure_attractions]
@@ -989,7 +997,10 @@ class UnifiedGuideService:
             return highlights
 
         best_day = max(daily_forecasts, key=lambda d: d.get("temperature", {}).get("high", 0))
-        highlights.append(f"Best weather expected on {best_day.get('date', 'TBD')} - perfect for outdoor activities")
+        highlights.append(
+            f"Best weather expected on {best_day.get('date', 'TBD')} - "
+            f"perfect for outdoor activities"
+        )
 
         rainy_days = [d for d in daily_forecasts if "rain" in d.get("conditions", "").lower()]
         if rainy_days:
@@ -1013,7 +1024,11 @@ class UnifiedGuideService:
         personalized_restaurants = []
 
         for restaurant in restaurants:
-            restaurant["persona_match"] = self._calculate_restaurant_persona_match(restaurant, context.persona)
+            restaurant["persona_match"] = (
+                self._calculate_restaurant_persona_match(
+                    restaurant, context.persona
+                )
+            )
             restaurant["why_recommended"] = (
                 self._generate_persona_restaurant_recommendation(
                     restaurant, context.persona))
@@ -1026,7 +1041,11 @@ class UnifiedGuideService:
         personalized_attractions = []
 
         for attraction in attractions:
-            attraction["persona_match"] = self._calculate_attraction_persona_match(attraction, context.persona)
+            attraction["persona_match"] = (
+                self._calculate_attraction_persona_match(
+                    attraction, context.persona
+                )
+            )
             attraction["why_recommended"] = (
                 self._generate_persona_attraction_recommendation(
                     attraction, context.persona))
@@ -1035,7 +1054,9 @@ class UnifiedGuideService:
         personalized_attractions.sort(key=lambda a: a.get("persona_match", 0), reverse=True)
         guide_data["attractions"] = personalized_attractions[:8]  # Top 8 for persona
 
-        guide_data["persona_tips"] = self._generate_persona_specific_tips(context.persona, context.destination)
+        guide_data["persona_tips"] = self._generate_persona_specific_tips(
+            context.persona, context.destination
+        )
 
         daily_itinerary = guide_data.get("daily_itinerary", [])
         for day in daily_itinerary:
@@ -1108,7 +1129,9 @@ class UnifiedGuideService:
 
         return min(score, 1.0)
 
-    def _generate_persona_restaurant_recommendation(self, restaurant: Dict[str, Any], persona: PersonaType) -> str:
+    def _generate_persona_restaurant_recommendation(
+        self, restaurant: Dict[str, Any], persona: PersonaType
+    ) -> str:
         """Generate persona-specific restaurant recommendation"""
         name = restaurant.get("name", "")
         cuisine = restaurant.get("cuisine", "")
@@ -1116,7 +1139,10 @@ class UnifiedGuideService:
         if persona == PersonaType.LUXURY_TRAVELER:
             return f"Perfect for a refined dining experience. {name} offers {cuisine} in an upscale setting."
         elif persona == PersonaType.BUDGET_EXPLORER:
-            return f"Great value for authentic {cuisine}. {name} is a local favorite that won't break the bank."
+            return (
+                f"Great value for authentic {cuisine}. {name} is a local "
+                f"favorite that won't break the bank."
+            )
         elif persona == PersonaType.FOODIE:
             return f"A must-try for food enthusiasts. {name} is renowned for exceptional {cuisine}."
         elif persona == PersonaType.FAMILY_FRIENDLY:
@@ -1124,7 +1150,9 @@ class UnifiedGuideService:
         else:
             return f"Highly recommended {cuisine} restaurant with excellent reviews."
 
-    def _generate_persona_attraction_recommendation(self, attraction: Dict[str, Any], persona: PersonaType) -> str:
+    def _generate_persona_attraction_recommendation(
+        self, attraction: Dict[str, Any], persona: PersonaType
+    ) -> str:
         """Generate persona-specific attraction recommendation"""
         name = attraction.get("name", "")
 
