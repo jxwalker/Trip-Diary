@@ -60,7 +60,20 @@ class GuideValidator:
             errors.append("Summary is empty or missing")
         
         if guide.get('destination_insights'):
-            insights_length = len(guide['destination_insights'].strip())
+            insights = guide['destination_insights']
+            if isinstance(insights, dict):
+                insights_text = ""
+                for key, value in insights.items():
+                    if isinstance(value, str):
+                        insights_text += f"{value} "
+                    elif isinstance(value, list):
+                        insights_text += " ".join(str(item) for item in value) + " "
+                insights_length = len(insights_text.strip())
+            elif isinstance(insights, str):
+                insights_length = len(insights.strip())
+            else:
+                insights_length = 0
+            
             details['insights_length'] = insights_length
             if insights_length < cls.MINIMUM_CONTENT_REQUIREMENTS['destination_insights']:
                 errors.append(f"Destination insights too short: {insights_length} chars")
@@ -80,8 +93,21 @@ class GuideValidator:
                 activities = day.get('activities', [])
                 if not activities or len(activities) == 0:
                     empty_days += 1
-                elif all(len(activity.strip()) < 10 for activity in activities):
-                    empty_days += 1  # Activities are too short/generic
+                else:
+                    activity_lengths = []
+                    for activity in activities:
+                        if isinstance(activity, dict):
+                            name = activity.get('name', '')
+                            description = activity.get('description', '')
+                            activity_text = f"{name} {description}".strip()
+                            activity_lengths.append(len(activity_text))
+                        elif isinstance(activity, str):
+                            activity_lengths.append(len(activity.strip()))
+                        else:
+                            activity_lengths.append(0)
+                    
+                    if all(length < 10 for length in activity_lengths):
+                        empty_days += 1  # Activities are too short/generic
             
             details['empty_itinerary_days'] = empty_days
             if empty_days > 0:

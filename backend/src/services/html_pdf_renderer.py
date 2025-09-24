@@ -37,7 +37,7 @@ class HTMLPDFRenderer:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
-            page.goto(f"file://{html_file}")
+            page.goto(f"file://{html_file.absolute()}")
             # Optional: wait for network idle or fonts loading
             page.wait_for_load_state("networkidle")
             page.pdf(path=str(output_path), format="A4", print_background=True, margin={"top":"20mm","bottom":"20mm","left":"15mm","right":"15mm"})

@@ -194,11 +194,13 @@ class HarshPRDScorer:
         
         # 3. Weather Integration (10 points)
         weather_score = 0
-        weather = guide.get("weather_forecast", {})
+        weather = guide.get("weather_forecast", [])
         
-        if weather and not weather.get("error"):
+        if isinstance(weather, list) and len(weather) > 0:
+            if len(weather) >= 3:
+                weather_score += 4
+        elif isinstance(weather, dict) and not weather.get("error"):
             daily_forecasts = weather.get("daily_forecasts", [])
-            
             if len(daily_forecasts) >= 3:
                 weather_score += 4
             else:
