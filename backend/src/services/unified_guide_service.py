@@ -428,8 +428,11 @@ class UnifiedGuideService:
                 guide_data["quality_score"])
 
             if progress_callback:
-                await progress_callback(100,
-                    f"Magazine-quality guide ready! Generated in {generation_time:.1f}s")
+                await progress_callback(
+                    100,
+                    f"Magazine-quality guide ready! Generated in "
+                    f"{generation_time:.1f}s"
+                )
 
             logger.info(f"Unified guide generated successfully for "
                        f"{destination} in {generation_time:.1f}s")
@@ -495,17 +498,21 @@ class UnifiedGuideService:
         interests = preferences.get("specialInterests", [])
         for interest in interests:
             interest_lower = interest.lower()
-            if any(word in interest_lower for word in ["food", "dining",
-                                                               "culinary", "restaurant"]):
+            if any(word in interest_lower for word in [
+                "food", "dining", "culinary", "restaurant"
+            ]):
                 persona_scores[PersonaType.FOODIE] += 2
-            elif any(word in interest_lower for word in ["adventure", "hiking",
-                                                                  "outdoor", "sports"]):
+            elif any(word in interest_lower for word in [
+                "adventure", "hiking", "outdoor", "sports"
+            ]):
                 persona_scores[PersonaType.ADVENTURE_SEEKER] += 2
-            elif any(word in interest_lower for word in ["culture", "museum",
-                                                                  "history", "art"]):
+            elif any(word in interest_lower for word in [
+                "culture", "museum", "history", "art"
+            ]):
                 persona_scores[PersonaType.CULTURAL_ENTHUSIAST] += 2
-            elif any(word in interest_lower for word in ["luxury", "spa",
-                                                                  "premium", "exclusive"]):
+            elif any(word in interest_lower for word in [
+                "luxury", "spa", "premium", "exclusive"
+            ]):
                 persona_scores[PersonaType.LUXURY_TRAVELER] += 2
 
         adventure_level = preferences.get("adventureLevel", 3)
@@ -623,7 +630,8 @@ class UnifiedGuideService:
         TRAVELER PERSONA: {context.persona.value.replace('_', ' ').title()}
 
         DESTINATION: {context.destination}
-        DATES: {context.start_date} to {context.end_date} ({context.duration_days} days)
+        DATES: {context.start_date} to {context.end_date}
+        ({context.duration_days} days)
 
         PREFERENCES:
         {json.dumps(context.preferences, indent=2)}
@@ -660,10 +668,12 @@ class UnifiedGuideService:
                     "messages": [
                         {
                             "role": "system",
-                            "content": ("You are creating a premium travel guide "
-                                       "with real-time web access. Provide current, "
-                                       "accurate information with specific details "
-                                       "and booking links.")
+                            "content": (
+                                "You are creating a premium travel guide "
+                                "with real-time web access. Provide current, "
+                                "accurate information with specific details "
+                                "and booking links."
+                            )
                         },
                         {
                             "role": "user",
@@ -675,7 +685,9 @@ class UnifiedGuideService:
                     "max_tokens": 16000
                 }
 
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         guide_content = data["choices"][0]["message"]["content"]
@@ -832,7 +844,9 @@ class UnifiedGuideService:
             enhanced_restaurants = []
             for restaurant in restaurants_data[:10]:
                 try:
-                    enhanced = await self.places_enhancer.enhance_place_data(restaurant)
+                    enhanced = await self.places_enhancer.enhance_place_data(
+                        restaurant
+                    )
                     enhanced_restaurants.append(enhanced)
                 except Exception as e:
                     logger.warning(f"Failed to enhance restaurant "
@@ -980,7 +994,9 @@ class UnifiedGuideService:
 
         guide_data["weather_summary"] = {
             "overview": weather_data.get("summary", {}),
-            "packing_recommendations": self._generate_packing_recommendations(daily_forecasts),
+            "packing_recommendations": self._generate_packing_recommendations(
+                daily_forecasts
+            ),
             "weather_highlights": self._generate_weather_highlights(daily_forecasts)
         }
 
@@ -1001,11 +1017,15 @@ class UnifiedGuideService:
                 recommendations.update(["Light, breathable clothing", "Sun hat",
                                         "Sunscreen", "Sunglasses"])
             elif temp_high >= 60:
-                recommendations.update(["Comfortable layers", "Light jacket", "Walking shoes"])
+                recommendations.update([
+                    "Comfortable layers", "Light jacket", "Walking shoes"
+                ])
             elif temp_high >= 40:
                 recommendations.update(["Warm layers", "Jacket", "Closed shoes"])
             else:
-                recommendations.update(["Heavy coat", "Warm layers", "Gloves", "Warm hat"])
+                recommendations.update([
+                    "Heavy coat", "Warm layers", "Gloves", "Warm hat"
+                ])
 
             if any(word in conditions for word in ["rain", "shower", "storm"]):
                 recommendations.update(["Waterproof jacket", "Umbrella", "Waterproof shoes"])
