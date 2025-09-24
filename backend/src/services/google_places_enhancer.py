@@ -31,6 +31,53 @@ class GooglePlacesEnhancer:
                   "web-service/get-api-key")
             print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment "
                   "or .env file")
+    
+    async def initialize(self):
+        """Initialize the Google Places enhancer service"""
+        pass
+    
+    async def search_attractions(self, location: str, limit: int = 10) -> List[Dict]:
+        """Search for attractions in a location"""
+        if not self.client:
+            print("[WARNING] Google Maps API key not configured")
+            return []
+        
+        try:
+            # Search for tourist attractions
+            places_result = self.client.places(
+                query=f"tourist attractions in {location}",
+                type="tourist_attraction"
+            )
+            
+            attractions = []
+            for place in places_result.get('results', [])[:limit]:
+                attraction = {
+                    "name": place.get('name', ''),
+                    "address": place.get('formatted_address', ''),
+                    "rating": place.get('rating', 0),
+                    "types": place.get('types', []),
+                    "place_id": place.get('place_id', ''),
+                    "price_level": place.get('price_level'),
+                    "opening_hours": place.get('opening_hours', {}),
+                    "photos": []
+                }
+                
+                if place.get('photos'):
+                    for photo in place['photos'][:3]:  # Max 3 photos
+                        photo_url = (
+                            f"https://maps.googleapis.com/maps/api/place/photo"
+                            f"?maxwidth=400&photoreference={photo['photo_reference']}"
+                            f"&key={self.api_key}"
+                        )
+                        attraction['photos'].append(photo_url)
+                
+                attractions.append(attraction)
+            
+            return attractions
+            
+        except Exception as e:
+            print(f"Error searching attractions: {e}")
+            return []
             
     async def enhance_restaurant(self, restaurant: Dict, 
                                  destination: str) -> Dict:
