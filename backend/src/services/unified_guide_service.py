@@ -1252,11 +1252,14 @@ class UnifiedGuideService:
                 f"favorite that won't break the bank."
             )
         elif persona == PersonaType.FOODIE:
-            return f"A must-try for food enthusiasts. {name} is renowned for exceptional {cuisine}."
+            return (f"A must-try for food enthusiasts. {name} is renowned "
+                    f"for exceptional {cuisine}.")
         elif persona == PersonaType.FAMILY_FRIENDLY:
-            return f"Family-friendly atmosphere at {name}. Great {cuisine} with options for all ages."
+            return (f"Family-friendly atmosphere at {name}. Great {cuisine} "
+                    f"with options for all ages.")
         else:
-            return f"Highly recommended {cuisine} restaurant with excellent reviews."
+            return (f"Highly recommended {cuisine} restaurant with "
+                    f"excellent reviews.")
 
     def _generate_persona_attraction_recommendation(
         self, attraction: Dict[str, Any], persona: PersonaType
@@ -1265,18 +1268,24 @@ class UnifiedGuideService:
         name = attraction.get("name", "")
 
         if persona == PersonaType.CULTURAL_ENTHUSIAST:
-            return f"Essential for culture lovers. {name} offers deep insights into local history and art."
+            return (f"Essential for culture lovers. {name} offers deep "
+                    f"insights into local history and art.")
         elif persona == PersonaType.ADVENTURE_SEEKER:
             return (f"Perfect for adventure enthusiasts. {name} provides "
                     f"exciting outdoor experiences.")
         elif persona == PersonaType.FAMILY_FRIENDLY:
-            return f"Great for families. {name} offers engaging activities for all ages."
+            return (f"Great for families. {name} offers engaging activities "
+                    f"for all ages.")
         elif persona == PersonaType.LUXURY_TRAVELER:
-            return f"A premium experience at {name}. Enjoy exclusive access and refined amenities."
+            return (f"A premium experience at {name}. Enjoy exclusive "
+                    f"access and refined amenities.")
         else:
-            return "Highly rated attraction that showcases the best of the destination."
+            return ("Highly rated attraction that showcases the best of "
+                    "the destination.")
 
-    def _generate_persona_specific_tips(self, persona: PersonaType, destination: str) -> List[str]:
+    def _generate_persona_specific_tips(
+        self, persona: PersonaType, destination: str
+    ) -> List[str]:
         """Generate persona-specific travel tips"""
         base_tips = [
             "Download offline maps before exploring",
@@ -1311,24 +1320,28 @@ class UnifiedGuideService:
 
         return base_tips
 
-    def _generate_daily_persona_notes(self, day: Dict[str, Any], persona: PersonaType) -> str:
+    def _generate_daily_persona_notes(
+        self, day: Dict[str, Any], persona: PersonaType
+    ) -> str:
         """Generate persona-specific notes for each day"""
         day_num = day.get("day", 1)
 
         if persona == PersonaType.LUXURY_TRAVELER:
             return (f"Day {day_num}: Focus on premium experiences and "
-                    f"comfortable pacing. Consider spa treatments or fine dining.")
+                    f"comfortable pacing. Consider spa treatments or "
+                    f"fine dining.")
         elif persona == PersonaType.BUDGET_EXPLORER:
-            return (f"Day {day_num}: Maximize value with free activities and "
-                    f"local experiences. Pack snacks and water.")
+            return (f"Day {day_num}: Maximize value with free activities "
+                    f"and local experiences. Pack snacks and water.")
         elif persona == PersonaType.ADVENTURE_SEEKER:
-            return (f"Day {day_num}: High-energy day with outdoor activities. "
-                    f"Start early to make the most of daylight.")
+            return (f"Day {day_num}: High-energy day with outdoor "
+                    f"activities. Start early to make the most of daylight.")
         elif persona == PersonaType.CULTURAL_ENTHUSIAST:
-            return (f"Day {day_num}: Immerse yourself in local culture and "
-                    f"history. Allow extra time for museums and sites.")
+            return (f"Day {day_num}: Immerse yourself in local culture "
+                    f"and history. Allow extra time for museums and sites.")
         else:
-            return f"Day {day_num}: Balanced mix of activities to suit your travel style."
+            return (f"Day {day_num}: Balanced mix of activities to suit "
+                    f"your travel style.")
 
     async def _auto_fix_guide_issues(
         self,
@@ -1340,14 +1353,17 @@ class UnifiedGuideService:
 
         if "Missing daily itinerary" in errors:
             if not guide_data.get("daily_itinerary"):
-                guide_data["daily_itinerary"] = self._generate_basic_itinerary(context)
+                guide_data["daily_itinerary"] = (
+                    self._generate_basic_itinerary(context)
+                )
 
         if "Missing restaurants" in errors:
             if not guide_data.get("restaurants"):
                 guide_data["restaurants"] = [
                     {
                         "name": "Local Restaurant Recommendations",
-                        "description": "Explore local dining options in the area",
+                        "description": ("Explore local dining options in "
+                                       "the area"),
                         "cuisine": "Various",
                         "address": f"Throughout {context.destination}"
                     }
@@ -1358,14 +1374,17 @@ class UnifiedGuideService:
                 guide_data["attractions"] = [
                     {
                         "name": "Local Attractions",
-                        "description": "Discover popular attractions and activities",
+                        "description": ("Discover popular attractions and "
+                                       "activities"),
                         "address": f"Throughout {context.destination}"
                     }
                 ]
 
         return guide_data
 
-    def _generate_basic_itinerary(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
+    def _generate_basic_itinerary(
+        self, context: GuideGenerationContext
+    ) -> List[Dict[str, Any]]:
         """Generate a basic itinerary structure"""
         itinerary = []
 
