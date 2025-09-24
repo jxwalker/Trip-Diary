@@ -589,11 +589,17 @@ class UnifiedGuideService:
                 events = []
 
             if isinstance(perplexity_data, Exception):
-                logger.error(
+                logger.warning(
                     f"Perplexity data fetch failed: {perplexity_data}"
                 )
-                return {"error": f"Failed to fetch guide content: "
-                                f"{str(perplexity_data)}"}
+                logger.info("Falling back to OpenAI for guide generation")
+                try:
+                    perplexity_data = await self._generate_with_openai(context)
+                except Exception as openai_error:
+                    logger.error(f"OpenAI fallback failed: {openai_error}")
+                    return {"error": f"Failed to fetch guide content: "
+                                    f"Perplexity: {str(perplexity_data)}, "
+                                    f"OpenAI: {str(openai_error)}"}
 
             if isinstance(practical_info, Exception):
                 logger.warning(
@@ -725,6 +731,54 @@ class UnifiedGuideService:
 
         except Exception as e:
             logger.error(f"Error calling Perplexity API: {e}")
+            return {"error": f"Failed to generate guide content: {str(e)}"}
+
+    async def _generate_with_openai(
+        self,
+        context: GuideGenerationContext
+    ) -> Dict[str, Any]:
+        """Generate guide content using OpenAI as fallback"""
+        
+        if not self.llm_parser.openai_api_key:
+            return {"error": "OpenAI API key not configured"}
+
+        prompt = f"""
+        Create a comprehensive travel guide for {context.destination} 
+        from {context.start_date} to {context.end_date} 
+        ({context.duration_days} days).
+
+        TRAVELER PERSONA: {context.persona.value.replace('_', ' ').title()}
+
+        PREFERENCES:
+        {json.dumps(context.preferences, indent=2)}
+
+        Create detailed sections for:
+        1. Destination Overview & Highlights
+        2. Daily Itinerary Suggestions
+        3. Local Neighborhoods & Areas
+        4. Hidden Gems & Insider Tips
+        5. Cultural Insights & Etiquette
+        6. Transportation Guide
+        7. Safety & Practical Information
+
+        Provide specific addresses, phone numbers, websites, and booking
+        information. Make recommendations that align with the
+        {context.persona.value.replace('_', ' ')} persona.
+        """
+
+        try:
+            guide_content = await self.llm_parser.parse_guide(prompt)
+            
+            if guide_content and not guide_content.get("error"):
+                parsed_guide = await self._parse_guide_with_llm(
+                    str(guide_content), context)
+                parsed_guide["generation_source"] = "openai_fallback"
+                return parsed_guide
+            else:
+                return {"error": "OpenAI guide generation failed"}
+                
+        except Exception as e:
+            logger.error(f"Error calling OpenAI API: {e}")
             return {"error": f"Failed to generate guide content: {str(e)}"}
 
     async def _parse_guide_with_llm(
