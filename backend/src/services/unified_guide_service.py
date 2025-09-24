@@ -611,10 +611,23 @@ class UnifiedGuideService:
                 practical_info = {}
 
             combined_data = perplexity_data.copy() if perplexity_data else {}
+            
+            # Normalize field names for validation compatibility
+            if "destination_overview" in combined_data and "destination_insights" not in combined_data:
+                combined_data["destination_insights"] = combined_data["destination_overview"]
+            
+            if combined_data.get("restaurants") and len(restaurants) > 0:
+                combined_data["restaurants"].extend(restaurants)
+            elif len(restaurants) > 0:
+                combined_data["restaurants"] = restaurants
+                
+            if combined_data.get("attractions") and len(attractions) > 0:
+                combined_data["attractions"].extend(attractions)
+            elif len(attractions) > 0:
+                combined_data["attractions"] = attractions
+            
             combined_data.update({
                 "weather_data": weather_data,
-                "restaurants": restaurants,
-                "attractions": attractions,
                 "events": events,
                 "practical_info": practical_info,
                 "generation_context": {
