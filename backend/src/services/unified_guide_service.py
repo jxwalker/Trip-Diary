@@ -773,10 +773,8 @@ class UnifiedGuideService:
             guide_content = await self.llm_parser.parse_guide(prompt)
             
             if guide_content and not guide_content.get("error"):
-                parsed_guide = await self._parse_guide_with_llm(
-                    str(guide_content), context)
-                parsed_guide["generation_source"] = "openai_fallback"
-                return parsed_guide
+                guide_content["generation_source"] = "openai_fallback"
+                return guide_content
             else:
                 return {"error": "OpenAI guide generation failed"}
                 
