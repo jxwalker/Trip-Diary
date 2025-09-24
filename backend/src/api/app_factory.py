@@ -10,7 +10,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies.container import container
-from .routes import upload, status
 from ..middleware import LoggingMiddleware, ErrorHandlingMiddleware, setup_error_handlers, log_startup_info
 from ..utils.logging_config import setup_logging
 from ..utils.environment import load_project_env, is_development

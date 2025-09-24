@@ -357,8 +357,8 @@ class WeatherService:
             )
         }
     
-    def _get_packing_suggestions(self, forecasts: List[Dict]) -> List[str]:
-        """Generate packing suggestions based on weather"""
+    def _get_packing_suggestions_from_forecasts(self, forecasts: List[Dict]) -> List[str]:
+        """Generate packing suggestions based on weather forecasts"""
         suggestions = ["Comfortable walking shoes", "Sunglasses"]
         
         # Check temperatures
