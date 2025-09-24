@@ -811,8 +811,6 @@ class UnifiedGuideService:
         """
 
         try:
-            import aiohttp
-            import json
             
             async with aiohttp.ClientSession() as session:
                 headers = {
