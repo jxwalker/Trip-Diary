@@ -288,9 +288,9 @@ class UnifiedGuideService:
                 conditions=["cold", "winter"],
                 recommended_activities=["museums", "indoor markets",
                                         "theaters", "warm restaurants"],
-                avoid_activities=["outdoor dining", "beach", 
+                avoid_activities=["outdoor dining", "beach",
                                  "long outdoor walks"],
-                clothing_suggestions=["heavy coat", "warm layers", "gloves", 
+                clothing_suggestions=["heavy coat", "warm layers", "gloves",
                                      "warm hat"],
                 special_notes="Focus on indoor activities and warm venues"
             ),
@@ -420,7 +420,7 @@ class UnifiedGuideService:
 
             persona_key = context.persona.value
             self.generation_stats["persona_distribution"][persona_key] = (
-                self.generation_stats["persona_distribution"].get(persona_key, 0) + 
+                self.generation_stats["persona_distribution"].get(persona_key, 0) +
                 1
             )
 
@@ -428,7 +428,7 @@ class UnifiedGuideService:
                 guide_data["quality_score"])
 
             if progress_callback:
-                await progress_callback(100, 
+                await progress_callback(100,
                     f"Magazine-quality guide ready! Generated in {generation_time:.1f}s")
 
             logger.info(f"Unified guide generated successfully for "
@@ -651,7 +651,10 @@ class UnifiedGuideService:
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are creating a premium travel guide with real-time web access. Provide current, accurate information with specific details and booking links."
+                            "content": ("You are creating a premium travel guide "
+                                       "with real-time web access. Provide current, "
+                                       "accurate information with specific details "
+                                       "and booking links.")
                         },
                         {
                             "role": "user",
@@ -843,16 +846,20 @@ class UnifiedGuideService:
 
             if context.persona == PersonaType.CULTURAL_ENTHUSIAST:
                 cultural_attractions = [
-                    attr for attr in attractions 
-                    if any(keyword in attr.get("types", []) for keyword in ["museum", "art_gallery", "church", "historical"])
+                    attr for attr in attractions
+                    if any(keyword in attr.get("types", []) 
+                           for keyword in ["museum", "art_gallery", "church", 
+                                          "historical"])
                 ]
                 other_attractions = [attr for attr in attractions if attr not in cultural_attractions]
                 attractions = cultural_attractions + other_attractions
 
             elif context.persona == PersonaType.ADVENTURE_SEEKER:
                 adventure_attractions = [
-                    attr for attr in attractions 
-                    if any(keyword in attr.get("types", []) for keyword in ["park", "natural_feature", "amusement_park"])
+                    attr for attr in attractions
+                    if any(keyword in attr.get("types", []) 
+                           for keyword in ["park", "natural_feature", 
+                                          "amusement_park"])
                 ]
                 other_attractions = [attr for attr in attractions if attr not in adventure_attractions]
                 attractions = adventure_attractions + other_attractions
@@ -920,7 +927,7 @@ class UnifiedGuideService:
                         "avoid_activities": matching_correlation.avoid_activities,
                         "special_notes": matching_correlation.special_notes
                     }
-                    
+
                     if matching_correlation.avoid_activities:
                         for time_period in ["morning", "afternoon", "evening"]:
                             activities = day_plan.get(time_period, [])
@@ -928,7 +935,7 @@ class UnifiedGuideService:
                             for activity in activities:
                                 activity_lower = activity.lower()
                                 should_avoid = any(
-                                    avoid_activity.lower() in activity_lower 
+                                    avoid_activity.lower() in activity_lower
                                     for avoid_activity in matching_correlation.avoid_activities
                                 )
                                 if not should_avoid:
@@ -937,26 +944,26 @@ class UnifiedGuideService:
                                     if "outdoor" in activity_lower:
                                         alternative = activity.replace("outdoor", "indoor")
                                         filtered_activities.append(f"{alternative} (weather alternative)")
-                            
+
                             day_plan[time_period] = filtered_activities
-        
+
         guide_data["weather_summary"] = {
             "overview": weather_data.get("summary", {}),
             "packing_recommendations": self._generate_packing_recommendations(daily_forecasts),
             "weather_highlights": self._generate_weather_highlights(daily_forecasts)
         }
-        
+
         return guide_data
 
     def _generate_packing_recommendations(self, daily_forecasts: List[Dict[str, Any]]) -> List[str]:
         """Generate packing recommendations based on weather forecast"""
         recommendations = set()
-        
+
         for day in daily_forecasts:
             temp_high = day.get("temperature", {}).get("high", 70)
             temp_low = day.get("temperature", {}).get("low", 60)
             conditions = day.get("conditions", "").lower()
-            
+
             if temp_high >= 80:
                 recommendations.update(["Light, breathable clothing", "Sun hat", "Sunscreen", "Sunglasses"])
             elif temp_high >= 60:
@@ -965,34 +972,34 @@ class UnifiedGuideService:
                 recommendations.update(["Warm layers", "Jacket", "Closed shoes"])
             else:
                 recommendations.update(["Heavy coat", "Warm layers", "Gloves", "Warm hat"])
-            
+
             if any(word in conditions for word in ["rain", "shower", "storm"]):
                 recommendations.update(["Waterproof jacket", "Umbrella", "Waterproof shoes"])
-            
+
             if temp_low < 50:
                 recommendations.add("Warm evening wear")
-        
+
         return sorted(list(recommendations))
 
     def _generate_weather_highlights(self, daily_forecasts: List[Dict[str, Any]]) -> List[str]:
         """Generate weather highlights for the trip"""
         highlights = []
-        
+
         if not daily_forecasts:
             return highlights
-        
+
         best_day = max(daily_forecasts, key=lambda d: d.get("temperature", {}).get("high", 0))
         highlights.append(f"Best weather expected on {best_day.get('date', 'TBD')} - perfect for outdoor activities")
-        
+
         rainy_days = [d for d in daily_forecasts if "rain" in d.get("conditions", "").lower()]
         if rainy_days:
             highlights.append(f"Rain expected on {len(rainy_days)} day(s) - plan indoor activities")
-        
+
         temps = [d.get("temperature", {}).get("high", 70) for d in daily_forecasts]
         if temps:
             min_temp, max_temp = min(temps), max(temps)
             highlights.append(f"Temperature range: {min_temp}°F - {max_temp}°F")
-        
+
         return highlights
 
     async def _apply_persona_personalization(
@@ -1001,45 +1008,49 @@ class UnifiedGuideService:
         context: GuideGenerationContext
     ) -> Dict[str, Any]:
         """Apply persona-based personalization to all guide content"""
-        
+
         restaurants = guide_data.get("restaurants", [])
         personalized_restaurants = []
-        
+
         for restaurant in restaurants:
             restaurant["persona_match"] = self._calculate_restaurant_persona_match(restaurant, context.persona)
-            restaurant["why_recommended"] = self._generate_persona_restaurant_recommendation(restaurant, context.persona)
+            restaurant["why_recommended"] = (
+                self._generate_persona_restaurant_recommendation(
+                    restaurant, context.persona))
             personalized_restaurants.append(restaurant)
-        
+
         personalized_restaurants.sort(key=lambda r: r.get("persona_match", 0), reverse=True)
         guide_data["restaurants"] = personalized_restaurants[:12]  # Top 12 for persona
-        
+
         attractions = guide_data.get("attractions", [])
         personalized_attractions = []
-        
+
         for attraction in attractions:
             attraction["persona_match"] = self._calculate_attraction_persona_match(attraction, context.persona)
-            attraction["why_recommended"] = self._generate_persona_attraction_recommendation(attraction, context.persona)
+            attraction["why_recommended"] = (
+                self._generate_persona_attraction_recommendation(
+                    attraction, context.persona))
             personalized_attractions.append(attraction)
-        
+
         personalized_attractions.sort(key=lambda a: a.get("persona_match", 0), reverse=True)
         guide_data["attractions"] = personalized_attractions[:8]  # Top 8 for persona
-        
+
         guide_data["persona_tips"] = self._generate_persona_specific_tips(context.persona, context.destination)
-        
+
         daily_itinerary = guide_data.get("daily_itinerary", [])
         for day in daily_itinerary:
             day["persona_notes"] = self._generate_daily_persona_notes(day, context.persona)
-        
+
         return guide_data
 
     def _calculate_restaurant_persona_match(self, restaurant: Dict[str, Any], persona: PersonaType) -> float:
         """Calculate how well a restaurant matches the persona (0-1 score)"""
         score = 0.5  # Base score
-        
+
         cuisine = restaurant.get("cuisine", "").lower()
         price_level = restaurant.get("price_level_numeric", 2)
         rating = restaurant.get("rating", 3.5)
-        
+
         if persona == PersonaType.LUXURY_TRAVELER:
             if price_level >= 3:
                 score += 0.3
@@ -1047,7 +1058,7 @@ class UnifiedGuideService:
                 score += 0.2
             if any(word in cuisine for word in ["fine", "upscale", "gourmet"]):
                 score += 0.2
-                
+
         elif persona == PersonaType.BUDGET_EXPLORER:
             if price_level <= 2:
                 score += 0.3
@@ -1055,7 +1066,7 @@ class UnifiedGuideService:
                 score += 0.2
             if rating >= 4.0:
                 score += 0.1
-                
+
         elif persona == PersonaType.FOODIE:
             if rating >= 4.3:
                 score += 0.3
@@ -1063,45 +1074,45 @@ class UnifiedGuideService:
                 score += 0.2
             if price_level >= 2:  # Foodies often willing to pay for quality
                 score += 0.1
-        
+
         return min(score, 1.0)
 
     def _calculate_attraction_persona_match(self, attraction: Dict[str, Any], persona: PersonaType) -> float:
         """Calculate how well an attraction matches the persona (0-1 score)"""
         score = 0.5  # Base score
-        
+
         types = attraction.get("types", [])
         name = attraction.get("name", "").lower()
         rating = attraction.get("rating", 3.5)
-        
+
         if persona == PersonaType.CULTURAL_ENTHUSIAST:
             if any(t in types for t in ["museum", "art_gallery", "church", "historical"]):
                 score += 0.4
             if any(word in name for word in ["museum", "gallery", "cathedral", "palace"]):
                 score += 0.2
-                
+
         elif persona == PersonaType.ADVENTURE_SEEKER:
             if any(t in types for t in ["park", "natural_feature", "amusement_park"]):
                 score += 0.4
             if any(word in name for word in ["park", "trail", "adventure", "outdoor"]):
                 score += 0.2
-                
+
         elif persona == PersonaType.FAMILY_FRIENDLY:
             if any(t in types for t in ["amusement_park", "zoo", "aquarium"]):
                 score += 0.4
             if any(word in name for word in ["family", "kids", "children", "zoo"]):
                 score += 0.2
-        
+
         if rating >= 4.0:
             score += 0.1
-        
+
         return min(score, 1.0)
 
     def _generate_persona_restaurant_recommendation(self, restaurant: Dict[str, Any], persona: PersonaType) -> str:
         """Generate persona-specific restaurant recommendation"""
         name = restaurant.get("name", "")
         cuisine = restaurant.get("cuisine", "")
-        
+
         if persona == PersonaType.LUXURY_TRAVELER:
             return f"Perfect for a refined dining experience. {name} offers {cuisine} in an upscale setting."
         elif persona == PersonaType.BUDGET_EXPLORER:
@@ -1116,7 +1127,7 @@ class UnifiedGuideService:
     def _generate_persona_attraction_recommendation(self, attraction: Dict[str, Any], persona: PersonaType) -> str:
         """Generate persona-specific attraction recommendation"""
         name = attraction.get("name", "")
-        
+
         if persona == PersonaType.CULTURAL_ENTHUSIAST:
             return f"Essential for culture lovers. {name} offers deep insights into local history and art."
         elif persona == PersonaType.ADVENTURE_SEEKER:
@@ -1136,7 +1147,7 @@ class UnifiedGuideService:
             "Learn basic local phrases",
             "Keep copies of important documents"
         ]
-        
+
         if persona == PersonaType.LUXURY_TRAVELER:
             base_tips.extend([
                 "Book restaurant reservations well in advance",
@@ -1161,21 +1172,25 @@ class UnifiedGuideService:
                 "Check weather conditions before hiking",
                 "Book adventure tours in advance during peak season"
             ])
-        
+
         return base_tips
 
     def _generate_daily_persona_notes(self, day: Dict[str, Any], persona: PersonaType) -> str:
         """Generate persona-specific notes for each day"""
         day_num = day.get("day", 1)
-        
+
         if persona == PersonaType.LUXURY_TRAVELER:
-            return f"Day {day_num}: Focus on premium experiences and comfortable pacing. Consider spa treatments or fine dining."
+            return (f"Day {day_num}: Focus on premium experiences and "
+                    f"comfortable pacing. Consider spa treatments or fine dining.")
         elif persona == PersonaType.BUDGET_EXPLORER:
-            return f"Day {day_num}: Maximize value with free activities and local experiences. Pack snacks and water."
+            return (f"Day {day_num}: Maximize value with free activities and "
+                    f"local experiences. Pack snacks and water.")
         elif persona == PersonaType.ADVENTURE_SEEKER:
-            return f"Day {day_num}: High-energy day with outdoor activities. Start early to make the most of daylight."
+            return (f"Day {day_num}: High-energy day with outdoor activities. "
+                    f"Start early to make the most of daylight.")
         elif persona == PersonaType.CULTURAL_ENTHUSIAST:
-            return f"Day {day_num}: Immerse yourself in local culture and history. Allow extra time for museums and sites."
+            return (f"Day {day_num}: Immerse yourself in local culture and "
+                    f"history. Allow extra time for museums and sites.")
         else:
             return f"Day {day_num}: Balanced mix of activities to suit your travel style."
 
@@ -1186,11 +1201,11 @@ class UnifiedGuideService:
         context: GuideGenerationContext
     ) -> Dict[str, Any]:
         """Automatically fix common guide quality issues"""
-        
+
         if "Missing daily itinerary" in errors:
             if not guide_data.get("daily_itinerary"):
                 guide_data["daily_itinerary"] = self._generate_basic_itinerary(context)
-        
+
         if "Missing restaurants" in errors:
             if not guide_data.get("restaurants"):
                 guide_data["restaurants"] = [
@@ -1201,7 +1216,7 @@ class UnifiedGuideService:
                         "address": f"Throughout {context.destination}"
                     }
                 ]
-        
+
         if "Missing attractions" in errors:
             if not guide_data.get("attractions"):
                 guide_data["attractions"] = [
@@ -1211,18 +1226,18 @@ class UnifiedGuideService:
                         "address": f"Throughout {context.destination}"
                     }
                 ]
-        
+
         return guide_data
 
     def _generate_basic_itinerary(self, context: GuideGenerationContext) -> List[Dict[str, Any]]:
         """Generate a basic itinerary structure"""
         itinerary = []
-        
+
         start_date = datetime.strptime(context.start_date, "%Y-%m-%d")
-        
+
         for i in range(context.duration_days):
             current_date = start_date + timedelta(days=i)
-            
+
             day_plan = {
                 "day": i + 1,
                 "date": current_date.strftime("%Y-%m-%d"),
@@ -1231,40 +1246,40 @@ class UnifiedGuideService:
                 "afternoon": [f"Visit {context.destination} afternoon highlights"],
                 "evening": [f"Enjoy {context.destination} evening activities"]
             }
-            
+
             itinerary.append(day_plan)
-        
+
         return itinerary
 
     def _calculate_quality_score(self, guide_data: Dict[str, Any]) -> float:
         """Calculate overall quality score for the guide (0-100)"""
         score = 0
         max_score = 100
-        
+
         required_sections = ["summary", "daily_itinerary", "restaurants", "attractions"]
         for section in required_sections:
             if guide_data.get(section):
                 score += 10
-        
+
         if len(guide_data.get("restaurants", [])) >= 5:
             score += 10
         if len(guide_data.get("attractions", [])) >= 5:
             score += 10
         if len(guide_data.get("daily_itinerary", [])) >= 1:
             score += 10
-        
+
         if guide_data.get("persona_tips"):
             score += 10
         restaurants = guide_data.get("restaurants", [])
         if any("persona_match" in item for item in restaurants):
             score += 10
-        
+
         if guide_data.get("weather_summary"):
             score += 5
         daily_itinerary = guide_data.get("daily_itinerary", [])
         if any("weather_recommendations" in day for day in daily_itinerary):
             score += 5
-        
+
         return min(score, max_score)
 
     def get_performance_stats(self) -> Dict[str, Any]:
@@ -1278,11 +1293,11 @@ class UnifiedGuideService:
     ) -> Dict[str, Any]:
         """
         Extract travel information from documents using LLM parsing (no regex)
-        
+
         Args:
             document_content: Raw document content
             document_type: Type of document (flight, hotel, mixed, etc.)
-            
+
         Returns:
             Structured travel information
         """
@@ -1291,23 +1306,23 @@ class UnifiedGuideService:
                 self.prompts["travel_guide"]["structured_extraction"]
                 ["document_parser"]
             )
-            
+
             full_prompt = f"""
             {extraction_prompt}
-            
+
             Document Type: {document_type}
             Document Content:
             {document_content}
             """
-            
+
             extracted_data = await self.llm_parser.parse_with_structure(
                 full_prompt,
                 expected_format="json"
             )
-            
+
             if not isinstance(extracted_data, dict):
                 extracted_data = {}
-            
+
             # Add metadata
             extracted_data["extraction_metadata"] = {
                 "document_type": document_type,
@@ -1315,9 +1330,9 @@ class UnifiedGuideService:
                 "extraction_method": "llm_structured",
                 "confidence": "high" if extracted_data else "low"
             }
-            
+
             return extracted_data
-            
+
         except Exception as e:
             logger.error(f"Error extracting travel documents: {e}")
             return {
