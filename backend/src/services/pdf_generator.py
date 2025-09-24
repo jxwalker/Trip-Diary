@@ -106,44 +106,8 @@ class TravelPackGenerator:
             fontName=body_font
         ))
         
-        self.styles.add(ParagraphStyle(
-            name='SectionHeader',
-            parent=self.styles['Heading2'],
-            fontSize=18,
-            textColor=colors.HexColor('#0284c7'),
-            spaceAfter=12,
-            spaceBefore=20,
-            fontName='Helvetica-Bold'
-        ))
-        
-        self.styles.add(ParagraphStyle(
-            name='SubHeader',
-            parent=self.styles['Heading3'],
-            fontSize=14,
-            textColor=colors.HexColor('#0369a1'),
-            spaceAfter=8,
-            spaceBefore=12,
-            fontName='Helvetica-Bold'
-        ))
-        
-        self.styles.add(ParagraphStyle(
-            name='InfoText',
-            parent=self.styles['BodyText'],
-            fontSize=11,
-            alignment=TA_LEFT,
-            spaceAfter=6
-        ))
-        
-        self.styles.add(ParagraphStyle(
-            name='SmallText',
-            parent=self.styles['BodyText'],
-            fontSize=9,
-            alignment=TA_LEFT,
-            spaceAfter=4,
-            textColor=colors.HexColor('#666666')
-        ))
     
-    async def generate(self, trip_id: str, itinerary: Dict, recommendations: Dict, enhanced_guide: Dict = None) -> str:
+    async def generate(self, trip_id: str, itinerary: Dict, recommendations: Dict, enhanced_guide: Optional[Dict] = None) -> str:
         """
         Generate PDF travel pack with enhanced guide content
         """

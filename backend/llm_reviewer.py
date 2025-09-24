@@ -127,9 +127,12 @@ class LLMReviewer:
         # 2. Content Completeness
         content_score = 0
         
-        # Check weather
-        weather = guide.get("weather_forecast", {})
-        if weather and not weather.get("error"):
+        # Check weather - handle both list and dict formats
+        weather = guide.get("weather_forecast", [])
+        if isinstance(weather, list) and len(weather) > 0:
+            content_score += 4
+            strengths.append("✅ Weather data included")
+        elif isinstance(weather, dict) and not weather.get("error"):
             content_score += 4
             strengths.append("✅ Weather data included")
         else:
@@ -173,7 +176,8 @@ class LLMReviewer:
         # Check for errors
         has_errors = False
         for key in ["weather_forecast", "culinary_guide", "contemporary_happenings"]:
-            if guide.get(key, {}).get("error"):
+            value = guide.get(key, {})
+            if isinstance(value, dict) and value.get("error"):
                 has_errors = True
                 improvements.append(f"❌ Error in {key}")
         

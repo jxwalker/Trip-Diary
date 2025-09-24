@@ -934,19 +934,19 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if isinstance(attractions, Exception):
                     print(f"[GUIDE] ❌ Attractions search failed: {attractions}")
                     attractions = []
-                else:
+                elif isinstance(attractions, list):
                     print(f"[GUIDE] ✅ Attractions search succeeded: {len(attractions)} items")
 
                 if isinstance(restaurants, Exception):
                     print(f"[GUIDE] ❌ Restaurants search failed: {restaurants}")
                     restaurants = []
-                else:
+                elif isinstance(restaurants, list):
                     print(f"[GUIDE] ✅ Restaurants search succeeded: {len(restaurants)} items")
 
                 if isinstance(events, Exception):
                     print(f"[GUIDE] ❌ Events search failed: {events}")
                     events = []
-                else:
+                elif isinstance(events, list):
                     print(f"[GUIDE] ✅ Events search succeeded: {len(events)} items")
 
                 if isinstance(weather, Exception):
@@ -970,13 +970,13 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 await progress_callback(50, "Adding photos and booking links")
             
             # Enhance restaurants with photos and booking URLs
-            if restaurants:
+            if isinstance(restaurants, list) and restaurants:
                 restaurants = await self.places_enhancer.enhance_restaurants_batch(
                     restaurants, context["destination"]
                 )
             
             # Enhance attractions with photos and details
-            if attractions:
+            if isinstance(attractions, list) and attractions:
                 attractions = await self.places_enhancer.enhance_attractions_batch(
                     attractions, context["destination"]
                 )
@@ -1017,7 +1017,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             # Ensure we have weather for all days
             weather_data = []
             weather_summary = {}
-            if weather and not weather.get("error"):
+            if isinstance(weather, dict) and not weather.get("error"):
                 weather_data = weather.get("daily_forecasts", [])
                 weather_summary = weather.get("summary", {})
                 
@@ -1033,7 +1033,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
                             "temperature": {"high": "--", "low": "--"},
                             "description": "Weather forecast will be available closer to your travel date"
                         })
-            elif insights.get("weather"):
+            elif isinstance(insights, dict) and insights.get("weather"):
                 weather_data = insights.get("weather", [])
             
             guide = {
@@ -1047,11 +1047,11 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 "events": events,
                 "neighborhoods": [],  # Can be enhanced with another search
                 "practical_info": {
-                    "transportation": insights.get("transportation", []),
-                    "money": insights.get("money", []),
-                    "cultural": insights.get("cultural", []),
-                    "updates": insights.get("updates", []),
-                    "tips": insights.get("tips", []),
+                    "transportation": insights.get("transportation", []) if isinstance(insights, dict) else [],
+                    "money": insights.get("money", []) if isinstance(insights, dict) else [],
+                    "cultural": insights.get("cultural", []) if isinstance(insights, dict) else [],
+                    "updates": insights.get("updates", []) if isinstance(insights, dict) else [],
+                    "tips": insights.get("tips", []) if isinstance(insights, dict) else [],
                     "packing": weather_summary.get("packing_suggestions", []) if weather_summary else []
                 },
                 "hidden_gems": [],  # Can be enhanced with another search
@@ -1067,19 +1067,19 @@ Make it feel like a personalized concierge service, not a generic guide."""
             print(f"[GUIDE] 📊 Final Guide Summary:")
             print(f"[GUIDE]   📍 Destination: {context['destination']}")
             print(f"[GUIDE]   📅 Dates: {context['dates']}")
-            print(f"[GUIDE]   🍽️  Restaurants: {len(restaurants)}")
-            print(f"[GUIDE]   🎭 Attractions: {len(attractions)}")
-            print(f"[GUIDE]   🎪 Events: {len(events)}")
+            print(f"[GUIDE]   🍽️  Restaurants: {len(restaurants) if isinstance(restaurants, list) else 0}")
+            print(f"[GUIDE]   🎭 Attractions: {len(attractions) if isinstance(attractions, list) else 0}")
+            print(f"[GUIDE]   🎪 Events: {len(events) if isinstance(events, list) else 0}")
             print(f"[GUIDE]   📅 Itinerary days: {len(daily_itinerary)}")
             print(f"[GUIDE]   🌤️  Weather forecasts: {len(weather_data)}")
             print(f"[GUIDE]   ℹ️  Practical info sections: {len([k for k, v in guide['practical_info'].items() if v])}")
 
             # Log sample content
-            if restaurants:
+            if isinstance(restaurants, list) and restaurants:
                 print(f"[GUIDE]   🍽️  Sample restaurant: {restaurants[0].get('name', 'N/A')}")
-            if attractions:
+            if isinstance(attractions, list) and attractions:
                 print(f"[GUIDE]   🎭 Sample attraction: {attractions[0].get('name', 'N/A')}")
-            if events:
+            if isinstance(events, list) and events:
                 print(f"[GUIDE]   🎪 Sample event: {events[0].get('name', 'N/A')}")
 
             return guide
