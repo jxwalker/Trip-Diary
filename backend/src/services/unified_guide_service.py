@@ -98,6 +98,7 @@ class UnifiedGuideService:
         self.perplexity_search = PerplexitySearchService()
         self.weather_service = WeatherService()
         self.places_enhancer = GooglePlacesEnhancer()
+        self.google_places_service = self.places_enhancer  # Alias for compatibility
         self.events_service = RealEventsService()
 
         self.prompts = self._load_prompts()
