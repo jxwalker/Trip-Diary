@@ -755,18 +755,45 @@ class UnifiedGuideService:
         PREFERENCES:
         {json.dumps(context.preferences, indent=2)}
 
-        Create detailed sections for:
-        1. Destination Overview & Highlights
-        2. Daily Itinerary Suggestions
-        3. Local Neighborhoods & Areas
-        4. Hidden Gems & Insider Tips
-        5. Cultural Insights & Etiquette
-        6. Transportation Guide
-        7. Safety & Practical Information
+        Return the response in this exact JSON format:
+        {{
+            "destination_overview": "Comprehensive overview of {context.destination} with key highlights and what makes it special",
+            "weather_analysis": "Weather information for {context.start_date} to {context.end_date} including temperature, precipitation, and what to expect",
+            "daily_itinerary": [
+                {{
+                    "day": 1,
+                    "date": "{context.start_date}",
+                    "activities": ["morning activity", "afternoon activity", "evening activity"],
+                    "recommendations": ["specific tips for this day"]
+                }}
+            ],
+            "restaurants": [
+                {{
+                    "name": "Restaurant Name",
+                    "cuisine": "Cuisine Type",
+                    "address": "Full Address",
+                    "rating": 4.5,
+                    "price_range": "moderate",
+                    "description": "Why this restaurant is recommended"
+                }}
+            ],
+            "attractions": [
+                {{
+                    "name": "Attraction Name",
+                    "description": "Detailed description",
+                    "address": "Full Address",
+                    "rating": 4.8,
+                    "type": "museum/landmark/park/etc"
+                }}
+            ],
+            "neighborhoods": ["List of interesting neighborhoods"],
+            "hidden_gems": ["List of lesser-known attractions"],
+            "cultural_insights": {{"etiquette": "Cultural tips", "customs": "Local customs"}},
+            "transportation": {{"getting_around": "Transportation options"}},
+            "safety_info": {{"general": "Safety tips"}}
+        }}
 
-        Provide specific addresses, phone numbers, websites, and booking
-        information. Make recommendations that align with the
-        {context.persona.value.replace('_', ' ')} persona.
+        Make all recommendations specific to the {context.persona.value.replace('_', ' ')} persona and provide real, detailed information.
         """
 
         try:
