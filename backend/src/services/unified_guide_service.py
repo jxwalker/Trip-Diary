@@ -811,13 +811,44 @@ class UnifiedGuideService:
         """
 
         try:
-            guide_content = await self.llm_parser.parse_guide(prompt)
+            import aiohttp
+            import json
             
-            if guide_content and not guide_content.get("error"):
-                guide_content["generation_source"] = "openai_fallback"
-                return guide_content
-            else:
-                return {"error": "OpenAI guide generation failed"}
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Authorization": f"Bearer {self.llm_parser.openai_api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": "gpt-4-turbo-preview",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are a travel guide expert. Create comprehensive, detailed travel guides with specific recommendations and practical information."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    "temperature": 0.3,
+                    "response_format": {"type": "json_object"}
+                }
+                
+                url = "https://api.openai.com/v1/chat/completions"
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        result_text = data["choices"][0]["message"]["content"]
+                        guide_content = json.loads(result_text)
+                        guide_content["generation_source"] = "openai_fallback"
+                        return guide_content
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"OpenAI API error: {response.status} - {error_text}")
+                        return {"error": f"OpenAI API error: {response.status}"}
                 
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {e}")
