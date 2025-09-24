@@ -257,8 +257,8 @@ class UnifiedGuideService:
         """Load weather-activity correlation rules"""
         return [
             WeatherActivityCorrelation(
-                temperature_range=(80, 100),
-                conditions=["sunny", "clear"],
+                temperature_range=(26, 100),
+                conditions=["clear", "sunny"],
                 recommended_activities=["beach", "swimming", "outdoor markets",
                                         "rooftop dining"],
                 avoid_activities=["intensive hiking", "long walking tours"],
@@ -267,8 +267,8 @@ class UnifiedGuideService:
                 special_notes="Stay hydrated and seek shade during peak hours"
             ),
             WeatherActivityCorrelation(
-                temperature_range=(60, 79),
-                conditions=["sunny", "partly cloudy"],
+                temperature_range=(16, 25),
+                conditions=["clear", "clouds", "partly cloudy"],
                 recommended_activities=["walking tours", "outdoor dining",
                                         "parks", "sightseeing"],
                 avoid_activities=[],
@@ -277,8 +277,8 @@ class UnifiedGuideService:
                 special_notes="Perfect weather for most outdoor activities"
             ),
             WeatherActivityCorrelation(
-                temperature_range=(40, 59),
-                conditions=["cloudy", "cool"],
+                temperature_range=(5, 15),
+                conditions=["clouds", "cloudy", "cool", "mist", "fog"],
                 recommended_activities=["museums", "indoor attractions",
                                         "cafes", "shopping"],
                 avoid_activities=["beach activities", "outdoor swimming"],
@@ -286,8 +286,8 @@ class UnifiedGuideService:
                 special_notes="Great for indoor cultural activities"
             ),
             WeatherActivityCorrelation(
-                temperature_range=(20, 39),
-                conditions=["cold", "winter"],
+                temperature_range=(-10, 4),
+                conditions=["cold", "winter", "snow"],
                 recommended_activities=["museums", "indoor markets",
                                         "theaters", "warm restaurants"],
                 avoid_activities=["outdoor dining", "beach",
@@ -297,8 +297,8 @@ class UnifiedGuideService:
                 special_notes="Focus on indoor activities and warm venues"
             ),
             WeatherActivityCorrelation(
-                temperature_range=(32, 100),
-                conditions=["rain", "showers", "thunderstorms"],
+                temperature_range=(-10, 100),
+                conditions=["rain", "drizzle", "showers", "thunderstorm"],
                 recommended_activities=["museums", "shopping malls",
                                         "covered markets",
                                         "indoor entertainment"],
@@ -1094,8 +1094,8 @@ class UnifiedGuideService:
             if i < len(daily_forecasts):
                 weather_day = daily_forecasts[i]
 
-                temp = weather_day.get("temperature", {}).get("high", 70)
-                conditions = weather_day.get("conditions", "").lower()
+                temp = weather_day.get("temp_high", 70)
+                conditions = weather_day.get("condition", "").lower()
 
                 matching_correlation = None
                 for correlation in self.weather_correlations:
@@ -1157,9 +1157,9 @@ class UnifiedGuideService:
         recommendations = set()
 
         for day in daily_forecasts:
-            temp_high = day.get("temperature", {}).get("high", 70)
-            temp_low = day.get("temperature", {}).get("low", 60)
-            conditions = day.get("conditions", "").lower()
+            temp_high = day.get("temp_high", 70)
+            temp_low = day.get("temp_low", 60)
+            conditions = day.get("condition", "").lower()
 
             if temp_high >= 80:
                 recommendations.update([
