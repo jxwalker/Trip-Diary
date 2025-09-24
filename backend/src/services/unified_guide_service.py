@@ -495,11 +495,14 @@ class UnifiedGuideService:
         interests = preferences.get("specialInterests", [])
         for interest in interests:
             interest_lower = interest.lower()
-            if any(word in interest_lower for word in ["food", "dining", "culinary", "restaurant"]):
+            if any(word in interest_lower for word in ["food", "dining",
+                                                               "culinary", "restaurant"]):
                 persona_scores[PersonaType.FOODIE] += 2
-            elif any(word in interest_lower for word in ["adventure", "hiking", "outdoor", "sports"]):
+            elif any(word in interest_lower for word in ["adventure", "hiking",
+                                                                  "outdoor", "sports"]):
                 persona_scores[PersonaType.ADVENTURE_SEEKER] += 2
-            elif any(word in interest_lower for word in ["culture", "museum", "history", "art"]):
+            elif any(word in interest_lower for word in ["culture", "museum",
+                                                                  "history", "art"]):
                 persona_scores[PersonaType.CULTURAL_ENTHUSIAST] += 2
             elif any(word in interest_lower for word in ["luxury", "spa", "premium", "exclusive"]):
                 persona_scores[PersonaType.LUXURY_TRAVELER] += 2
@@ -550,7 +553,8 @@ class UnifiedGuideService:
                 timeout=60  # 60 second total timeout
             )
 
-            weather_data, restaurants, attractions, events, perplexity_data, practical_info = results
+            (weather_data, restaurants, attractions, events,
+             perplexity_data, practical_info) = results
 
             if isinstance(weather_data, Exception):
                 logger.warning(f"Weather data fetch failed: {weather_data}")
@@ -632,8 +636,10 @@ class UnifiedGuideService:
 
         {self.prompts["travel_guide"]["weather_integration"]}
 
-        Provide specific addresses, phone numbers, websites, and booking information for everything.
-        Make recommendations that align with the {context.persona.value.replace('_', ' ')} persona.
+        Provide specific addresses, phone numbers, websites, and booking
+        information for everything.
+        Make recommendations that align with the
+        {context.persona.value.replace('_', ' ')} persona.
         """
 
         try:
@@ -781,8 +787,8 @@ class UnifiedGuideService:
             return {
                 "summary": "Travel guide generated successfully",
                 "destination_insights": (
-                    guide_content[:500] + "..." 
-                    if len(guide_content) > 500 
+                    guide_content[:500] + "..."
+                    if len(guide_content) > 500
                     else guide_content
                 ),
                 "daily_itinerary": [],
@@ -822,7 +828,8 @@ class UnifiedGuideService:
                     enhanced = await self.places_enhancer.enhance_place_data(restaurant)
                     enhanced_restaurants.append(enhanced)
                 except Exception as e:
-                    logger.warning(f"Failed to enhance restaurant {restaurant.get('name', 'Unknown')}: {e}")
+                    logger.warning(f"Failed to enhance restaurant "
+                                   f"{restaurant.get('name', 'Unknown')}: {e}")
                     enhanced_restaurants.append(restaurant)
             restaurants = enhanced_restaurants
 
@@ -859,7 +866,8 @@ class UnifiedGuideService:
                            for keyword in ["museum", "art_gallery", "church",
                                           "historical"])
                 ]
-                other_attractions = [attr for attr in attractions if attr not in cultural_attractions]
+                other_attractions = [attr for attr in attractions
+                                     if attr not in cultural_attractions]
                 attractions = cultural_attractions + other_attractions
 
             elif context.persona == PersonaType.ADVENTURE_SEEKER:
@@ -869,7 +877,8 @@ class UnifiedGuideService:
                            for keyword in ["park", "natural_feature",
                                           "amusement_park"])
                 ]
-                other_attractions = [attr for attr in attractions if attr not in adventure_attractions]
+                other_attractions = [attr for attr in attractions
+                                     if attr not in adventure_attractions]
                 attractions = adventure_attractions + other_attractions
 
             return attractions[:8]  # Top 8 attractions
@@ -951,7 +960,8 @@ class UnifiedGuideService:
                                 else:
                                     if "outdoor" in activity_lower:
                                         alternative = activity.replace("outdoor", "indoor")
-                                        filtered_activities.append(f"{alternative} (weather alternative)")
+                                        filtered_activities.append(
+                                            f"{alternative} (weather alternative)")
 
                             day_plan[time_period] = filtered_activities
 
@@ -963,7 +973,9 @@ class UnifiedGuideService:
 
         return guide_data
 
-    def _generate_packing_recommendations(self, daily_forecasts: List[Dict[str, Any]]) -> List[str]:
+    def _generate_packing_recommendations(
+        self, daily_forecasts: List[Dict[str, Any]]
+    ) -> List[str]:
         """Generate packing recommendations based on weather forecast"""
         recommendations = set()
 
@@ -973,7 +985,8 @@ class UnifiedGuideService:
             conditions = day.get("conditions", "").lower()
 
             if temp_high >= 80:
-                recommendations.update(["Light, breathable clothing", "Sun hat", "Sunscreen", "Sunglasses"])
+                recommendations.update(["Light, breathable clothing", "Sun hat",
+                                        "Sunscreen", "Sunglasses"])
             elif temp_high >= 60:
                 recommendations.update(["Comfortable layers", "Light jacket", "Walking shoes"])
             elif temp_high >= 40:
@@ -1004,7 +1017,8 @@ class UnifiedGuideService:
 
         rainy_days = [d for d in daily_forecasts if "rain" in d.get("conditions", "").lower()]
         if rainy_days:
-            highlights.append(f"Rain expected on {len(rainy_days)} day(s) - plan indoor activities")
+            highlights.append(f"Rain expected on {len(rainy_days)} day(s) - "
+                             f"plan indoor activities")
 
         temps = [d.get("temperature", {}).get("high", 70) for d in daily_forecasts]
         if temps:
