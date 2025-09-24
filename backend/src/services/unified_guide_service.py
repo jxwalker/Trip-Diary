@@ -208,8 +208,9 @@ class UnifiedGuideService:
                     },
                     PersonaType.FAMILY_FRIENDLY: {
                         "tone": "Warm, practical, safety-conscious",
-                        "focus": ("Kid-friendly activities, family restaurants, "
-                                 "safe neighborhoods, educational experiences"),
+                        "focus": ("Kid-friendly activities, family "
+                                 "restaurants, safe neighborhoods, "
+                                 "educational experiences"),
                         "budget_range": "$$-$$$",
                         "activity_preference": ("Safe, engaging, "
                                          "age-appropriate")
