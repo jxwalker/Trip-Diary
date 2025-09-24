@@ -588,7 +588,10 @@ class UnifiedGuideService:
                 logger.warning(f"Events fetch failed: {events}")
                 events = []
 
-            if isinstance(perplexity_data, Exception):
+            if isinstance(perplexity_data, Exception) or (
+                isinstance(perplexity_data, dict) and 
+                perplexity_data.get("error")
+            ):
                 logger.warning(
                     f"Perplexity data fetch failed: {perplexity_data}"
                 )
