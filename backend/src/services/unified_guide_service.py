@@ -371,16 +371,18 @@ class UnifiedGuideService:
 
             if progress_callback:
                 await progress_callback(95, "Validating guide quality")
-            is_valid, errors, validation_details = GuideValidator.validate_guide(
-                guide_data)
+            is_valid, errors, validation_details = (
+                GuideValidator.validate_guide(guide_data)
+            )
 
             if not is_valid:
                 logger.warning(f"Guide validation failed: {errors}")
                 guide_data = await self._auto_fix_guide_issues(
                     guide_data, errors, context)
 
-                (is_valid, errors,
-                 validation_details) = GuideValidator.validate_guide(guide_data)
+                (is_valid, errors, validation_details) = (
+                    GuideValidator.validate_guide(guide_data)
+                )
 
                 if not is_valid:
                     return {
@@ -415,7 +417,9 @@ class UnifiedGuideService:
             self.generation_stats["average_time"] = (
                 (self.generation_stats["average_time"] *
                  (self.generation_stats["successful_requests"] - 1) +
-                 generation_time) / self.generation_stats["successful_requests"]
+                 generation_time) / (
+                    self.generation_stats["successful_requests"]
+                )
             )
 
             persona_key = context.persona.value
@@ -583,12 +587,16 @@ class UnifiedGuideService:
                 events = []
 
             if isinstance(perplexity_data, Exception):
-                logger.error(f"Perplexity data fetch failed: {perplexity_data}")
+                logger.error(
+                    f"Perplexity data fetch failed: {perplexity_data}"
+                )
                 return {"error": f"Failed to fetch guide content: "
                                 f"{str(perplexity_data)}"}
 
             if isinstance(practical_info, Exception):
-                logger.warning(f"Practical info fetch failed: {practical_info}")
+                logger.warning(
+                    f"Practical info fetch failed: {practical_info}"
+                )
                 practical_info = {}
 
             combined_data = perplexity_data.copy() if perplexity_data else {}
@@ -610,7 +618,9 @@ class UnifiedGuideService:
 
         except asyncio.TimeoutError:
             logger.error(f"Timeout fetching data for {context.destination}")
-            return {"error": f"Timeout fetching data for {context.destination}"}
+            return {
+                "error": f"Timeout fetching data for {context.destination}"
+            }
         except Exception as e:
             logger.error(f"Error in concurrent data fetching: {e}")
             return {"error": f"Error fetching data: {str(e)}"}
@@ -691,7 +701,9 @@ class UnifiedGuideService:
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        guide_content = data["choices"][0]["message"]["content"]
+                        guide_content = (
+                            data["choices"][0]["message"]["content"]
+                        )
                         citations = data.get("citations", [])
 
                         parsed_guide = await self._parse_guide_with_llm(
@@ -943,7 +955,8 @@ class UnifiedGuideService:
         """Apply weather-activity correlation to the guide"""
 
         weather_data = guide_data.get("weather_data", {})
-        if weather_data.get("error") or not weather_data.get("daily_forecasts"):
+        if (weather_data.get("error") or
+            not weather_data.get("daily_forecasts")):
             logger.warning("No weather data available for correlation")
             return guide_data
 
@@ -1022,14 +1035,18 @@ class UnifiedGuideService:
             conditions = day.get("conditions", "").lower()
 
             if temp_high >= 80:
-                recommendations.update(["Light, breathable clothing", "Sun hat",
-                                        "Sunscreen", "Sunglasses"])
+                recommendations.update([
+                    "Light, breathable clothing", "Sun hat",
+                    "Sunscreen", "Sunglasses"
+                ])
             elif temp_high >= 60:
                 recommendations.update([
                     "Comfortable layers", "Light jacket", "Walking shoes"
                 ])
             elif temp_high >= 40:
-                recommendations.update(["Warm layers", "Jacket", "Closed shoes"])
+                recommendations.update([
+                    "Warm layers", "Jacket", "Closed shoes"
+                ])
             else:
                 recommendations.update([
                     "Heavy coat", "Warm layers", "Gloves", "Warm hat"
@@ -1077,7 +1094,9 @@ class UnifiedGuideService:
         ]
         if temps:
             min_temp, max_temp = min(temps), max(temps)
-            highlights.append(f"Temperature range: {min_temp}°F - {max_temp}°F")
+            highlights.append(
+                f"Temperature range: {min_temp}°F - {max_temp}°F"
+            )
 
         return highlights
 
@@ -1102,7 +1121,9 @@ class UnifiedGuideService:
                     restaurant, context.persona))
             personalized_restaurants.append(restaurant)
 
-        personalized_restaurants.sort(key=lambda r: r.get("persona_match", 0), reverse=True)
+        personalized_restaurants.sort(
+            key=lambda r: r.get("persona_match", 0), reverse=True
+        )
         guide_data["restaurants"] = personalized_restaurants[:12]  # Top 12 for persona
 
         attractions = guide_data.get("attractions", [])
