@@ -10,6 +10,14 @@ const nextConfig = {
     // Also ignore TypeScript errors during builds for now
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: 'http://localhost:8000/api/proxy/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
