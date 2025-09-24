@@ -420,8 +420,8 @@ class UnifiedGuideService:
 
             persona_key = context.persona.value
             self.generation_stats["persona_distribution"][persona_key] = (
-                self.generation_stats["persona_distribution"].get(persona_key, 0) +
-                1
+                self.generation_stats["persona_distribution"].get(
+                    persona_key, 0) + 1
             )
 
             self.generation_stats["quality_scores"].append(
@@ -549,7 +549,8 @@ class UnifiedGuideService:
         )
         tasks.append(events_task)
 
-        perplexity_task = self._generate_with_perplexity(context, progress_callback)
+        perplexity_task = self._generate_with_perplexity(
+            context, progress_callback)
         tasks.append(perplexity_task)
 
         practical_task = self._fetch_practical_info(context)
@@ -701,9 +702,12 @@ class UnifiedGuideService:
                         return parsed_guide
                     else:
                         error_text = await response.text()
-                        logger.error(f"Perplexity API error: {response.status} - "
-                                    f"{error_text}")
-                        return {"error": f"Perplexity API error: {response.status}"}
+                        logger.error(
+                            f"Perplexity API error: {response.status} - "
+                            f"{error_text}")
+                        return {
+                            "error": f"Perplexity API error: {response.status}"
+                        }
 
         except Exception as e:
             logger.error(f"Error calling Perplexity API: {e}")
@@ -871,7 +875,8 @@ class UnifiedGuideService:
     async def _fetch_google_places_attractions(
         self, context: GuideGenerationContext
     ) -> List[Dict[str, Any]]:
-        """Fetch attractions using Google Places API with persona-based filtering"""
+        """Fetch attractions using Google Places API with
+        persona-based filtering"""
         try:
             await self.google_places_service.initialize()
 
@@ -966,7 +971,8 @@ class UnifiedGuideService:
                         "clothing": matching_correlation.clothing_suggestions,
                         "recommended_activities":
                             matching_correlation.recommended_activities,
-                        "avoid_activities": matching_correlation.avoid_activities,
+                        "avoid_activities":
+                            matching_correlation.avoid_activities,
                         "special_notes": matching_correlation.special_notes
                     }
 
@@ -988,7 +994,8 @@ class UnifiedGuideService:
                                         alternative = activity.replace(
                                             "outdoor", "indoor")
                                         filtered_activities.append(
-                                            f"{alternative} (weather alternative)")
+                                            f"{alternative} "
+                                            f"(weather alternative)")
 
                             day_plan[time_period] = filtered_activities
 
@@ -997,7 +1004,8 @@ class UnifiedGuideService:
             "packing_recommendations": self._generate_packing_recommendations(
                 daily_forecasts
             ),
-            "weather_highlights": self._generate_weather_highlights(daily_forecasts)
+            "weather_highlights": self._generate_weather_highlights(
+                daily_forecasts)
         }
 
         return guide_data
@@ -1028,32 +1036,45 @@ class UnifiedGuideService:
                 ])
 
             if any(word in conditions for word in ["rain", "shower", "storm"]):
-                recommendations.update(["Waterproof jacket", "Umbrella", "Waterproof shoes"])
+                recommendations.update([
+                    "Waterproof jacket", "Umbrella", "Waterproof shoes"
+                ])
 
             if temp_low < 50:
                 recommendations.add("Warm evening wear")
 
         return sorted(list(recommendations))
 
-    def _generate_weather_highlights(self, daily_forecasts: List[Dict[str, Any]]) -> List[str]:
+    def _generate_weather_highlights(
+        self, daily_forecasts: List[Dict[str, Any]]
+    ) -> List[str]:
         """Generate weather highlights for the trip"""
         highlights = []
 
         if not daily_forecasts:
             return highlights
 
-        best_day = max(daily_forecasts, key=lambda d: d.get("temperature", {}).get("high", 0))
+        best_day = max(
+            daily_forecasts,
+            key=lambda d: d.get("temperature", {}).get("high", 0)
+        )
         highlights.append(
             f"Best weather expected on {best_day.get('date', 'TBD')} - "
             f"perfect for outdoor activities"
         )
 
-        rainy_days = [d for d in daily_forecasts if "rain" in d.get("conditions", "").lower()]
+        rainy_days = [
+            d for d in daily_forecasts
+            if "rain" in d.get("conditions", "").lower()
+        ]
         if rainy_days:
             highlights.append(f"Rain expected on {len(rainy_days)} day(s) - "
                              f"plan indoor activities")
 
-        temps = [d.get("temperature", {}).get("high", 70) for d in daily_forecasts]
+        temps = [
+            d.get("temperature", {}).get("high", 70)
+            for d in daily_forecasts
+        ]
         if temps:
             min_temp, max_temp = min(temps), max(temps)
             highlights.append(f"Temperature range: {min_temp}°F - {max_temp}°F")
