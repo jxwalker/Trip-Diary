@@ -403,30 +403,6 @@ class WeatherService:
             )
         }
     
-    def _get_packing_suggestions(self, forecasts: List[Dict]) -> List[str]:
-        """Generate packing suggestions based on weather"""
-        suggestions = ["Comfortable walking shoes", "Sunglasses"]
-        
-        # Check temperatures
-        temps = [f["temp_high"] for f in forecasts] + [f["temp_low"] for f in forecasts]
-        avg_temp = sum(temps) / len(temps)
-        
-        if avg_temp < 10:
-            suggestions.extend(["Warm jacket", "Gloves", "Scarf"])
-        elif avg_temp < 20:
-            suggestions.extend(["Light jacket", "Long pants", "Sweater"])
-        else:
-            suggestions.extend(["Light clothing", "Shorts", "T-shirts"])
-        
-        # Check for rain
-        if any("rain" in f["condition"].lower() for f in forecasts):
-            suggestions.extend(["Umbrella", "Rain jacket"])
-        
-        # Check for sun
-        if any(f["condition"] == "Clear" for f in forecasts):
-            suggestions.append("Sunscreen")
-        
-        return list(set(suggestions))  # Remove duplicates
     
     def _get_typical_weather(self, destination: str, month: int) -> Dict:
         """Get typical weather patterns for a destination and month - NO HARDCODED DATA"""
