@@ -107,6 +107,8 @@ class UnifiedGuideService:
         self.perplexity_api_key = os.getenv('PERPLEXITY_API_KEY') or get_api_key("perplexity")
         self.openai_api_key = get_api_key("openai")
         self.anthropic_api_key = get_api_key("anthropic")
+        self.google_maps_api_key = os.getenv('GOOGLE_MAPS_API_KEY')
+        self.openweather_api_key = os.getenv('OPENWEATHER_API_KEY')
 
         # Validate required API keys
         if not any([self.perplexity_api_key, self.openai_api_key,
@@ -549,10 +551,12 @@ class UnifiedGuideService:
         )
         tasks.append(weather_task)
 
-        restaurants_task = self._fetch_google_places_restaurants(context)
+        restaurants_task = self._fetch_google_places_restaurants(
+            context.destination, context.preferences)
         tasks.append(restaurants_task)
 
-        attractions_task = self._fetch_google_places_attractions(context)
+        attractions_task = self._fetch_google_places_attractions(
+            context.destination, context.preferences)
         tasks.append(attractions_task)
 
         events_task = self.events_service.get_events_for_dates(
@@ -562,7 +566,8 @@ class UnifiedGuideService:
         tasks.append(events_task)
 
         perplexity_task = self._generate_with_perplexity(
-            context, progress_callback)
+            context.destination, context.start_date, context.end_date, 
+            context.preferences, context)
         tasks.append(perplexity_task)
 
         practical_task = self._fetch_practical_info(context)
@@ -962,14 +967,14 @@ class UnifiedGuideService:
             }
 
     async def _fetch_google_places_restaurants(
-        self, context: GuideGenerationContext
+        self, destination: str, preferences: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Fetch restaurants using Perplexity and enhance with Google Places"""
         try:
             perplexity_prompt = (
-                f"Find the top 10 restaurants in {context.destination}. "
+                f"Find the top 10 restaurants in {destination}. "
                 f"Focus on restaurants that would appeal to a "
-                f"{context.persona} traveler. "
+                f"{preferences.get('persona', 'Cultural Enthusiast')} traveler. "
                 "Return as JSON array with name, address, cuisine_type, "
                 "price_range, rating."
             )
@@ -1012,7 +1017,7 @@ class UnifiedGuideService:
             return []
 
     async def _fetch_google_places_attractions(
-        self, context: GuideGenerationContext
+        self, destination: str, preferences: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Fetch attractions using Google Places API with
         persona-based filtering"""
@@ -1020,11 +1025,12 @@ class UnifiedGuideService:
             await self.google_places_service.initialize()
 
             attractions = await self.google_places_service.search_attractions(
-                location=context.destination,
+                location=destination,
                 limit=10
             )
 
-            if context.persona == PersonaType.CULTURAL_ENTHUSIAST:
+            persona = preferences.get('persona', 'Cultural Enthusiast')
+            if persona == 'Cultural Enthusiast':
                 cultural_attractions = [
                     attr for attr in attractions
                     if any(keyword in attr.get("types", [])
@@ -1035,7 +1041,7 @@ class UnifiedGuideService:
                                      if attr not in cultural_attractions]
                 attractions = cultural_attractions + other_attractions
 
-            elif context.persona == PersonaType.ADVENTURE_SEEKER:
+            elif persona == 'Adventure Seeker':
                 adventure_attractions = [
                     attr for attr in attractions
                     if any(keyword in attr.get("types", [])

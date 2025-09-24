@@ -308,17 +308,7 @@ Return ONLY the JSON object, no other text."""
                         }
                     ],
                     "temperature": 0.1,
-                    "max_tokens": 4000,
-                    "top_p": 0.9,
-                    "return_citations": True,
-                    "search_domain_filter": ["tripadvisor.com", "yelp.com", "timeout.com"],
-                    "return_images": False,
-                    "return_related_questions": False,
-                    "search_recency_filter": "month",
-                    "top_k": 0,
-                    "stream": False,
-                    "presence_penalty": 0,
-                    "frequency_penalty": 1
+                    "max_tokens": 4000
                 }
                 
                 url = "https://api.perplexity.ai/chat/completions"
