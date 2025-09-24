@@ -603,33 +603,34 @@ class EnhancedGooglePlacesService:
                     logger.info(
                         f"Searching for {attraction_type} near {coordinates}"
                     )
-                    # Use Text Search API (Places API New) for attractions
+                    # Use Places API (New) Text Search for attractions
                     query = f"{attraction_type.replace('_', ' ')} near {location}"
-            import aiohttp
-            async with aiohttp.ClientSession() as session:
-                url = "https://places.googleapis.com/v1/places:searchText"
-                headers = {
-                    "Content-Type": "application/json",
-                    "X-Goog-Api-Key": self.api_key,
-                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
-                }
-                payload = {
-                    "textQuery": query,
-                    "maxResultCount": limit if 'limit' in locals() else 20
-                }
-                
-                async with session.post(url, json=payload, headers=headers) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logger.error(f"Places API (New) search failed: {error_text}")
-                        places_result = {"results": [], "status": "FAILED"}
-                    else:
-                        data = await response.json()
-                        places_result = {"results": data.get("places", []), "status": "OK"}
+                    
+                    import aiohttp
+                    async with aiohttp.ClientSession() as session:
+                        url = "https://places.googleapis.com/v1/places:searchText"
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Goog-Api-Key": self.api_key,
+                            "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                        }
+                        payload = {
+                            "textQuery": query,
+                            "maxResultCount": 5
+                        }
+                        
+                        async with session.post(url, json=payload, headers=headers) as response:
+                            if response.status != 200:
+                                error_text = await response.text()
+                                logger.error(f"Places API (New) search failed: {error_text}")
+                                places_result = {"results": [], "status": "FAILED"}
+                            else:
+                                data = await response.json()
+                                places_result = {"results": data.get("places", []), "status": "OK"}
 
                     if places_result.get('status') != 'OK':
                         logger.warning(
-                            f"Places nearby search failed for {attraction_type}: "
+                            f"Places search failed for {attraction_type}: "
                             f"{places_result.get('status')}"
                         )
                         continue
@@ -641,18 +642,16 @@ class EnhancedGooglePlacesService:
                 # Top 5 per type
                 for place in places_result.get('results', [])[:5]:
                     try:
-                        place_id = place['place_id']
-                        details = self.client.place(
-                            place_id,
-                            fields=[
-                                'name', 'formatted_address', 
-                                'formatted_phone_number',
-                                'rating', 'user_ratings_total', 'website', 
-                                'opening_hours',
-                                'photos', 'url', 'geometry', 'types', 
-                                'business_status'
-                            ]
-                        )['result']
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'types': place.get('types', []),
+                            'photos': place.get('photos', []),
+                            'place_id': place_id,
+                            'business_status': 'OPERATIONAL'
+                        }
 
                         attraction = await self._format_attraction_data(
                             details, place_id, attraction_type
