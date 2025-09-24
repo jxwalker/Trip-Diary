@@ -198,6 +198,51 @@ class EnhancedGooglePlacesService:
 
             # Use Text Search API (Places API New) instead of legacy nearby search
             search_radius = radius if radius else 5000  # Default 5km radius
+            
+            # Use direct HTTP calls to Places API (New) Text Search
+            import aiohttp
+            import json
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.userRatingCount,places.photos,places.types,places.location'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            
+            request_body = {
+                "textQuery": query,
+                "locationBias": {
+                    "circle": {
+                        "center": {
+                            "latitude": coordinates[0],
+                            "longitude": coordinates[1]
+                        },
+                        "radius": search_radius
+                    }
+                },
+                "maxResultCount": min(limit, 20)
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places_results = data.get('places', [])
+                    elif response.status == 403:
+                        logger.warning("Places API (New) not enabled, falling back to legacy API")
+                        self.use_legacy_api = True
+                        places_result = self.client.places_nearby(
+                            location=coordinates,
+                            radius=search_radius,
+                            type='restaurant',
+                            keyword=cuisine_type
+                        )
+                        places_results = places_result.get('results', [])
+                    else:
+                        logger.error(f"Places API error: {response.status}")
+                        return []
             query = f"restaurant {cuisine_type} near {location}" if cuisine_type else f"restaurant near {location}"
             
             import aiohttp
@@ -235,19 +280,56 @@ class EnhancedGooglePlacesService:
             # Process results
             for place in places_result.get('results', [])[:limit]:
                 try:
-                    # Get detailed information
-                    place_id = place['place_id']
-                    details = self.client.place(
-                        place_id,
-                        fields=[
-                            'name', 'formatted_address', 
-                            'formatted_phone_number', 'rating', 
-                            'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photos', 'reviews', 'url', 
-                            'geometry',
-                            'types', 'business_status'
-                        ]
-                    )['result']
+                    # Get detailed information using Places API (New) Place Details
+                    place_id = place.get('id') or place.get('place_id')
+                    if not place_id:
+                        continue
+                    
+                    # Use Places API (New) Place Details endpoint
+                    async with aiohttp.ClientSession() as session:
+                        url = f"https://places.googleapis.com/v1/places/{place_id}"
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Goog-Api-Key": self.api_key,
+                            "X-Goog-FieldMask": "displayName,formattedAddress,internationalPhoneNumber,rating,userRatingCount,priceLevel,websiteUri,regularOpeningHours,photos,reviews,googleMapsUri,location,types,businessStatus"
+                        }
+                        
+                        async with session.get(url, headers=headers) as response:
+                            if response.status == 200:
+                                place_data = await response.json()
+                                details = {
+                                    'name': place_data.get('displayName', {}).get('text', ''),
+                                    'formatted_address': place_data.get('formattedAddress', ''),
+                                    'formatted_phone_number': place_data.get('internationalPhoneNumber', ''),
+                                    'rating': place_data.get('rating', 0),
+                                    'user_ratings_total': place_data.get('userRatingCount', 0),
+                                    'price_level': place_data.get('priceLevel', 0),
+                                    'website': place_data.get('websiteUri', ''),
+                                    'opening_hours': place_data.get('regularOpeningHours', {}),
+                                    'photos': place_data.get('photos', []),
+                                    'reviews': place_data.get('reviews', []),
+                                    'url': place_data.get('googleMapsUri', ''),
+                                    'geometry': {
+                                        'location': {
+                                            'lat': place_data.get('location', {}).get('latitude', 0),
+                                            'lng': place_data.get('location', {}).get('longitude', 0)
+                                        }
+                                    },
+                                    'types': place_data.get('types', []),
+                                    'business_status': place_data.get('businessStatus', '')
+                                }
+                            else:
+                                details = self.client.place(
+                                    place_id,
+                                    fields=[
+                                        'name', 'formatted_address', 
+                                        'formatted_phone_number', 'rating', 
+                                        'user_ratings_total', 'price_level', 'website',
+                                        'opening_hours', 'photos', 'reviews', 'url', 
+                                        'geometry',
+                                        'types', 'business_status'
+                                    ]
+                                )['result']
                     
                     # Format restaurant data
                     restaurant = await self._format_restaurant_data(

@@ -107,20 +107,69 @@ class GooglePlacesEnhancer:
             return restaurant
             
         try:
-            # Search for the restaurant
+            # Search for the restaurant using Places API (New)
             query = (f"{restaurant.get('name', '')} restaurant "
                     f"{restaurant.get('address', '')} {destination}")
-            places_result = self.client.places(query=query)
             
-            if not places_result.get('results'):
-                print(f"[DEBUG] No Google Places results for: {query}")
-                return restaurant
-                
-            place = places_result['results'][0]
-            place_id = place['place_id']
+            import aiohttp
+            import json
             
-            # Get detailed information
-            details = self.client.place(place_id)['result']
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.photos,places.regularOpeningHours,places.website,places.nationalPhoneNumber,places.location,places.id'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            request_body = {
+                "textQuery": query,
+                "maxResultCount": 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places = data.get('places', [])
+                        if not places:
+                            print(f"[DEBUG] No Google Places results for: {query}")
+                            return restaurant
+                        
+                        place = places[0]
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'price_level': place.get('priceLevel', 0),
+                            'photos': place.get('photos', []),
+                            'opening_hours': place.get('regularOpeningHours', {}),
+                            'website': place.get('website', ''),
+                            'formatted_phone_number': place.get('nationalPhoneNumber', ''),
+                            'geometry': {
+                                'location': {
+                                    'lat': place.get('location', {}).get('latitude', 0),
+                                    'lng': place.get('location', {}).get('longitude', 0)
+                                }
+                            }
+                        }
+                    else:
+                        print(f"[DEBUG] Places API error: {response.status}")
+                        if hasattr(self, 'client') and self.client:
+                            try:
+                                places_result = self.client.places(query=query)
+                                if places_result.get('results'):
+                                    place = places_result['results'][0]
+                                    place_id = place['place_id']
+                                    details = self.client.place(place_id)['result']
+                                else:
+                                    return restaurant
+                            except Exception as e:
+                                print(f"[DEBUG] Legacy API fallback failed: {e}")
+                                return restaurant
+                        else:
+                            return restaurant
             
             # Enhance restaurant data
             enhanced = restaurant.copy()
@@ -268,19 +317,65 @@ class GooglePlacesEnhancer:
             return attraction
             
         try:
-            # Search for the attraction
+            # Search for the attraction using Places API (New)
             query = (f"{attraction.get('name', '')} "
                     f"{attraction.get('address', '')} {destination}")
-            places_result = self.client.places(query=query)
             
-            if not places_result.get('results'):
-                return attraction
-                
-            place = places_result['results'][0]
-            place_id = place['place_id']
+            import aiohttp
+            import json
             
-            # Get detailed information
-            details = self.client.place(place_id)['result']
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.photos,places.types,places.regularOpeningHours,places.website,places.location,places.id'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            request_body = {
+                "textQuery": query,
+                "maxResultCount": 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places = data.get('places', [])
+                        if not places:
+                            return attraction
+                        
+                        place = places[0]
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'photos': place.get('photos', []),
+                            'types': place.get('types', []),
+                            'opening_hours': place.get('regularOpeningHours', {}),
+                            'website': place.get('website', ''),
+                            'geometry': {
+                                'location': {
+                                    'lat': place.get('location', {}).get('latitude', 0),
+                                    'lng': place.get('location', {}).get('longitude', 0)
+                                }
+                            }
+                        }
+                    else:
+                        if hasattr(self, 'client') and self.client:
+                            try:
+                                places_result = self.client.places(query=query)
+                                if places_result.get('results'):
+                                    place = places_result['results'][0]
+                                    place_id = place['place_id']
+                                    details = self.client.place(place_id)['result']
+                                else:
+                                    return attraction
+                            except Exception as e:
+                                return attraction
+                        else:
+                            return attraction
             
             # Enhance attraction data
             enhanced = attraction.copy()

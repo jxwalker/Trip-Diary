@@ -62,16 +62,40 @@ class PlacesService:
             for cuisine in cuisines[:3]:  # Limit to top 3 cuisines
                 query = f"{cuisine} restaurant in {location}"
                 
-                # Use Google Places API
-                places_result = self.gmaps.places(
-                    query=query,
-                    type='restaurant',
-                    min_price=price_level[0] if price_level else None,
-                    max_price=price_level[1] if price_level else None
-                )
+                import aiohttp
+                import json
+                
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': self.api_key,
+                    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.userRatingCount'
+                }
+                
+                text_search_url = "https://places.googleapis.com/v1/places:searchText"
+                request_body = {
+                    "textQuery": query,
+                    "maxResultCount": 20
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            places_result = {'results': data.get('places', [])}
+                        else:
+                            places_result = {'results': []}
                 
                 for place in places_result.get('results', [])[:3]:
-                    # Get detailed information
+                    if isinstance(place, dict) and 'displayName' in place:
+                        place_data = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'types': place.get('types', [])
+                        }
+                    else:
+                        place_data = place
                     details = self.gmaps.place(place['place_id'])['result']
                     
                     restaurant = {
@@ -173,10 +197,41 @@ class PlacesService:
             # Search for each type using Places API (New) text search
             for place_type in set(types_to_search):
                 query = f"{place_type.replace('_', ' ')} in {location}"
-                places_result = self.gmaps.places(query=query)
+                
+                import aiohttp
+                import json
+                
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': self.api_key,
+                    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.types'
+                }
+                
+                text_search_url = "https://places.googleapis.com/v1/places:searchText"
+                request_body = {
+                    "textQuery": query,
+                    "maxResultCount": 3
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            places_result = {'results': data.get('places', [])}
+                        else:
+                            places_result = {'results': []}
                 
                 for place in places_result.get('results', [])[:3]:
-                    # Get detailed information
+                    if isinstance(place, dict) and 'displayName' in place:
+                        place_data = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'types': place.get('types', [])
+                        }
+                    else:
+                        place_data = place
                     details = self.gmaps.place(place['place_id'])['result']
                     
                     attraction = {
