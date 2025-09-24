@@ -1607,7 +1607,9 @@ class UnifiedGuideService:
             {document_content}
             """
 
-            extracted_data = await self.llm_parser.parse_guide(full_prompt)
+            extracted_data = await self.llm_parser.parse_guide(
+                full_prompt
+            )
 
             if not isinstance(extracted_data, dict):
                 extracted_data = {}
