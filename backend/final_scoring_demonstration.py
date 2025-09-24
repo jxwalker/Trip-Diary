@@ -135,7 +135,7 @@ async def demonstrate_scoring_system():
                 improver.pdf_renderer.render_magazine_pdf,
                 guide=guide,
                 itinerary=itinerary,
-                output_path=pdf_filename
+                output_path=str(pdf_filename)
             )
             
             file_size = pdf_path.stat().st_size
