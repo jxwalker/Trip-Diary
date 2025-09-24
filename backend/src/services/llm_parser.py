@@ -300,14 +300,25 @@ Return ONLY the JSON object, no other text."""
                             "role": "system",
                             "content": ("You are a data extraction expert. "
                                        "Extract structured data from travel "
-                                       "guides and return valid JSON.")
+                                       "guides and return valid JSON format only.")
                         },
                         {
                             "role": "user",
-                            "content": prompt
+                            "content": f"{prompt}\n\nPlease respond with valid JSON format only."
                         }
                     ],
-                    "temperature": 0.1
+                    "temperature": 0.1,
+                    "max_tokens": 4000,
+                    "top_p": 0.9,
+                    "return_citations": True,
+                    "search_domain_filter": ["tripadvisor.com", "yelp.com", "timeout.com"],
+                    "return_images": False,
+                    "return_related_questions": False,
+                    "search_recency_filter": "month",
+                    "top_k": 0,
+                    "stream": False,
+                    "presence_penalty": 0,
+                    "frequency_penalty": 1
                 }
                 
                 url = "https://api.perplexity.ai/chat/completions"
@@ -322,9 +333,16 @@ Return ONLY the JSON object, no other text."""
                         json_end = result_text.rfind('}') + 1
                         if json_start >= 0 and json_end > json_start:
                             json_str = result_text[json_start:json_end]
-                            return json.loads(json_str)
+                            parsed_data = json.loads(json_str)
+                            parsed_data["source"] = "perplexity"
+                            return parsed_data
                         else:
-                            return json.loads(result_text)
+                            try:
+                                parsed_data = json.loads(result_text)
+                                parsed_data["source"] = "perplexity"
+                                return parsed_data
+                            except json.JSONDecodeError:
+                                return {"content": result_text, "source": "perplexity"}
                     else:
                         print(f"Perplexity API error: {response.status}")
                         return self._basic_extraction("")

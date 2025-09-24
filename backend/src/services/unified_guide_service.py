@@ -104,7 +104,7 @@ class UnifiedGuideService:
         self.prompts = self._load_prompts()
         self.weather_correlations = self._load_weather_correlations()
 
-        self.perplexity_api_key = get_api_key("perplexity")
+        self.perplexity_api_key = os.getenv('PERPLEXITY_API_KEY') or get_api_key("perplexity")
         self.openai_api_key = get_api_key("openai")
         self.anthropic_api_key = get_api_key("anthropic")
 
@@ -125,6 +125,12 @@ class UnifiedGuideService:
             "persona_distribution": {},
             "quality_scores": []
         }
+        
+        # Initialize LLM parser with API keys
+        self.llm_parser = LLMParser()
+        self.llm_parser.openai_api_key = self.openai_api_key
+        self.llm_parser.anthropic_api_key = self.anthropic_api_key
+        self.llm_parser.perplexity_api_key = self.perplexity_api_key
 
     def _load_prompts(self) -> Dict[str, Any]:
         """Load structured prompts for LLM-based parsing and generation"""
@@ -650,9 +656,7 @@ class UnifiedGuideService:
             return {"error": f"Error fetching data: {str(e)}"}
 
     async def _generate_with_perplexity(
-        self,
-        context: GuideGenerationContext,
-        progress_callback: Optional[Callable] = None
+        self, destination: str, start_date: str, end_date: str, preferences: Dict[str, Any], context: Optional[GuideGenerationContext] = None
     ) -> Dict[str, Any]:
         """Generate guide content using Perplexity with structured prompts"""
 
@@ -662,14 +666,13 @@ class UnifiedGuideService:
         prompt = f"""
         {self.prompts["travel_guide"]["base_prompt"]}
 
-        TRAVELER PERSONA: {context.persona.value.replace('_', ' ').title()}
+        TRAVELER PERSONA: {preferences.get('persona', 'Cultural Enthusiast')}
 
-        DESTINATION: {context.destination}
-        DATES: {context.start_date} to {context.end_date}
-        ({context.duration_days} days)
+        DESTINATION: {destination}
+        DATES: {start_date} to {end_date}
 
         PREFERENCES:
-        {json.dumps(context.preferences, indent=2)}
+        {json.dumps(preferences, indent=2)}
 
         Create a comprehensive travel guide with these sections:
         1. Destination Overview & Highlights
@@ -918,10 +921,7 @@ class UnifiedGuideService:
         """
 
         try:
-            parsed_data = await self.llm_parser.parse_with_structure(
-                parsing_prompt,
-                expected_format="json"
-            )
+            parsed_data = await self.llm_parser.parse_guide(parsing_prompt)
 
             if not isinstance(parsed_data, dict):
                 parsed_data = {}
@@ -1601,10 +1601,7 @@ class UnifiedGuideService:
             {document_content}
             """
 
-            extracted_data = await self.llm_parser.parse_with_structure(
-                full_prompt,
-                expected_format="json"
-            )
+            extracted_data = await self.llm_parser.parse_guide(full_prompt)
 
             if not isinstance(extracted_data, dict):
                 extracted_data = {}

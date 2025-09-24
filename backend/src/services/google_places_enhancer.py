@@ -43,10 +43,9 @@ class GooglePlacesEnhancer:
             return []
         
         try:
-            # Search for tourist attractions
+            # Search for tourist attractions using Text Search API
             places_result = self.client.places(
-                query=f"tourist attractions in {location}",
-                type="tourist_attraction"
+                query=f"tourist attractions in {location}"
             )
             
             attractions = []

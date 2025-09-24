@@ -835,16 +835,24 @@ class TravelPackGenerator:
             pass
 
     async def _download_image(self, url: str) -> Optional[str]:
-        """Download and cache image, return local path."""
+        """Download and cache image, return local path (async to avoid blocking)."""
         if not url:
             return None
         if url in self._image_cache:
             return self._image_cache[url]
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                urllib.request.urlretrieve(url, tmp.name)
-                self._image_cache[url] = tmp.name
-                return tmp.name
+            import asyncio
+            import aiohttp
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                            tmp.write(content)
+                            self._image_cache[url] = tmp.name
+                            return tmp.name
+            return None
         except Exception:
             return None
 

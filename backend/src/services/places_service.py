@@ -170,13 +170,10 @@ class PlacesService:
             # Also add tourist attractions
             types_to_search.append("tourist_attraction")
             
-            # Search for each type
+            # Search for each type using Places API (New) text search
             for place_type in set(types_to_search):
-                places_result = self.gmaps.places_nearby(
-                    location=location,
-                    type=place_type,
-                    rank_by='prominence'
-                )
+                query = f"{place_type.replace('_', ' ')} in {location}"
+                places_result = self.gmaps.places(query=query)
                 
                 for place in places_result.get('results', [])[:3]:
                     # Get detailed information

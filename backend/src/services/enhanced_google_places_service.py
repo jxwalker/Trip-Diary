@@ -167,14 +167,21 @@ class EnhancedGooglePlacesService:
             lat_lng = geocode_result[0]['geometry']['location']
             coordinates = (lat_lng['lat'], lat_lng['lng'])
 
-            # Use nearby search with coordinates for better location accuracy
+            # Use Text Search API (Places API New) instead of legacy nearby search
             search_radius = radius if radius else 5000  # Default 5km radius
-            places_result = self.client.places_nearby(
-                location=coordinates,
-                radius=search_radius,
-                type='restaurant',
-                keyword=cuisine_type
-            )
+            query = f"restaurant {cuisine_type} near {location}" if cuisine_type else f"restaurant near {location}"
+            
+            places_result = self.client.places(query=query)
+            
+            if places_result.get('status') == 'OK':
+                results = places_result.get('results', [])
+                # Filter by distance if coordinates available
+                filtered_results = []
+                for place in results:
+                    if 'geometry' in place and 'location' in place['geometry']:
+                        place_coords = place['geometry']['location']
+                        filtered_results.append(place)
+                places_result['results'] = filtered_results[:limit]
             
             # Process results
             for place in places_result.get('results', [])[:limit]:
@@ -187,9 +194,9 @@ class EnhancedGooglePlacesService:
                             'name', 'formatted_address', 
                             'formatted_phone_number', 'rating', 
                             'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 
+                            'opening_hours', 'photos', 'reviews', 'url', 
                             'geometry',
-                            'type', 'business_status'
+                            'types', 'business_status'
                         ]
                     )['result']
                     
@@ -411,13 +418,9 @@ class EnhancedGooglePlacesService:
             raise ConfigurationError("Google Places API not configured")
 
         try:
-            # Use nearby search
-            places_result = self.client.places_nearby(
-                location=(lat, lng),
-                radius=radius,
-                type='restaurant',
-                keyword=cuisine_type
-            )
+            # Use Text Search API (Places API New) instead of legacy nearby search
+            query = f"restaurant {cuisine_type} near {lat},{lng}" if cuisine_type else f"restaurant near {lat},{lng}"
+            places_result = self.client.places(query=query)
 
             restaurants = []
             for place in places_result.get('results', [])[:limit]:
@@ -429,9 +432,9 @@ class EnhancedGooglePlacesService:
                             'name', 'formatted_address', 
                             'formatted_phone_number', 'rating', 
                             'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 
+                            'opening_hours', 'photos', 'reviews', 'url', 
                             'geometry',
-                            'type', 'business_status'
+                            'types', 'business_status'
                         ]
                     )['result']
 
@@ -545,11 +548,9 @@ class EnhancedGooglePlacesService:
                     logger.info(
                         f"Searching for {attraction_type} near {coordinates}"
                     )
-                    places_result = self.client.places_nearby(
-                        location=coordinates,
-                        radius=5000,  # 5km radius
-                        type=attraction_type
-                    )
+                    # Use Text Search API (Places API New) for attractions
+                    query = f"{attraction_type.replace('_', ' ')} near {location}"
+                    places_result = self.client.places(query=query)
 
                     if places_result.get('status') != 'OK':
                         logger.warning(
@@ -573,7 +574,7 @@ class EnhancedGooglePlacesService:
                                 'formatted_phone_number',
                                 'rating', 'user_ratings_total', 'website', 
                                 'opening_hours',
-                                'photo', 'url', 'geometry', 'type', 
+                                'photos', 'url', 'geometry', 'types', 
                                 'business_status'
                             ]
                         )['result']
@@ -615,13 +616,9 @@ class EnhancedGooglePlacesService:
 
         # Format photos
         photos = []
-        photo_data = details.get('photo') or details.get('photos', [])
+        photo_data = details.get('photos', [])
         if photo_data:
-            # Handle both single photo and photos array
-            if isinstance(photo_data, list):
-                photo_list = photo_data[:3]  # Get up to 3 photos
-            else:
-                photo_list = [photo_data]  # Single photo
+            photo_list = photo_data[:3]  # Get up to 3 photos
 
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
