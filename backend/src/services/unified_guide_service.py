@@ -1378,8 +1378,10 @@ class UnifiedGuideService:
                 "day": i + 1,
                 "date": current_date.strftime("%Y-%m-%d"),
                 "day_of_week": current_date.strftime("%A"),
-                "morning": [f"Explore {context.destination} morning attractions"],
-                "afternoon": [f"Visit {context.destination} afternoon highlights"],
+                "morning": [f"Explore {context.destination} morning "
+                          f"attractions"],
+                "afternoon": [f"Visit {context.destination} afternoon "
+                             f"highlights"],
                 "evening": [f"Enjoy {context.destination} evening activities"]
             }
 
@@ -1392,7 +1394,9 @@ class UnifiedGuideService:
         score = 0
         max_score = 100
 
-        required_sections = ["summary", "daily_itinerary", "restaurants", "attractions"]
+        required_sections = [
+            "summary", "daily_itinerary", "restaurants", "attractions"
+        ]
         for section in required_sections:
             if guide_data.get(section):
                 score += 10
