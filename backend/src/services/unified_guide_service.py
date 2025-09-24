@@ -504,7 +504,8 @@ class UnifiedGuideService:
             elif any(word in interest_lower for word in ["culture", "museum",
                                                                   "history", "art"]):
                 persona_scores[PersonaType.CULTURAL_ENTHUSIAST] += 2
-            elif any(word in interest_lower for word in ["luxury", "spa", "premium", "exclusive"]):
+            elif any(word in interest_lower for word in ["luxury", "spa",
+                                                                  "premium", "exclusive"]):
                 persona_scores[PersonaType.LUXURY_TRAVELER] += 2
 
         adventure_level = preferences.get("adventureLevel", 3)
@@ -536,7 +537,8 @@ class UnifiedGuideService:
         tasks.append(attractions_task)
 
         events_task = self.events_service.get_events_for_dates(
-            context.destination, context.start_date, context.end_date, context.preferences
+            context.destination, context.start_date, context.end_date,
+            context.preferences
         )
         tasks.append(events_task)
 
@@ -574,7 +576,8 @@ class UnifiedGuideService:
 
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
-                return {"error": f"Failed to fetch guide content: {str(perplexity_data)}"}
+                return {"error": f"Failed to fetch guide content: "
+                                f"{str(perplexity_data)}"}
 
             if isinstance(practical_info, Exception):
                 logger.warning(f"Practical info fetch failed: {practical_info}")
@@ -678,14 +681,16 @@ class UnifiedGuideService:
                         guide_content = data["choices"][0]["message"]["content"]
                         citations = data.get("citations", [])
 
-                        parsed_guide = await self._parse_guide_with_llm(guide_content, context)
+                        parsed_guide = await self._parse_guide_with_llm(
+                            guide_content, context)
                         parsed_guide["citations"] = citations
                         parsed_guide["raw_content"] = guide_content
 
                         return parsed_guide
                     else:
                         error_text = await response.text()
-                        logger.error(f"Perplexity API error: {response.status} - {error_text}")
+                        logger.error(f"Perplexity API error: {response.status} - "
+                                    f"{error_text}")
                         return {"error": f"Perplexity API error: {response.status}"}
 
         except Exception as e:
@@ -753,7 +758,8 @@ class UnifiedGuideService:
         Travel Guide Content:
         {guide_content}
 
-        Return only valid JSON. If information is not available, use null or empty arrays.
+        Return only valid JSON. If information is not available, use null or
+        empty arrays.
         """
 
         try:
@@ -813,7 +819,8 @@ class UnifiedGuideService:
                 "price_range, rating."
             )
 
-            restaurants_data = await self.llm_parser._parse_with_perplexity(perplexity_prompt)
+            restaurants_data = await self.llm_parser._parse_with_perplexity(
+                perplexity_prompt)
 
             if not isinstance(restaurants_data, list):
                 restaurants_data = (
@@ -887,7 +894,9 @@ class UnifiedGuideService:
             logger.error(f"Error fetching Google Places attractions: {e}")
             return []
 
-    async def _fetch_practical_info(self, context: GuideGenerationContext) -> Dict[str, Any]:
+    async def _fetch_practical_info(
+        self, context: GuideGenerationContext
+    ) -> Dict[str, Any]:
         """Fetch practical travel information"""
         try:
             return {
@@ -933,14 +942,16 @@ class UnifiedGuideService:
                 for correlation in self.weather_correlations:
                     temp_min, temp_max = correlation.temperature_range
                     if temp_min <= temp <= temp_max:
-                        if any(condition in conditions for condition in correlation.conditions):
+                        if any(condition in conditions
+                               for condition in correlation.conditions):
                             matching_correlation = correlation
                             break
 
                 if matching_correlation:
                     day_plan["weather_recommendations"] = {
                         "clothing": matching_correlation.clothing_suggestions,
-                        "recommended_activities": matching_correlation.recommended_activities,
+                        "recommended_activities":
+                            matching_correlation.recommended_activities,
                         "avoid_activities": matching_correlation.avoid_activities,
                         "special_notes": matching_correlation.special_notes
                     }
@@ -953,13 +964,15 @@ class UnifiedGuideService:
                                 activity_lower = activity.lower()
                                 should_avoid = any(
                                     avoid_activity.lower() in activity_lower
-                                    for avoid_activity in matching_correlation.avoid_activities
+                                    for avoid_activity in
+                                    matching_correlation.avoid_activities
                                 )
                                 if not should_avoid:
                                     filtered_activities.append(activity)
                                 else:
                                     if "outdoor" in activity_lower:
-                                        alternative = activity.replace("outdoor", "indoor")
+                                        alternative = activity.replace(
+                                            "outdoor", "indoor")
                                         filtered_activities.append(
                                             f"{alternative} (weather alternative)")
 
