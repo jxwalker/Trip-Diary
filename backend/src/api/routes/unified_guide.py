@@ -60,9 +60,7 @@ async def generate_unified_guide(
         )
 
         from ...services.guide_validator import GuideValidator
-        validation_result = GuideValidator.validate_guide(guide)
-        is_valid = validation_result.is_valid
-        errors = validation_result.errors
+        is_valid, errors = GuideValidator.validate_guide(guide)
 
         if not is_valid:
             logger.warning(f"Generated guide failed validation: {errors}")
