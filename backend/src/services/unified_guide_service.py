@@ -770,7 +770,8 @@ class UnifiedGuideService:
 
         Return the response in this exact JSON format:
         {{
-            "destination_overview": "Comprehensive overview of {context.destination} with key highlights and what makes it special",
+            "destination_insights": "Comprehensive overview of {context.destination} with key highlights and what makes it special",
+            "summary": "Brief travel summary for {context.destination}",
             "weather_analysis": "Weather information for {context.start_date} to {context.end_date} including temperature, precipitation, and what to expect",
             "daily_itinerary": [
                 {{
