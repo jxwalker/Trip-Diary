@@ -1124,7 +1124,7 @@ class UnifiedGuideService:
         personalized_restaurants.sort(
             key=lambda r: r.get("persona_match", 0), reverse=True
         )
-        guide_data["restaurants"] = personalized_restaurants[:12]  # Top 12 for persona
+        guide_data["restaurants"] = personalized_restaurants[:12]  # Top 12
 
         attractions = guide_data.get("attractions", [])
         personalized_attractions = []
@@ -1140,8 +1140,9 @@ class UnifiedGuideService:
                     attraction, context.persona))
             personalized_attractions.append(attraction)
 
-        personalized_attractions.sort(key=lambda a: a.get("persona_match", 0), reverse=True)
-        guide_data["attractions"] = personalized_attractions[:8]  # Top 8 for persona
+        personalized_attractions.sort(
+            key=lambda a: a.get("persona_match", 0), reverse=True)
+        guide_data["attractions"] = personalized_attractions[:8]  # Top 8
 
         guide_data["persona_tips"] = self._generate_persona_specific_tips(
             context.persona, context.destination
@@ -1149,11 +1150,14 @@ class UnifiedGuideService:
 
         daily_itinerary = guide_data.get("daily_itinerary", [])
         for day in daily_itinerary:
-            day["persona_notes"] = self._generate_daily_persona_notes(day, context.persona)
+            day["persona_notes"] = self._generate_daily_persona_notes(
+                day, context.persona)
 
         return guide_data
 
-    def _calculate_restaurant_persona_match(self, restaurant: Dict[str, Any], persona: PersonaType) -> float:
+    def _calculate_restaurant_persona_match(
+        self, restaurant: Dict[str, Any], persona: PersonaType
+    ) -> float:
         """Calculate how well a restaurant matches the persona (0-1 score)"""
         score = 0.5  # Base score
 
@@ -1180,14 +1184,18 @@ class UnifiedGuideService:
         elif persona == PersonaType.FOODIE:
             if rating >= 4.3:
                 score += 0.3
-            if any(word in cuisine for word in ["authentic", "traditional", "specialty"]):
+            if any(word in cuisine for word in [
+                "authentic", "traditional", "specialty"
+            ]):
                 score += 0.2
             if price_level >= 2:  # Foodies often willing to pay for quality
                 score += 0.1
 
         return min(score, 1.0)
 
-    def _calculate_attraction_persona_match(self, attraction: Dict[str, Any], persona: PersonaType) -> float:
+    def _calculate_attraction_persona_match(
+        self, attraction: Dict[str, Any], persona: PersonaType
+    ) -> float:
         """Calculate how well an attraction matches the persona (0-1 score)"""
         score = 0.5  # Base score
 
@@ -1196,21 +1204,31 @@ class UnifiedGuideService:
         rating = attraction.get("rating", 3.5)
 
         if persona == PersonaType.CULTURAL_ENTHUSIAST:
-            if any(t in types for t in ["museum", "art_gallery", "church", "historical"]):
+            if any(t in types for t in [
+                "museum", "art_gallery", "church", "historical"
+            ]):
                 score += 0.4
-            if any(word in name for word in ["museum", "gallery", "cathedral", "palace"]):
+            if any(word in name for word in [
+                "museum", "gallery", "cathedral", "palace"
+            ]):
                 score += 0.2
 
         elif persona == PersonaType.ADVENTURE_SEEKER:
-            if any(t in types for t in ["park", "natural_feature", "amusement_park"]):
+            if any(t in types for t in [
+                "park", "natural_feature", "amusement_park"
+            ]):
                 score += 0.4
-            if any(word in name for word in ["park", "trail", "adventure", "outdoor"]):
+            if any(word in name for word in [
+                "park", "trail", "adventure", "outdoor"
+            ]):
                 score += 0.2
 
         elif persona == PersonaType.FAMILY_FRIENDLY:
             if any(t in types for t in ["amusement_park", "zoo", "aquarium"]):
                 score += 0.4
-            if any(word in name for word in ["family", "kids", "children", "zoo"]):
+            if any(word in name for word in [
+                "family", "kids", "children", "zoo"
+            ]):
                 score += 0.2
 
         if rating >= 4.0:
@@ -1226,7 +1244,8 @@ class UnifiedGuideService:
         cuisine = restaurant.get("cuisine", "")
 
         if persona == PersonaType.LUXURY_TRAVELER:
-            return f"Perfect for a refined dining experience. {name} offers {cuisine} in an upscale setting."
+            return (f"Perfect for a refined dining experience. {name} "
+                    f"offers {cuisine} in an upscale setting.")
         elif persona == PersonaType.BUDGET_EXPLORER:
             return (
                 f"Great value for authentic {cuisine}. {name} is a local "
