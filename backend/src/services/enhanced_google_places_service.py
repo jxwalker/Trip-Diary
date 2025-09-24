@@ -55,6 +55,8 @@ class EnhancedGooglePlacesService:
         # Simple in-memory cache for testing
         self._cache = {}
         
+        self.use_places_api_new = False
+        
     @property
     def service_name(self) -> str:
         return "google_places"
@@ -99,12 +101,12 @@ class EnhancedGooglePlacesService:
         pass
     
     async def validate_api_key(self) -> bool:
-        """Validate the Google Places API key"""
-        if not self.api_key or not self.client:
+        """Validate the Google Places API key with fallback to legacy API"""
+        if not self.api_key:
             raise ConfigurationError("GOOGLE_MAPS_API_KEY not configured")
         
         try:
-            # Test with Places API (New) Text Search
+            # First try Places API (New) Text Search
             import aiohttp
             async with aiohttp.ClientSession() as session:
                 url = "https://places.googleapis.com/v1/places:searchText"
@@ -120,14 +122,26 @@ class EnhancedGooglePlacesService:
                 async with session.post(url, json=payload, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
+                        self.use_places_api_new = True
+                        logger.info("Places API (New) validation successful")
                         return bool(data.get("places"))
+                    elif response.status == 403:
+                        error_text = await response.text()
+                        if "Places API (New)" in error_text and "not been used" in error_text:
+                            logger.warning("Places API (New) not enabled, will use legacy API as fallback")
+                            self.use_places_api_new = False
+                            return True
+                        else:
+                            raise Exception(f"Places API validation failed: {error_text}")
                     else:
                         error_text = await response.text()
                         raise Exception(f"Places API (New) validation failed: {error_text}")
             
         except Exception as e:
             logger.error(f"Google Places API key validation failed: {e}")
-            raise ConfigurationError(f"Invalid Google Places API key: {e}")
+            self.use_places_api_new = False
+            logger.warning("Falling back to legacy Google Places API")
+            return True
     
     async def search_restaurants(
         self,
