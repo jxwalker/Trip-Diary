@@ -16,12 +16,17 @@ class APIConfig(BaseSettings):
     
     # API metadata
     title: str = Field(default="TripCraft AI API", env="API_TITLE")
-    description: str = Field(default="AI-powered travel planning and itinerary generation", env="API_DESCRIPTION")
+    description: str = Field(
+        default="AI-powered travel planning and itinerary generation", 
+        env="API_DESCRIPTION"
+    )
     version: str = Field(default="1.0.0", env="API_VERSION")
     
     # CORS settings
     cors_enabled: bool = Field(default=True, env="CORS_ENABLED")
-    cors_allow_credentials: bool = Field(default=True, env="CORS_ALLOW_CREDENTIALS")
+    cors_allow_credentials: bool = Field(
+        default=True, env="CORS_ALLOW_CREDENTIALS"
+    )
     cors_allow_methods: List[str] = Field(
         default=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         env="CORS_ALLOW_METHODS"
@@ -36,8 +41,12 @@ class APIConfig(BaseSettings):
     )
     
     # Request/Response settings
-    max_request_size: int = Field(default=50 * 1024 * 1024, env="MAX_REQUEST_SIZE")  # 50MB
-    request_timeout: int = Field(default=300, env="REQUEST_TIMEOUT")  # 5 minutes
+    max_request_size: int = Field(
+        default=50 * 1024 * 1024, env="MAX_REQUEST_SIZE"
+    )  # 50MB
+    request_timeout: int = Field(
+        default=300, env="REQUEST_TIMEOUT"
+    )  # 5 minutes
     
     # Documentation
     docs_enabled: bool = Field(default=True, env="API_DOCS_ENABLED")

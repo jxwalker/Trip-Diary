@@ -28,8 +28,11 @@ class PerplexityResponseParser:
             if not line:
                 continue
             
-            # Check for numbered restaurant with inline format: "1. **Name** - Address"
-            inline_match = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*\s*[-–]\s*(.+)', line)
+            # Check for numbered restaurant with inline format: 
+            # "1. **Name** - Address"
+            inline_match = re.match(
+                r'^(\d+)\.\s+\*\*(.+?)\*\*\s*[-–]\s*(.+)', line
+            )
             if inline_match:
                 # Save previous restaurant if exists
                 if current_restaurant:
@@ -41,12 +44,14 @@ class PerplexityResponseParser:
                 
                 # The rest often contains address followed by description
                 # Try to extract address (usually ends with ZIP code)
-                address_match = re.match(r'^([^.]+(?:NY|New York)\s+\d{5})', rest)
+                address_match = re.match(
+                    r'^([^.]+(?:NY|New York)\s+\d{5})', rest
+                )
                 if address_match:
                     address = address_match.group(1).strip()
                     description = rest[address_match.end():].strip('. ')
                 else:
-                    # If no clear address pattern, take everything before first period
+                    # If no clear address pattern, take everything before first
                     parts = rest.split('. ', 1)
                     address = parts[0] if parts else rest
                     description = parts[1] if len(parts) > 1 else ''
@@ -59,7 +64,8 @@ class PerplexityResponseParser:
                 }
                 continue
             
-            # Check for numbered restaurant without inline (e.g., "1. **Restaurant Name**")
+            # Check for numbered restaurant without inline
+            # (e.g., "1. **Restaurant Name**")
             numbered_match = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*', line)
             if numbered_match:
                 # Save previous restaurant if exists
@@ -83,13 +89,15 @@ class PerplexityResponseParser:
                 
                 # Check for why it's great / description
                 elif '**Why it' in line or '**why it' in line:
-                    desc = line.split(':', 1)[1].strip() if ':' in line else line
+                    desc = (line.split(':', 1)[1].strip() 
+                           if ':' in line else line)
                     desc = re.sub(r'\*\*.*?\*\*\s*', '', desc).strip('- ')
                     current_restaurant['description'] = desc
                 
                 # Check for price
                 elif '**Price' in line or '**price' in line:
-                    price = line.split(':', 1)[1].strip() if ':' in line else line
+                    price = (line.split(':', 1)[1].strip() 
+                            if ':' in line else line)
                     price = re.sub(r'\*\*.*?\*\*\s*', '', price).strip('- ')
                     # Extract just the $ symbols if present
                     if '$' in price:
@@ -103,13 +111,16 @@ class PerplexityResponseParser:
                 
                 # Check for cuisine type
                 elif '**Cuisine' in line or '**cuisine' in line:
-                    cuisine = line.split(':', 1)[1].strip() if ':' in line else line
-                    cuisine = re.sub(r'\*\*.*?\*\*\s*', '', cuisine).strip('- ')
+                    cuisine = (line.split(':', 1)[1].strip() 
+                              if ':' in line else line)
+                    cuisine = re.sub(r'\*\*.*?\*\*\s*', '', cuisine).strip(
+                        '- ')
                     current_restaurant['cuisine'] = cuisine
                 
                 # Check for hours
                 elif '**Hours' in line or '**Open' in line:
-                    hours = line.split(':', 1)[1].strip() if ':' in line else line
+                    hours = (line.split(':', 1)[1].strip() 
+                            if ':' in line else line)
                     hours = re.sub(r'\*\*.*?\*\*\s*', '', hours).strip('- ')
                     current_restaurant['hours'] = hours
                 
@@ -127,7 +138,8 @@ class PerplexityResponseParser:
                 # Look for descriptive text that's not a labeled field
                 desc_lines = []
                 for line in restaurant['raw_text']:
-                    if not line.startswith('-') and '**' not in line and len(line) > 20:
+                    if (not line.startswith('-') and '**' not in line 
+                        and len(line) > 20):
                         desc_lines.append(line)
                 if desc_lines:
                     restaurant['description'] = ' '.join(desc_lines)
@@ -165,23 +177,31 @@ class PerplexityResponseParser:
             if current_attraction:
                 # Parse address
                 if '**Address:**' in line or 'Address:' in line:
-                    address = re.sub(r'(\*\*)?[Aa]ddress:(\*\*)?\s*', '', line).strip('- ')
+                    address = re.sub(
+                        r'(\*\*)?[Aa]ddress:(\*\*)?\s*', '', line
+                    ).strip('- ')
                     current_attraction['address'] = address
                 
                 # Parse hours
                 elif 'Hours:' in line or 'Open:' in line:
-                    hours = line.split(':', 1)[1].strip() if ':' in line else ''
+                    hours = (line.split(':', 1)[1].strip() 
+                            if ':' in line else '')
                     current_attraction['hours'] = hours.strip('- ')
                 
                 # Parse price/admission
-                elif any(word in line.lower() for word in ['price:', 'admission:', 'tickets:', 'cost:']):
-                    price = line.split(':', 1)[1].strip() if ':' in line else line
-                    current_attraction['price'] = re.sub(r'\*\*.*?\*\*\s*', '', price).strip('- ')
+                elif any(word in line.lower() 
+                        for word in ['price:', 'admission:', 'tickets:', 'cost:']):
+                    price = (line.split(':', 1)[1].strip() 
+                            if ':' in line else line)
+                    current_attraction['price'] = re.sub(
+                        r'\*\*.*?\*\*\s*', '', price).strip('- ')
                 
                 # Parse why it's recommended
                 elif 'Why' in line or 'Description:' in line:
-                    desc = line.split(':', 1)[1].strip() if ':' in line else line
-                    current_attraction['description'] = re.sub(r'\*\*.*?\*\*\s*', '', desc).strip('- ')
+                    desc = (line.split(':', 1)[1].strip() 
+                           if ':' in line else line)
+                    current_attraction['description'] = re.sub(
+                        r'\*\*.*?\*\*\s*', '', desc).strip('- ')
                 
                 # Collect other details
                 elif line.startswith('-'):
@@ -218,17 +238,19 @@ class PerplexityResponseParser:
                 current_section = 'lunch'
             elif 'afternoon' in line_lower or '2:00' in line or '3:00' in line:
                 current_section = 'afternoon'
-            elif 'evening' in line_lower or 'dinner' in line_lower or '6:00' in line or '7:00' in line:
+            elif ('evening' in line_lower or 'dinner' in line_lower 
+                  or '6:00' in line or '7:00' in line):
                 current_section = 'evening'
             elif 'tip' in line_lower or 'note' in line_lower:
                 current_section = 'tips'
             elif current_section:
                 # Clean up the line
-                cleaned = re.sub(r'\*\*.*?\*\*:', '', line)  # Remove bold labels
+                cleaned = re.sub(r'\*\*.*?\*\*:', '', line)
                 cleaned = cleaned.strip('- ').strip()
                 
                 # Only add substantial content
-                if len(cleaned) > 10 and not cleaned.lower().startswith(('morning', 'afternoon', 'evening', 'lunch')):
+                if (len(cleaned) > 10 and not cleaned.lower().startswith(
+                    ('morning', 'afternoon', 'evening', 'lunch'))):
                     itinerary[current_section].append(cleaned)
         
         return itinerary
@@ -259,14 +281,20 @@ class PerplexityResponseParser:
                 }
             elif current_event:
                 # Parse event details
-                if any(word in line.lower() for word in ['date:', 'when:', 'dates:']):
-                    date = line.split(':', 1)[1].strip() if ':' in line else line
+                if any(word in line.lower() 
+                       for word in ['date:', 'when:', 'dates:']):
+                    date = (line.split(':', 1)[1].strip() 
+                           if ':' in line else line)
                     current_event['date'] = date
-                elif any(word in line.lower() for word in ['venue:', 'location:', 'where:']):
-                    venue = line.split(':', 1)[1].strip() if ':' in line else line
+                elif any(word in line.lower() 
+                        for word in ['venue:', 'location:', 'where:']):
+                    venue = (line.split(':', 1)[1].strip() 
+                            if ':' in line else line)
                     current_event['venue'] = venue
-                elif any(word in line.lower() for word in ['price:', 'tickets:', 'cost:']):
-                    price = line.split(':', 1)[1].strip() if ':' in line else line
+                elif any(word in line.lower() 
+                        for word in ['price:', 'tickets:', 'cost:']):
+                    price = (line.split(':', 1)[1].strip() 
+                            if ':' in line else line)
                     current_event['price'] = price
                 elif line.startswith('-'):
                     current_event['details'].append(line.strip('- '))
@@ -304,9 +332,11 @@ class PerplexityResponseParser:
                 current_section = 'weather'
             elif 'transport' in line_lower or 'getting around' in line_lower:
                 current_section = 'transportation'
-            elif 'money' in line_lower or 'currency' in line_lower or 'cost' in line_lower:
+            elif ('money' in line_lower or 'currency' in line_lower 
+                  or 'cost' in line_lower):
                 current_section = 'money'
-            elif 'cultur' in line_lower or 'custom' in line_lower or 'etiquette' in line_lower:
+            elif ('cultur' in line_lower or 'custom' in line_lower 
+                  or 'etiquette' in line_lower):
                 current_section = 'cultural'
             elif 'safety' in line_lower or 'security' in line_lower:
                 current_section = 'safety'
@@ -315,8 +345,9 @@ class PerplexityResponseParser:
                 cleaned = re.sub(r'\*\*.*?\*\*:', '', line)
                 cleaned = cleaned.strip('- •').strip()
                 
-                if len(cleaned) > 10 and not any(cleaned.lower().startswith(word) for word in 
-                    ['weather', 'transport', 'money', 'cultur', 'safety']):
+                if (len(cleaned) > 10 and not any(
+                    cleaned.lower().startswith(word) for word in 
+                    ['weather', 'transport', 'money', 'cultur', 'safety'])):
                     insights[current_section].append(cleaned)
         
         return insights

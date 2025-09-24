@@ -22,7 +22,8 @@ def _present(key: str) -> bool:
 @router.get("/health/secrets")
 async def health_secrets() -> Dict[str, Any]:
     """
-    Report presence (not values) of required and optional secrets, plus cache status.
+    Report presence (not values) of required and optional secrets, plus
+    cache status.
     """
     required = {
         "PERPLEXITY_API_KEY": _present("PERPLEXITY_API_KEY"),

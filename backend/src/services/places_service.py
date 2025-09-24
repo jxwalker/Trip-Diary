@@ -55,21 +55,47 @@ class PlacesService:
             
             # Search for restaurants based on cuisine preferences
             cuisines = preferences.get("cuisineTypes", ["restaurant"])
-            price_level = self._convert_price_range(preferences.get("priceRange", "$$"))
+            price_level = self._convert_price_range(
+                preferences.get("priceRange", "$$")
+            )
             
             for cuisine in cuisines[:3]:  # Limit to top 3 cuisines
                 query = f"{cuisine} restaurant in {location}"
                 
-                # Use Google Places API
-                places_result = self.gmaps.places(
-                    query=query,
-                    type='restaurant',
-                    min_price=price_level[0] if price_level else None,
-                    max_price=price_level[1] if price_level else None
-                )
+                import aiohttp
+                import json
                 
-                for place in places_result.get('results', [])[:3]:  # Top 3 per cuisine
-                    # Get detailed information
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': self.api_key,
+                    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.userRatingCount'
+                }
+                
+                text_search_url = "https://places.googleapis.com/v1/places:searchText"
+                request_body = {
+                    "textQuery": query,
+                    "maxResultCount": 20
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            places_result = {'results': data.get('places', [])}
+                        else:
+                            places_result = {'results': []}
+                
+                for place in places_result.get('results', [])[:3]:
+                    if isinstance(place, dict) and 'displayName' in place:
+                        place_data = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'types': place.get('types', [])
+                        }
+                    else:
+                        place_data = place
                     details = self.gmaps.place(place['place_id'])['result']
                     
                     restaurant = {
@@ -78,14 +104,22 @@ class PlacesService:
                         "address": details.get('formatted_address'),
                         "phone": details.get('formatted_phone_number', ''),
                         "rating": details.get('rating', 0),
-                        "price_level": self._format_price_level(details.get('price_level', 2)),
-                        "opening_hours": self._format_hours(details.get('opening_hours', {})),
+                        "price_level": self._format_price_level(
+                            details.get('price_level', 2)
+                        ),
+                        "opening_hours": self._format_hours(
+                            details.get('opening_hours', {})
+                        ),
                         "website": details.get('website', ''),
                         "google_maps_url": details.get('url', ''),
-                        "reviews_summary": self._get_review_summary(details.get('reviews', [])),
-                        "specialties": [],  # Would need additional API or scraping
-                        "reservation_recommended": details.get('rating', 0) > 4.3,
-                        "distance_from_hotel": None  # Calculate if hotel address provided
+                        "reviews_summary": self._get_review_summary(
+                            details.get('reviews', [])
+                        ),
+                        "specialties": [],
+                        "reservation_recommended": (
+                            details.get('rating', 0) > 4.3
+                        ),
+                        "distance_from_hotel": None
                     }
                     
                     # Calculate distance from hotel if possible
@@ -95,9 +129,16 @@ class PlacesService:
                                 origins=[hotel_address],
                                 destinations=[restaurant["address"]]
                             )
-                            if distance['rows'][0]['elements'][0]['status'] == 'OK':
-                                restaurant["distance_from_hotel"] = distance['rows'][0]['elements'][0]['distance']['text']
-                                restaurant["walking_time"] = distance['rows'][0]['elements'][0]['duration']['text']
+                            if (distance['rows'][0]['elements'][0]['status'] == 
+                                'OK'):
+                                restaurant["distance_from_hotel"] = (
+                                    distance['rows'][0]['elements'][0]
+                                    ['distance']['text']
+                                )
+                                restaurant["walking_time"] = (
+                                    distance['rows'][0]['elements'][0]
+                                    ['duration']['text']
+                                )
                         except:
                             pass
                     
@@ -147,22 +188,50 @@ class PlacesService:
             # Get relevant place types based on interests
             types_to_search = []
             for interest, level in preferences.items():
-                if interest in interest_mapping and level > 2:  # Interest level > 2
+                if interest in interest_mapping and level > 2:
                     types_to_search.extend(interest_mapping[interest])
             
             # Also add tourist attractions
             types_to_search.append("tourist_attraction")
             
-            # Search for each type
+            # Search for each type using Places API (New) text search
             for place_type in set(types_to_search):
-                places_result = self.gmaps.places_nearby(
-                    location=location,
-                    type=place_type,
-                    rank_by='prominence'
-                )
+                query = f"{place_type.replace('_', ' ')} in {location}"
                 
-                for place in places_result.get('results', [])[:3]:  # Top 3 per type
-                    # Get detailed information
+                import aiohttp
+                import json
+                
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': self.api_key,
+                    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.types'
+                }
+                
+                text_search_url = "https://places.googleapis.com/v1/places:searchText"
+                request_body = {
+                    "textQuery": query,
+                    "maxResultCount": 3
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            places_result = {'results': data.get('places', [])}
+                        else:
+                            places_result = {'results': []}
+                
+                for place in places_result.get('results', [])[:3]:
+                    if isinstance(place, dict) and 'displayName' in place:
+                        place_data = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'types': place.get('types', [])
+                        }
+                    else:
+                        place_data = place
                     details = self.gmaps.place(place['place_id'])['result']
                     
                     attraction = {
@@ -170,13 +239,21 @@ class PlacesService:
                         "type": place_type.replace('_', ' ').title(),
                         "address": details.get('formatted_address'),
                         "rating": details.get('rating', 0),
-                        "opening_hours": self._format_hours(details.get('opening_hours', {})),
+                        "opening_hours": self._format_hours(
+                            details.get('opening_hours', {})
+                        ),
                         "website": details.get('website', ''),
                         "google_maps_url": details.get('url', ''),
-                        "description": self._generate_attraction_description(details),
-                        "entry_fee": None,  # Would need additional data source
-                        "typical_duration": self._estimate_duration(place_type),
-                        "best_time_to_visit": self._suggest_visit_time(place_type),
+                        "description": self._generate_attraction_description(
+                            details
+                        ),
+                        "entry_fee": None,
+                        "typical_duration": self._estimate_duration(
+                            place_type
+                        ),
+                        "best_time_to_visit": self._suggest_visit_time(
+                            place_type
+                        ),
                         "distance_from_hotel": None
                     }
                     
@@ -187,9 +264,16 @@ class PlacesService:
                                 origins=[hotel_address],
                                 destinations=[attraction["address"]]
                             )
-                            if distance['rows'][0]['elements'][0]['status'] == 'OK':
-                                attraction["distance_from_hotel"] = distance['rows'][0]['elements'][0]['distance']['text']
-                                attraction["travel_time"] = distance['rows'][0]['elements'][0]['duration']['text']
+                            if (distance['rows'][0]['elements'][0]['status'] == 
+                                'OK'):
+                                attraction["distance_from_hotel"] = (
+                                    distance['rows'][0]['elements'][0]
+                                    ['distance']['text']
+                                )
+                                attraction["travel_time"] = (
+                                    distance['rows'][0]['elements'][0]
+                                    ['duration']['text']
+                                )
                         except:
                             pass
                     
@@ -203,7 +287,9 @@ class PlacesService:
                     seen.add(attr['name'])
                     unique_attractions.append(attr)
             
-            unique_attractions.sort(key=lambda x: x.get('rating', 0), reverse=True)
+            unique_attractions.sort(
+                key=lambda x: x.get('rating', 0), reverse=True
+            )
             return unique_attractions[:15]  # Return top 15
             
         except Exception as e:
@@ -247,18 +333,30 @@ class PlacesService:
     
     def _generate_attraction_description(self, details: Dict) -> str:
         """Generate a description for an attraction"""
-        # In production, this could use an AI service to generate better descriptions
+        # In production, this could use an AI service for better descriptions
         types = details.get('types', [])
         name = details.get('name', '')
         
         if 'museum' in types:
-            return f"{name} is a must-visit museum showcasing local culture and history."
+            return (
+                f"{name} is a must-visit museum showcasing "
+                "local culture and history."
+            )
         elif 'park' in types:
-            return f"{name} offers beautiful green spaces perfect for relaxation and recreation."
+            return (
+                f"{name} offers beautiful green spaces perfect "
+                "for relaxation and recreation."
+            )
         elif 'art_gallery' in types:
-            return f"{name} features impressive art collections and exhibitions."
+            return (
+                f"{name} features impressive art collections "
+                "and exhibitions."
+            )
         else:
-            return f"{name} is a popular attraction worth exploring during your visit."
+            return (
+                f"{name} is a popular attraction worth exploring "
+                "during your visit."
+            )
     
     def _estimate_duration(self, place_type: str) -> str:
         """Estimate typical visit duration based on place type"""

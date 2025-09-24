@@ -82,7 +82,9 @@ class GoogleWeatherService(WeatherServiceInterface):
                         status_code=response.status,
                         data=data,
                         text=text,
-                        error=None if response.status < 400 else f"HTTP {response.status}"
+                        error=None if response.status < 400 else (
+                            f"HTTP {response.status}"
+                        )
                     )
         except Exception as e:
             return ExternalResponse(
@@ -135,13 +137,19 @@ class GoogleWeatherService(WeatherServiceInterface):
                 "timestamp": datetime.now().isoformat()
             }
 
-    async def get_current_weather(self, location: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_current_weather(
+        self, location: str, units: str = "metric"
+    ) -> Dict[str, Any]:
         """Get current weather for location"""
         # For current weather, just return the first day of forecast
         try:
             today = datetime.now().strftime("%Y-%m-%d")
-            tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-            forecast = await self.get_weather_for_dates(location, today, tomorrow, units)
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime(
+                "%Y-%m-%d"
+            )
+            forecast = await self.get_weather_for_dates(
+                location, today, tomorrow, units
+            )
 
             if forecast.get("daily_forecasts"):
                 current = forecast["daily_forecasts"][0]
@@ -159,16 +167,25 @@ class GoogleWeatherService(WeatherServiceInterface):
         except Exception as e:
             return {"error": str(e)}
 
-    async def get_weather_forecast(self, location: str, start_date: str, end_date: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_weather_forecast(
+        self, location: str, start_date: str, end_date: str, 
+        units: str = "metric"
+    ) -> Dict[str, Any]:
         """Get weather forecast for location between start and end dates"""
         try:
-            return await self.get_weather_for_dates(location, start_date, end_date, units)
+            return await self.get_weather_for_dates(
+                location, start_date, end_date, units
+            )
         except Exception as e:
             return {"error": str(e)}
 
-    async def get_weather_for_dates(self, location: str, start_date: str, end_date: str, units: str = "metric") -> Dict[str, Any]:
+    async def get_weather_for_dates(
+        self, location: str, start_date: str, end_date: str, 
+        units: str = "metric"
+    ) -> Dict[str, Any]:
         """
-        Get weather forecast for a destination during trip dates using Google services
+        Get weather forecast for a destination during trip dates using 
+        Google services
 
         Args:
             location: City name or location
@@ -223,15 +240,23 @@ class GoogleWeatherService(WeatherServiceInterface):
                 }
             
             # Create summary
-            avg_high = sum(d["temperature"]["high"] for d in daily_forecasts) / len(daily_forecasts)
-            avg_low = sum(d["temperature"]["low"] for d in daily_forecasts) / len(daily_forecasts)
+            avg_high = sum(
+                d["temperature"]["high"] for d in daily_forecasts
+            ) / len(daily_forecasts)
+            avg_low = sum(
+                d["temperature"]["low"] for d in daily_forecasts
+            ) / len(daily_forecasts)
             
-            condition = daily_forecasts[0]["condition"] if daily_forecasts else ""
+            condition = (
+                daily_forecasts[0]["condition"] if daily_forecasts else ""
+            )
             summary = {
                 "average_high": round(avg_high, 1),
                 "average_low": round(avg_low, 1),
                 "general_conditions": condition,
-                "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
+                "packing_suggestions": self._get_packing_suggestions(
+                    avg_high, avg_low, condition
+                ),
                 "note": "Real weather data from OpenWeatherMap API"
             }
             
@@ -266,7 +291,9 @@ class GoogleWeatherService(WeatherServiceInterface):
                     if response.status == 200:
                         data = await response.json()
                         if data.get("results"):
-                            location_data = data["results"][0]["geometry"]["location"]
+                            location_data = data["results"][0]["geometry"][
+                                "location"
+                            ]
                             return {
                                 "lat": location_data["lat"],
                                 "lon": location_data["lng"]
@@ -275,7 +302,9 @@ class GoogleWeatherService(WeatherServiceInterface):
             print(f"Geocoding error: {e}")
         return None
     
-    async def _generate_realistic_forecast(self, destination: str, coords: Dict, start_date: str, duration: int) -> List[Dict]:
+    async def _generate_realistic_forecast(
+        self, destination: str, coords: Dict, start_date: str, duration: int
+    ) -> List[Dict]:
         """Generate realistic weather forecast based on location and season"""
         
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -309,14 +338,24 @@ class GoogleWeatherService(WeatherServiceInterface):
         
         return forecasts
     
-    def _get_seasonal_pattern(self, destination: str, month: int, lat: float) -> Dict:
+    def _get_seasonal_pattern(
+        self, destination: str, month: int, lat: float
+    ) -> Dict:
         """Get seasonal weather pattern for location"""
         
         # Seasonal patterns for major destinations
         seasonal_patterns = {
             "paris": {
-                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 70, "humidity": 80, "wind_speed": 15},
-                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", "description": "Cool with occasional rain", "precipitation": 60, "humidity": 75, "wind_speed": 12},
+                1: {
+                    "temp_high": 7, "temp_low": 2, "condition": "Cloudy", 
+                    "description": "Cool and often rainy", "precipitation": 70, 
+                    "humidity": 80, "wind_speed": 15
+                },
+                2: {
+                    "temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", 
+                    "description": "Cool with occasional rain", "precipitation": 60, 
+                    "humidity": 75, "wind_speed": 12
+                },
                 3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", "description": "Mild spring weather", "precipitation": 50, "humidity": 70, "wind_speed": 10},
                 4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", "description": "Pleasant spring weather", "precipitation": 45, "humidity": 65, "wind_speed": 8},
                 5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", "description": "Warm and pleasant", "precipitation": 40, "humidity": 60, "wind_speed": 8},
@@ -381,17 +420,25 @@ class GoogleWeatherService(WeatherServiceInterface):
         
         return pattern
     
-    def _get_packing_suggestions(self, avg_high: float, avg_low: float, condition: str) -> List[str]:
+    def _get_packing_suggestions(
+        self, avg_high: float, avg_low: float, condition: str
+    ) -> List[str]:
         """Generate packing suggestions based on weather"""
         suggestions = []
         
         # Temperature-based suggestions
         if avg_high >= 25:
-            suggestions.extend(["Light, breathable clothing", "Sun hat", "Sunscreen"])
+            suggestions.extend([
+                "Light, breathable clothing", "Sun hat", "Sunscreen"
+            ])
         elif avg_high >= 20:
-            suggestions.extend(["Comfortable casual wear", "Light jacket for evenings"])
+            suggestions.extend([
+                "Comfortable casual wear", "Light jacket for evenings"
+            ])
         elif avg_high >= 15:
-            suggestions.extend(["Layers for varying temperatures", "Medium-weight jacket"])
+            suggestions.extend([
+                "Layers for varying temperatures", "Medium-weight jacket"
+            ])
         elif avg_high >= 10:
             suggestions.extend(["Warm clothing", "Heavy jacket or coat"])
         else:
@@ -402,7 +449,9 @@ class GoogleWeatherService(WeatherServiceInterface):
             suggestions.extend(["Umbrella or rain jacket", "Waterproof shoes"])
         
         if avg_low <= 5:
-            suggestions.extend(["Warm sleepwear", "Extra layers for cold mornings"])
+            suggestions.extend([
+                "Warm sleepwear", "Extra layers for cold mornings"
+            ])
         
         return suggestions
 

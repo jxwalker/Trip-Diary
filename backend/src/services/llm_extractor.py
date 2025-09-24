@@ -22,9 +22,13 @@ class LLMExtractor:
         self.claude_client = None
         
         if os.getenv("OPENAI_API_KEY"):
-            self.openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.openai_client = AsyncOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
         elif os.getenv("ANTHROPIC_API_KEY"):
-            self.claude_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            self.claude_client = anthropic.AsyncAnthropic(
+                api_key=os.getenv("ANTHROPIC_API_KEY")
+            )
     
     async def extract_travel_info(self, text: str) -> Dict[str, Any]:
         """
@@ -33,8 +37,12 @@ class LLMExtractor:
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"Starting LLM extraction with text length: {len(text)}")
-        logger.info(f"OpenAI client available: {self.openai_client is not None}")
-        logger.info(f"Claude client available: {self.claude_client is not None}")
+        logger.info(
+            f"OpenAI client available: {self.openai_client is not None}"
+        )
+        logger.info(
+            f"Claude client available: {self.claude_client is not None}"
+        )
         json_template = """{{
   "flights": [
     {{
@@ -91,7 +99,8 @@ class LLMExtractor:
   }}
 }}"""
 
-        prompt = f"""Extract ALL travel information from this travel document. Be extremely thorough and precise.
+        prompt = f"""Extract ALL travel information from this travel document. 
+Be extremely thorough and precise.
 
 Return a JSON object with this exact structure:
 {json_template}
@@ -117,11 +126,17 @@ Return ONLY the JSON object, no markdown, no explanations."""
                 model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
                 
                 # More specific prompt for better extraction
-                system_prompt = """You are an expert travel document parser specialized in extracting structured data from flight tickets, hotel bookings, and itineraries.
-                Your task is to extract ALL information with 100% accuracy. Parse dates carefully, extract complete flight details including times and flight numbers.
-                Return ONLY a valid JSON object with no additional text, no markdown formatting, no explanations."""
+                system_prompt = """You are an expert travel document parser 
+specialized in extracting structured data from flight tickets, hotel bookings, 
+and itineraries. Your task is to extract ALL information with 100% accuracy. 
+Parse dates carefully, extract complete flight details including times and 
+flight numbers. Return ONLY a valid JSON object with no additional text, 
+no markdown formatting, no explanations."""
                 
-                print(f"[EXTRACTION] 🚀 Starting LLM extraction for {len(text)} characters of text")
+                print(
+                    f"[EXTRACTION] 🚀 Starting LLM extraction for "
+                    f"{len(text)} characters of text"
+                )
                 print(f"[EXTRACTION] 📄 Text preview: {text[:200]}...")
 
                 try:
@@ -130,19 +145,28 @@ Return ONLY the JSON object, no markdown, no explanations."""
                         model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt.format(text=text[:8000])}  # Increased text length
+                            {
+                                "role": "user", 
+                                "content": prompt.format(text=text[:8000])
+                            }
                         ],
                         temperature=0.1,
                         response_format={"type": "json_object"}
                     )
                 except Exception as format_error:
-                    print(f"[EXTRACTION] ⚠️  Using fallback without response_format")
+                    print(
+                        "[EXTRACTION] ⚠️  Using fallback without "
+                        "response_format"
+                    )
                     # Fallback without response_format
                     response = await self.openai_client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt.format(text=text[:8000])}  # Increased text length
+                            {
+                                "role": "user", 
+                                "content": prompt.format(text=text[:8000])
+                            }
                         ],
                         temperature=0.1
                     )
@@ -169,21 +193,46 @@ Return ONLY the JSON object, no markdown, no explanations."""
                 # Log extracted data summary
                 print(f"[EXTRACTION] ✅ Extraction successful!")
                 print(f"[EXTRACTION] 📊 Summary:")
-                print(f"[EXTRACTION]   • Flights: {len(parsed_data.get('flights', []))}")
-                print(f"[EXTRACTION]   • Hotels: {len(parsed_data.get('hotels', []))}")
-                print(f"[EXTRACTION]   • Passengers: {len(parsed_data.get('passengers', []))}")
+                print(
+                    f"[EXTRACTION]   • Flights: "
+                    f"{len(parsed_data.get('flights', []))}"
+                )
+                print(
+                    f"[EXTRACTION]   • Hotels: "
+                    f"{len(parsed_data.get('hotels', []))}"
+                )
+                print(
+                    f"[EXTRACTION]   • Passengers: "
+                    f"{len(parsed_data.get('passengers', []))}"
+                )
 
                 # Log detailed flight info
                 for i, flight in enumerate(parsed_data.get('flights', [])):
-                    print(f"[EXTRACTION] ✈️  Flight {i+1}: {flight.get('airline')} {flight.get('flight_number')} - {flight.get('departure_airport')} → {flight.get('arrival_airport')} on {flight.get('departure_date')} at {flight.get('departure_time')}")
+                    print(
+                        f"[EXTRACTION] ✈️  Flight {i+1}: "
+                        f"{flight.get('airline')} {flight.get('flight_number')} - "
+                        f"{flight.get('departure_airport')} → "
+                        f"{flight.get('arrival_airport')} on "
+                        f"{flight.get('departure_date')} at "
+                        f"{flight.get('departure_time')}"
+                    )
 
                 # Log detailed hotel info
                 for i, hotel in enumerate(parsed_data.get('hotels', [])):
-                    print(f"[EXTRACTION] 🏨 Hotel {i+1}: {hotel.get('name')} in {hotel.get('city')} ({hotel.get('check_in_date')} to {hotel.get('check_out_date')})")
+                    print(
+                        f"[EXTRACTION] 🏨 Hotel {i+1}: {hotel.get('name')} "
+                        f"in {hotel.get('city')} ({hotel.get('check_in_date')} "
+                        f"to {hotel.get('check_out_date')})"
+                    )
 
                 # Log passenger info
-                for i, passenger in enumerate(parsed_data.get('passengers', [])):
-                    print(f"[EXTRACTION] 👤 Passenger {i+1}: {passenger.get('full_name')}")
+                for i, passenger in enumerate(
+                    parsed_data.get('passengers', [])
+                ):
+                    print(
+                        f"[EXTRACTION] 👤 Passenger {i+1}: "
+                        f"{passenger.get('full_name')}"
+                    )
 
                 return parsed_data
                 
@@ -193,7 +242,10 @@ Return ONLY the JSON object, no markdown, no explanations."""
                     max_tokens=2000,
                     temperature=0.1,
                     messages=[
-                        {"role": "user", "content": prompt.format(text=text[:4000])}
+                        {
+                            "role": "user", 
+                            "content": prompt.format(text=text[:4000])
+                        }
                     ]
                 )
                 
@@ -225,5 +277,6 @@ Return ONLY the JSON object, no markdown, no explanations."""
             "dates": {},
             "travelers": [],
             "confirmation_numbers": [],
-            "error": "LLM extraction failed and no fallback parsing available. Please check your API configuration."
+            "error": "LLM extraction failed and no fallback parsing "
+                     "available. Please check your API configuration."
         }

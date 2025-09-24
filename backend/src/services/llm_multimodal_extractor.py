@@ -1,6 +1,7 @@
 """
 Multimodal LLM Extractor Service
-Uses vision-capable models to extract travel information directly from images/PDFs
+Uses vision-capable models to extract travel information directly from
+images/PDFs
 """
 import os
 import json
@@ -25,11 +26,16 @@ class MultimodalLLMExtractor:
         self.claude_client = None
         
         if os.getenv("OPENAI_API_KEY"):
-            self.openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.openai_client = AsyncOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
         if os.getenv("ANTHROPIC_API_KEY"):
-            self.claude_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            self.claude_client = anthropic.AsyncAnthropic(
+                api_key=os.getenv("ANTHROPIC_API_KEY")
+            )
     
-    def pdf_to_images_base64(self, pdf_path: str, max_pages: int = 10) -> List[str]:
+    def pdf_to_images_base64(self, pdf_path: str, 
+                             max_pages: int = 10) -> List[str]:
         """Convert PDF pages to base64 encoded images."""
         images = []
         try:
@@ -52,18 +58,21 @@ class MultimodalLLMExtractor:
     
     async def extract_from_image(self, 
                                  file_path: Optional[str] = None,
-                                 image_bytes: Optional[bytes] = None) -> Dict[str, Any]:
+                                 image_bytes: Optional[bytes] = None
+                                 ) -> Dict[str, Any]:
         """
         Extract travel information using multimodal vision capabilities.
         """
         
-        system_prompt = """You are an expert travel document analyzer with perfect OCR capabilities.
-        Extract ALL travel information from the document image(s) with 100% accuracy.
+        system_prompt = """You are an expert travel document analyzer with 
+        perfect OCR capabilities. Extract ALL travel information from the 
+        document image(s) with 100% accuracy.
         
         CRITICAL REQUIREMENTS:
         - Extract ALL flights (both outbound AND return flights)
         - Parse dates EXACTLY - "09 Aug 25" means August 9, 2025
-        - Extract passenger names EXACTLY as shown (e.g., "MR PETER JAMES LLOYD WALKER")
+        - Extract passenger names EXACTLY as shown 
+          (e.g., "MR PETER JAMES LLOYD WALKER")
         - For hotel dates, find actual check-in and check-out dates
         - Identify the destination city from the travel documents
         - Return dates in YYYY-MM-DD format (2025-08-09 not 2024-08-09)
@@ -75,7 +84,8 @@ class MultimodalLLMExtractor:
         user_prompt = """Extract ALL travel information from this document.
         
         CRITICAL INSTRUCTIONS:
-        1. Extract EXACT dates as shown in document (e.g., "09 Aug 25" becomes "2025-08-09")
+        1. Extract EXACT dates as shown in document 
+           (e.g., "09 Aug 25" becomes "2025-08-09")
         2. Extract FULL passenger names exactly as written
         3. For dates, if you see "09 Aug" assume current or next year (2025)
         4. Include ALL flight segments (outbound AND return)
@@ -148,11 +158,13 @@ class MultimodalLLMExtractor:
                 if file_ext == '.pdf':
                     # Convert PDF to images
                     images = self.pdf_to_images_base64(file_path)
-                    image_data_list = [{"base64": img, "type": "image/png"} for img in images]
+                    image_data_list = [{"base64": img, "type": "image/png"} 
+                                       for img in images]
                 elif file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']:
                     # Direct image
                     img_base64 = self.image_to_base64(file_path)
-                    image_data_list = [{"base64": img_base64, "type": f"image/{file_ext[1:]}"}]
+                    image_data_list = [{"base64": img_base64, 
+                                        "type": f"image/{file_ext[1:]}"}]
             elif image_bytes:
                 # Raw bytes
                 img_base64 = base64.b64encode(image_bytes).decode('utf-8')
@@ -178,7 +190,8 @@ class MultimodalLLMExtractor:
                     messages[1]["content"].append({
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:{img_data['type']};base64,{img_data['base64']}",
+                            "url": f"data:{img_data['type']};base64,"
+                                   f"{img_data['base64']}",
                             "detail": "high"  # High detail for better OCR
                         }
                     })
@@ -194,9 +207,11 @@ class MultimodalLLMExtractor:
                 
                 # Clean up response
                 if "```json" in result_text:
-                    result_text = result_text.split("```json")[1].split("```")[0]
+                    result_text = result_text.split("```json")[1].split(
+                        "```")[0]
                 elif "```" in result_text:
-                    result_text = result_text.split("```")[1].split("```")[0]
+                    result_text = result_text.split("```")[1].split(
+                        "```")[0]
                 
                 result = json.loads(result_text.strip())
                 
@@ -227,7 +242,7 @@ class MultimodalLLMExtractor:
                     })
                 
                 response = await self.claude_client.messages.create(
-                    model="claude-3-sonnet-20240229",  # or claude-3-opus-20240229
+                    model="claude-3-sonnet-20240229",  # or claude-3-opus
                     max_tokens=4096,
                     temperature=0.1,
                     messages=[
@@ -270,7 +285,9 @@ class MultimodalLLMExtractor:
             }
         }
     
-    async def extract_from_multiple_files(self, file_paths: List[str], progress_callback=None) -> Dict[str, Any]:
+    async def extract_from_multiple_files(
+        self, file_paths: List[str], progress_callback=None
+    ) -> Dict[str, Any]:
         """Process multiple files and merge results."""
         all_results = {
             "flights": [],
@@ -283,8 +300,10 @@ class MultimodalLLMExtractor:
         for idx, file_path in enumerate(file_paths):
             # Update progress if callback provided
             if progress_callback:
-                progress = 30 + (20 * (idx + 1) // total_files)  # Progress from 30-50%
-                await progress_callback(progress, f"Analyzing document {idx+1} of {total_files}...")
+                progress = 30 + (20 * (idx + 1) // total_files)  # 30-50%
+                await progress_callback(
+                    progress, f"Analyzing document {idx+1} of {total_files}..."
+                )
             
             result = await self.extract_from_image(file_path=file_path)
             if result and not result.get("_metadata", {}).get("error"):
@@ -304,7 +323,8 @@ class MultimodalLLMExtractor:
         seen_flights = set()
         unique_flights = []
         for flight in results["flights"]:
-            key = f"{flight.get('flight_number', '')}{flight.get('departure_date', '')}"
+            key = (f"{flight.get('flight_number', '')}"
+                   f"{flight.get('departure_date', '')}")
             if key not in seen_flights:
                 seen_flights.add(key)
                 unique_flights.append(flight)
@@ -324,7 +344,8 @@ class MultimodalLLMExtractor:
         seen_passengers = set()
         unique_passengers = []
         for passenger in results["passengers"]:
-            key = f"{passenger.get('first_name', '')}{passenger.get('last_name', '')}"
+            key = (f"{passenger.get('first_name', '')}"
+                   f"{passenger.get('last_name', '')}")
             if key not in seen_passengers:
                 seen_passengers.add(key)
                 unique_passengers.append(passenger)

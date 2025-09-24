@@ -42,7 +42,8 @@ class EventsService:
             Categorized events with details
         """
         
-        # No mocks: require real API integration; otherwise return empty with error
+        # No mocks: require real API integration; otherwise return empty
+        # with error
         if not (self.ticketmaster_api_key or self.predicthq_api_key):
             return {
                 "concerts": [],
@@ -53,7 +54,8 @@ class EventsService:
                 "local_events": [],
                 "error": "No events API configured"
             }
-        # If keys exist, implement real fetchers here (Ticketmaster included below)
+        # If keys exist, implement real fetchers here (Ticketmaster
+        # included below)
         results = {
             "concerts": [],
             "festivals": [],
@@ -64,13 +66,18 @@ class EventsService:
         }
         # Example: augment with Ticketmaster results when available
         try:
-            tm = await self._fetch_ticketmaster_events(location, start_date, end_date)
-            results["concerts"] = tm  # basic pass-through; ideally categorize
+            tm = await self._fetch_ticketmaster_events(
+                location, start_date, end_date
+            )
+            results["concerts"] = tm  # basic pass-through; ideally
+            # categorize
         except Exception as e:
             results["error"] = str(e)
         return results
     
-    async def get_local_news(self, location: str, start_date: str) -> List[Dict]:
+    async def get_local_news(
+        self, location: str, start_date: str
+    ) -> List[Dict]:
         """
         Get local news and updates for the destination
         

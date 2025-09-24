@@ -24,7 +24,8 @@ load_dotenv(env_path)
 logger = logging.getLogger(__name__)
 
 class HighPerformanceGuideService:
-    """Ultra-fast guide generation with Redis caching and parallel processing"""
+    """Ultra-fast guide generation with Redis caching and parallel 
+    processing"""
     
     def __init__(self):
         load_dotenv(env_path, override=True)
@@ -61,11 +62,13 @@ class HighPerformanceGuideService:
         await cache_service.connect()
         
         if progress_callback:
-            await progress_callback(5, "Initializing high-performance generation...")
+            await progress_callback(5, 
+                                   "Initializing high-performance generation...")
         
         # Extract traveler info
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (passengers[0]["full_name"] if passengers 
+                            else "Traveler")
         
         # Calculate duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -80,9 +83,11 @@ class HighPerformanceGuideService:
             "budget": preferences.get("budget", "moderate")
         }
         
-        cached_guide = await cache_service.get("complete_guide", **guide_cache_key)
+        cached_guide = await cache_service.get("complete_guide", 
+                                               **guide_cache_key)
         if cached_guide:
-            logger.info(f"Complete guide cache hit! Saved {time.time() - start_time:.1f}s")
+            logger.info(f"Complete guide cache hit! Saved "
+                       f"{time.time() - start_time:.1f}s")
             cached_guide["from_cache"] = True
             cached_guide["performance_metrics"] = {
                 "total_time": time.time() - start_time,
@@ -131,7 +136,8 @@ class HighPerformanceGuideService:
                 timeout=self.timeouts["parallel"]
             )
         except asyncio.TimeoutError:
-            logger.warning("Parallel execution timeout - using partial results")
+            logger.warning("Parallel execution timeout - using partial "
+                           "results")
             results = [None] * len(tasks)
         
         # Process results
@@ -186,8 +192,10 @@ class HighPerformanceGuideService:
             "weather_forecast": weather,
             
             "destination_intelligence": {
-                "map_url": f"https://maps.google.com/maps?q={destination}&z=13",
-                "interactive_map": f"https://www.openstreetmap.org/search?query={destination}",
+                "map_url": (f"https://maps.google.com/maps?q={destination}"
+                           f"&z=13"),
+                "interactive_map": (f"https://www.openstreetmap.org/search"
+                                   f"?query={destination}"),
                 "neighborhoods": neighborhoods,
                 "photos": self._generate_photo_urls(destination, neighborhoods)
             },
@@ -227,17 +235,22 @@ class HighPerformanceGuideService:
         }
         
         # Cache the complete guide
-        await cache_service.set("complete_guide", guide, ttl=7200, **guide_cache_key)
+        await cache_service.set("complete_guide", guide, ttl=7200, 
+                                **guide_cache_key)
         
         if progress_callback:
-            await progress_callback(100, f"Guide ready in {guide['generation_time_seconds']}s!")
+            await progress_callback(100, 
+                                   f"Guide ready in "
+                                   f"{guide['generation_time_seconds']}s!")
         
         logger.info(f"Guide generated in {guide['generation_time_seconds']}s "
-                   f"(Cache hits: {metrics['cache_hits']}, API calls: {metrics['api_calls']})")
+                   f"(Cache hits: {metrics['cache_hits']}, "
+                   f"API calls: {metrics['api_calls']})")
         
         return guide
     
-    async def _get_cached_content(self, destination: str, preferences: Dict, metrics: Dict) -> Dict:
+    async def _get_cached_content(self, destination: str, 
+                                  preferences: Dict, metrics: Dict) -> Dict:
         """Get restaurants and attractions with caching"""
         
         # Check cache
@@ -289,11 +302,14 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions", 
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
-                        content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+                        content = result.get("choices", [{}])[0].get(
+                            "message", {}).get("content", "{}")
                         
                         # Clean citations
                         content = re.sub(r'\[\d+\]', '', content)
@@ -302,15 +318,19 @@ Return as JSON arrays: restaurants, attractions"""
                         try:
                             parsed = json.loads(content)
                             # Cache the result
-                            await cache_service.set("perplexity_content", parsed, **cache_key)
+                            await cache_service.set(
+                                "perplexity_content", parsed, **cache_key)
                             return parsed
                         except json.JSONDecodeError:
                             # Try to extract JSON
-                            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                            json_match = re.search(
+                                r'\{.*\}', content, re.DOTALL)
                             if json_match:
                                 try:
                                     parsed = json.loads(json_match.group())
-                                    await cache_service.set("perplexity_content", parsed, **cache_key)
+                                    await cache_service.set(
+                                        "perplexity_content", parsed, 
+                                        **cache_key)
                                     return parsed
                                 except:
                                     pass
@@ -321,7 +341,8 @@ Return as JSON arrays: restaurants, attractions"""
         
         return {}
     
-    async def _get_cached_weather(self, destination: str, start_date: str, metrics: Dict) -> Dict:
+    async def _get_cached_weather(self, destination: str, start_date: str, 
+                                  metrics: Dict) -> Dict:
         """Get weather with caching"""
         
         cache_key = {"destination": destination, "date": start_date}
@@ -362,18 +383,22 @@ Return as JSON arrays: restaurants, attractions"""
                         
                         result = {
                             "daily_forecasts": forecasts,
-                            "summary": f"{forecasts[0]['condition']} - {forecasts[0]['temperature']}" if forecasts else ""
+                            "summary": (f"{forecasts[0]['condition']} - "
+                                       f"{forecasts[0]['temperature']}" 
+                                       if forecasts else "")
                         }
                         
                         # Cache for 1 hour
-                        await cache_service.set("weather", result, ttl=3600, **cache_key)
+                        await cache_service.set(
+                            "weather", result, ttl=3600, **cache_key)
                         return result
         except:
             pass
         
         return {"error": "Weather unavailable"}
     
-    async def _get_cached_events(self, destination: str, start_date: str, end_date: str, metrics: Dict) -> Dict:
+    async def _get_cached_events(self, destination: str, start_date: str, 
+                                 end_date: str, metrics: Dict) -> Dict:
         """Get events with caching"""
         
         cache_key = {
@@ -390,7 +415,9 @@ Return as JSON arrays: restaurants, attractions"""
         if not self.perplexity_api_key:
             return {}
         
-        prompt = f"List 5 events happening in {destination} between {start_date} and {end_date}. Include: name, date, venue, type. Format as JSON array."
+        prompt = (f"List 5 events happening in {destination} between "
+                 f"{start_date} and {end_date}. Include: name, date, venue, "
+                 f"type. Format as JSON array.")
         
         try:
             timeout = aiohttp.ClientTimeout(total=self.timeouts["perplexity"])
@@ -409,8 +436,10 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions",
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
@@ -422,7 +451,8 @@ Return as JSON arrays: restaurants, attractions"""
                             events = json.loads(content)
                             if isinstance(events, list):
                                 result = {"events": events[:5]}
-                                await cache_service.set("events", result, **cache_key)
+                                await cache_service.set(
+                                    "events", result, **cache_key)
                                 return result
                         except:
                             pass
@@ -431,7 +461,8 @@ Return as JSON arrays: restaurants, attractions"""
         
         return {}
     
-    async def _get_cached_neighborhoods(self, destination: str, metrics: Dict) -> List[Dict]:
+    async def _get_cached_neighborhoods(self, destination: str, 
+                                        metrics: Dict) -> List[Dict]:
         """Get neighborhoods with long-term caching"""
         
         cache_key = {"destination": destination}
@@ -444,7 +475,9 @@ Return as JSON arrays: restaurants, attractions"""
         if not self.perplexity_api_key:
             return []
         
-        prompt = f"List 5 main neighborhoods in {destination} for tourists. For each: name, description (10 words max). Format as JSON array."
+        prompt = (f"List 5 main neighborhoods in {destination} for "
+                 f"tourists. For each: name, description (10 words max). "
+                 f"Format as JSON array.")
         
         try:
             timeout = aiohttp.ClientTimeout(total=self.timeouts["perplexity"])
@@ -463,8 +496,10 @@ Return as JSON arrays: restaurants, attractions"""
                 
                 metrics["api_calls"] += 1
                 
-                async with session.post("https://api.perplexity.ai/chat/completions",
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers=headers, json=data) as response:
                     if response.status == 200:
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
@@ -476,8 +511,9 @@ Return as JSON arrays: restaurants, attractions"""
                             neighborhoods = json.loads(content)
                             if isinstance(neighborhoods, list):
                                 # Cache for 1 week
-                                await cache_service.set("neighborhoods", neighborhoods[:5], 
-                                                      ttl=604800, **cache_key)
+                                await cache_service.set(
+                                    "neighborhoods", neighborhoods[:5], 
+                                    ttl=604800, **cache_key)
                                 return neighborhoods[:5]
                         except:
                             pass
@@ -486,12 +522,14 @@ Return as JSON arrays: restaurants, attractions"""
         
         return []
     
-    def _generate_photo_urls(self, destination: str, neighborhoods: List[Dict]) -> List[str]:
+    def _generate_photo_urls(self, destination: str, 
+                             neighborhoods: List[Dict]) -> List[str]:
         """Generate photo URLs - NO PLACEHOLDER IMAGES"""
         # Return empty list - only use real photos from Google Places API
         return []
     
-    def _generate_fast_itinerary(self, num_days: int, content: Dict, destination: str) -> List[Dict]:
+    def _generate_fast_itinerary(self, num_days: int, content: Dict, 
+                                 destination: str) -> List[Dict]:
         """Generate quick itinerary"""
         restaurants = content.get("restaurants", [])
         attractions = content.get("attractions", [])

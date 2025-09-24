@@ -76,19 +76,25 @@ class EnhancedWeatherService(WeatherServiceInterface):
             
         except Exception as e:
             logger.error(f"Failed to initialize enhanced weather service: {e}")
-            raise ConfigurationError(f"Enhanced weather service initialization failed: {e}")
+            raise ConfigurationError(
+                f"Enhanced weather service initialization failed: {e}"
+            )
     
     async def health_check(self) -> Dict[str, Any]:
         """Check weather service health"""
         try:
             # Test with a simple weather request
-            test_weather = await self.get_current_weather("London", units="metric")
+            test_weather = await self.get_current_weather(
+                "London", units="metric"
+            )
             
             return {
                 "status": "healthy",
                 "service_name": self.service_name,
                 "base_url": self.base_url,
-                "api_key_configured": bool(self.settings.services.weather_api_key),
+                "api_key_configured": bool(
+                    self.settings.services.weather_api_key
+                ),
                 "test_request_success": "main" in test_weather,
                 "cache_size": len(self._cache),
                 "cache_enabled": self.config.cache_enabled,
@@ -126,10 +132,13 @@ class EnhancedWeatherService(WeatherServiceInterface):
                 method=request.method.value,
                 url=request.url,
                 params=request.params,
-                json=request.data if request.method != RequestMethod.GET else None,
+                json=(request.data if request.method != RequestMethod.GET 
+                      else None),
                 headers=request.headers
             ) as response:
-                response_time = (datetime.now() - start_time).total_seconds() * 1000
+                response_time = (
+                    (datetime.now() - start_time).total_seconds() * 1000
+                )
                 
                 if response.status == 200:
                     data = await response.json()
@@ -147,9 +156,15 @@ class EnhancedWeatherService(WeatherServiceInterface):
                     )
                     
         except asyncio.TimeoutError:
-            raise ServiceError("Weather service request timeout", service_name=self.service_name)
+            raise ServiceError(
+                "Weather service request timeout", 
+                service_name=self.service_name
+            )
         except Exception as e:
-            raise ServiceError(f"Weather service request failed: {e}", service_name=self.service_name)
+            raise ServiceError(
+                f"Weather service request failed: {e}", 
+                service_name=self.service_name
+            )
     
     async def validate_api_key(self) -> bool:
         """Validate the API key"""
@@ -176,7 +191,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             
             # Check Redis cache first
             if self.config.cache_enabled:
-                cached_data = await cache_manager.get("weather_data", cache_key_data)
+                cached_data = await cache_manager.get(
+                    "weather_data", cache_key_data
+                )
                 if cached_data:
                     logger.info(f"Redis cache HIT for weather: {location}")
                     return cached_data
@@ -185,10 +202,13 @@ class EnhancedWeatherService(WeatherServiceInterface):
             memory_cache_key = f"current_{location}_{units}"
             if self.config.cache_enabled and memory_cache_key in self._cache:
                 cached_data = self._cache[memory_cache_key]
-                if datetime.now() - cached_data["timestamp"] < timedelta(seconds=self.config.cache_ttl_seconds):
+                if (datetime.now() - cached_data["timestamp"] < 
+                    timedelta(seconds=self.config.cache_ttl_seconds)):
                     logger.debug(f"Memory cache HIT for weather: {location}")
                     # Also store in Redis for next time
-                    await cache_manager.set("weather_data", cache_key_data, cached_data["data"])
+                    await cache_manager.set(
+                        "weather_data", cache_key_data, cached_data["data"]
+                    )
                     return cached_data["data"]
             
             # Build request
@@ -212,7 +232,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             # Cache result in both Redis and memory
             if self.config.cache_enabled:
                 # Store in Redis
-                await cache_manager.set("weather_data", cache_key_data, enhanced_data)
+                await cache_manager.set(
+                    "weather_data", cache_key_data, enhanced_data
+                )
                 # Store in memory cache
                 self._cache[memory_cache_key] = {
                     "data": enhanced_data,
@@ -235,14 +257,19 @@ class EnhancedWeatherService(WeatherServiceInterface):
         try:
             # Validate days parameter
             if days < 1 or days > 5:
-                raise ValidationError("Days must be between 1 and 5 for free tier")
+                raise ValidationError(
+                    "Days must be between 1 and 5 for free tier"
+                )
             
             # Check cache first
             cache_key = f"forecast_{location}_{days}_{units}"
             if self.config.cache_enabled and cache_key in self._cache:
                 cached_data = self._cache[cache_key]
-                if datetime.now() - cached_data["timestamp"] < timedelta(seconds=self.config.cache_ttl_seconds):
-                    logger.debug(f"Returning cached forecast data for {location}")
+                if (datetime.now() - cached_data["timestamp"] < 
+                    timedelta(seconds=self.config.cache_ttl_seconds)):
+                    logger.debug(
+                        f"Returning cached forecast data for {location}"
+                    )
                     return cached_data["data"]
             
             # Build request
@@ -259,7 +286,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             response = await self.make_request(request)
             
             if not response.is_success:
-                raise ServiceError(f"Forecast request failed: {response.error}")
+                raise ServiceError(
+                    f"Forecast request failed: {response.error}"
+                )
             
             # Process forecast data
             processed_data = self._process_forecast_data(response.data, days)
@@ -287,20 +316,27 @@ class EnhancedWeatherService(WeatherServiceInterface):
         """Get weather for specific date range"""
         try:
             # Parse dates
-            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            start_dt = datetime.fromisoformat(
+                start_date.replace('Z', '+00:00')
+            )
+            end_dt = datetime.fromisoformat(
+                end_date.replace('Z', '+00:00')
+            )
             
             # Check if dates are in the future (use forecast)
             now = datetime.now()
             if start_dt > now:
                 days = min((end_dt - start_dt).days + 1, 5)
-                forecast_data = await self.get_weather_forecast(location, days, units)
+                forecast_data = await self.get_weather_forecast(
+                    location, days, units
+                )
                 
                 # Filter forecast to date range
                 filtered_forecasts = []
                 for daily in forecast_data.get("daily_forecasts", []):
                     forecast_date = datetime.fromisoformat(daily["date"])
-                    if start_dt.date() <= forecast_date.date() <= end_dt.date():
+                    if (start_dt.date() <= forecast_date.date() <= 
+                        end_dt.date()):
                         filtered_forecasts.append(daily)
                 
                 return {
@@ -325,7 +361,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             }
             
         except Exception as e:
-            logger.error(f"Failed to get weather for date range {start_date} to {end_date}: {e}")
+            logger.error(
+                f"Failed to get weather for date range {start_date} to {end_date}: {e}"
+            )
             raise ServiceError(f"Weather date range request failed: {e}")
     
     async def get_travel_weather_summary(
@@ -337,23 +375,33 @@ class EnhancedWeatherService(WeatherServiceInterface):
     ) -> Dict[str, Any]:
         """Get travel-specific weather summary"""
         try:
-            weather_data = await self.get_weather_for_dates(location, start_date, end_date, units)
+            weather_data = await self.get_weather_for_dates(
+                location, start_date, end_date, units
+            )
             
             # Generate travel recommendations
-            recommendations = self._generate_travel_recommendations(weather_data)
+            recommendations = self._generate_travel_recommendations(
+                weather_data
+            )
             
             return {
                 **weather_data,
                 "travel_recommendations": recommendations,
-                "packing_suggestions": self._generate_packing_suggestions(weather_data),
-                "activity_recommendations": self._generate_activity_recommendations(weather_data)
+                "packing_suggestions": self._generate_packing_suggestions(
+                    weather_data
+                ),
+                "activity_recommendations": (
+                    self._generate_activity_recommendations(weather_data)
+                )
             }
             
         except Exception as e:
             logger.error(f"Failed to get travel weather summary: {e}")
             raise ServiceError(f"Travel weather summary failed: {e}")
     
-    def _enhance_current_weather(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _enhance_current_weather(
+        self, raw_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Enhance current weather data with additional insights"""
         try:
             enhanced = raw_data.copy()
@@ -361,13 +409,21 @@ class EnhancedWeatherService(WeatherServiceInterface):
             # Add comfort index
             temp = raw_data["main"]["temp"]
             humidity = raw_data["main"]["humidity"]
-            enhanced["comfort_index"] = self._calculate_comfort_index(temp, humidity)
+            enhanced["comfort_index"] = self._calculate_comfort_index(
+                temp, humidity
+            )
             
             # Add travel suitability
-            enhanced["travel_suitability"] = self._assess_travel_suitability(raw_data)
+            enhanced["travel_suitability"] = (
+                self._assess_travel_suitability(raw_data)
+            )
             
             # Add clothing recommendations
-            enhanced["clothing_recommendations"] = self._get_clothing_recommendations(temp, raw_data["weather"][0]["main"])
+            enhanced["clothing_recommendations"] = (
+                self._get_clothing_recommendations(
+                    temp, raw_data["weather"][0]["main"]
+                )
+            )
             
             return enhanced
             
@@ -375,7 +431,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
             logger.warning(f"Failed to enhance weather data: {e}")
             return raw_data
     
-    def _process_forecast_data(self, raw_data: Dict[str, Any], days: int) -> Dict[str, Any]:
+    def _process_forecast_data(
+        self, raw_data: Dict[str, Any], days: int
+    ) -> Dict[str, Any]:
         """Process raw forecast data into structured format"""
         try:
             forecasts = raw_data.get("list", [])
@@ -401,7 +459,9 @@ class EnhancedWeatherService(WeatherServiceInterface):
                 
                 # Track min/max temperatures
                 temp = forecast["main"]["temp"]
-                daily_forecasts[date_key]["temp_min"] = min(daily_forecasts[date_key]["temp_min"], temp)
+                daily_forecasts[date_key]["temp_min"] = min(
+                    daily_forecasts[date_key]["temp_min"], temp
+                )
                 daily_forecasts[date_key]["temp_max"] = max(daily_forecasts[date_key]["temp_max"], temp)
                 
                 # Collect weather conditions

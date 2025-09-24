@@ -21,6 +21,11 @@ from .enhanced_database_service import EnhancedDatabaseService
 from .enhanced_llm_service import EnhancedLLMService
 from .google_weather_service import GoogleWeatherService
 from .enhanced_pdf_processor import EnhancedPDFProcessor
+from .enhanced_guide_service import EnhancedGuideService
+from .optimized_guide_service import OptimizedGuideService
+from .luxury_guide_service import LuxuryGuideService
+from .magazine_pdf_service import MagazinePDFService
+from .unified_guide_service import UnifiedGuideService
 from ..core.exceptions import ConfigurationError, ServiceError
 from ..config import get_settings
 
@@ -66,7 +71,9 @@ class ServiceFactory:
             
         except Exception as e:
             logger.error(f"Failed to initialize service factory: {e}")
-            raise ConfigurationError(f"Service factory initialization failed: {e}")
+            raise ConfigurationError(
+                f"Service factory initialization failed: {e}"
+            )
     
     async def create_storage_service(
         self,
@@ -83,7 +90,9 @@ class ServiceFactory:
             service = EnhancedDatabaseService(config)
             
             # Register the service
-            service_registry.register(f"storage_{service_name}", service, config)
+            service_registry.register(
+                f"storage_{service_name}", service, config
+            )
             
             return service
             
@@ -119,7 +128,9 @@ class ServiceFactory:
             return service
             
         except Exception as e:
-            raise ServiceError(f"Failed to create LLM service for {provider}: {e}")
+            raise ServiceError(
+                f"Failed to create LLM service for {provider}: {e}"
+            )
     
     async def create_weather_service(
         self,
@@ -138,7 +149,9 @@ class ServiceFactory:
             service = GoogleWeatherService()
 
             # Register the service
-            service_registry.register(f"weather_{service_name}", service, config)
+            service_registry.register(
+                f"weather_{service_name}", service, config
+            )
 
             return service
 
@@ -159,10 +172,14 @@ class ServiceFactory:
             if processing_type == "pdf":
                 service = EnhancedPDFProcessor(config)
             else:
-                raise ConfigurationError(f"Unsupported processing type: {processing_type}")
+                raise ConfigurationError(
+                    f"Unsupported processing type: {processing_type}"
+                )
 
             # Register the service
-            service_registry.register(f"processing_{processing_type}_{service_name}", service, config)
+            service_registry.register(
+                f"processing_{processing_type}_{service_name}", service, config
+            )
 
             return service
 
@@ -177,20 +194,26 @@ class ServiceFactory:
     ) -> ExternalServiceInterface:
         """Create an external service"""
         # This would be implemented based on specific external service needs
-        raise NotImplementedError("External service creation not yet implemented")
+        raise NotImplementedError(
+            "External service creation not yet implemented"
+        )
     
     def get_service(self, service_name: str) -> Optional[BaseService]:
         """Get a service by name"""
         return service_registry.get(service_name)
     
-    def get_storage_service(self, service_name: str = "default") -> Optional[StorageServiceInterface]:
+    def get_storage_service(
+        self, service_name: str = "default"
+    ) -> Optional[StorageServiceInterface]:
         """Get a storage service"""
         service = service_registry.get(f"storage_{service_name}")
         if service and isinstance(service, StorageServiceInterface):
             return service
         return None
     
-    def get_llm_service(self, provider: Union[LLMProvider, str]) -> Optional[LLMServiceInterface]:
+    def get_llm_service(
+        self, provider: Union[LLMProvider, str]
+    ) -> Optional[LLMServiceInterface]:
         """Get an LLM service"""
         if isinstance(provider, LLMProvider):
             provider = provider.value
@@ -200,16 +223,22 @@ class ServiceFactory:
             return service
         return None
 
-    def get_weather_service(self, service_name: str = "default") -> Optional[WeatherServiceInterface]:
+    def get_weather_service(
+        self, service_name: str = "default"
+    ) -> Optional[WeatherServiceInterface]:
         """Get a weather service"""
         service = service_registry.get(f"weather_{service_name}")
         if service and isinstance(service, WeatherServiceInterface):
             return service
         return None
 
-    def get_processing_service(self, processing_type: str, service_name: str = "default") -> Optional[ProcessingServiceInterface]:
+    def get_processing_service(
+        self, processing_type: str, service_name: str = "default"
+    ) -> Optional[ProcessingServiceInterface]:
         """Get a processing service"""
-        service = service_registry.get(f"processing_{processing_type}_{service_name}")
+        service = service_registry.get(
+            f"processing_{processing_type}_{service_name}"
+        )
         if service and isinstance(service, ProcessingServiceInterface):
             return service
         return None
@@ -257,7 +286,9 @@ class ServiceFactory:
         if service:
             return service
 
-        return await self.create_processing_service(processing_type, service_name)
+        return await self.create_processing_service(
+            processing_type, service_name
+        )
     
     async def health_check_all(self) -> Dict[str, Dict[str, Any]]:
         """Health check all services"""
@@ -316,7 +347,9 @@ class ServiceFactory:
                     await self.create_llm_service(provider)
                     logger.info(f"Created LLM service for {provider.value}")
                 except Exception as e:
-                    logger.warning(f"Failed to create LLM service for {provider.value}: {e}")
+                    logger.warning(
+                        f"Failed to create LLM service for {provider.value}: {e}"
+                    )
 
         # Create weather service if enabled
         if self.settings.services.weather_enabled:
@@ -334,7 +367,61 @@ class ServiceFactory:
             except Exception as e:
                 logger.warning(f"Failed to create PDF processing service: {e}")
     
-    def _get_service_config(self, service_type: str, service_name: str) -> ServiceConfig:
+    def create_enhanced_guide_service(self) -> EnhancedGuideService:
+        """Create enhanced guide service"""
+        try:
+            return EnhancedGuideService()
+        except Exception as e:
+            logger.exception(f"Failed to create enhanced guide service: {e}")
+            raise ConfigurationError(
+                f"Enhanced guide service creation failed: {e}"
+            ) from e
+    
+    def create_optimized_guide_service(self) -> OptimizedGuideService:
+        """Create optimized guide service"""
+        try:
+            return OptimizedGuideService()
+        except Exception as e:
+            logger.exception(f"Failed to create optimized guide service: {e}")
+            raise ConfigurationError(
+                f"Optimized guide service creation failed: {e}"
+            ) from e
+    
+    def create_luxury_guide_service(self) -> LuxuryGuideService:
+        """Create luxury guide service"""
+        try:
+            return LuxuryGuideService()
+        except Exception as e:
+            logger.exception(f"Failed to create luxury guide service: {e}")
+            raise ConfigurationError(
+                f"Luxury guide service creation failed: {e}"
+            ) from e
+    
+    def create_magazine_pdf_service(
+        self, destination: Optional[str] = None
+    ) -> MagazinePDFService:
+        """Create magazine PDF service"""
+        try:
+            return MagazinePDFService(destination=destination)
+        except Exception as e:
+            logger.exception(f"Failed to create magazine PDF service: {e}")
+            raise ConfigurationError(
+                f"Magazine PDF service creation failed: {e}"
+            ) from e
+    
+    def create_unified_guide_service(self) -> UnifiedGuideService:
+        """Create unified guide service"""
+        try:
+            return UnifiedGuideService()
+        except Exception as e:
+            logger.exception(f"Failed to create unified guide service: {e}")
+            raise ConfigurationError(
+                f"Unified guide service creation failed: {e}"
+            ) from e
+    
+    def _get_service_config(
+        self, service_type: str, service_name: str
+    ) -> ServiceConfig:
         """Get service configuration"""
         config_key = f"{service_type}_{service_name}"
         return self._service_configs.get(config_key, ServiceConfig())
@@ -342,11 +429,20 @@ class ServiceFactory:
     def _is_provider_enabled(self, provider: LLMProvider) -> bool:
         """Check if LLM provider is enabled"""
         if provider == LLMProvider.OPENAI:
-            return self.settings.services.openai_enabled and bool(self.settings.services.openai_api_key)
+            return (
+                self.settings.services.openai_enabled and 
+                bool(self.settings.services.openai_api_key)
+            )
         elif provider == LLMProvider.ANTHROPIC:
-            return self.settings.services.anthropic_enabled and bool(self.settings.services.anthropic_api_key)
+            return (
+                self.settings.services.anthropic_enabled and 
+                bool(self.settings.services.anthropic_api_key)
+            )
         elif provider == LLMProvider.PERPLEXITY:
-            return self.settings.services.perplexity_enabled and bool(self.settings.services.perplexity_api_key)
+            return (
+                self.settings.services.perplexity_enabled and 
+                bool(self.settings.services.perplexity_api_key)
+            )
         else:
             return False
     
@@ -374,12 +470,16 @@ service_factory = ServiceFactory()
 
 
 # Convenience functions
-async def get_storage_service(service_name: str = "default") -> StorageServiceInterface:
+async def get_storage_service(
+    service_name: str = "default"
+) -> StorageServiceInterface:
     """Get storage service"""
     if not service_factory._initialized:
         await service_factory.initialize()
     
-    return await service_factory.get_or_create_storage_service(service_name)
+    return await service_factory.get_or_create_storage_service(
+        service_name
+    )
 
 
 async def get_llm_service(provider: Union[LLMProvider, str]) -> LLMServiceInterface:

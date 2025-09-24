@@ -51,65 +51,88 @@ class EnhancedGuideService:
         self.anthropic_api_key = get_api_key("anthropic")
 
         # Validate required API keys
-        if not any([self.perplexity_api_key, self.openai_api_key, self.anthropic_api_key]):
-            raise APIError("At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)")
+        if not any([self.perplexity_api_key, self.openai_api_key, 
+                   self.anthropic_api_key]):
+            raise APIError(
+                "At least one LLM API key is required "
+                "(Perplexity, OpenAI, or Anthropic)"
+            )
 
     def _load_prompts(self) -> Dict[str, Any]:
-        """Load prompts configuration from JSON file, with a safe default fallback.
-        Returns a dict that contains the keys expected by _construct_master_prompt
-        so single-pass generation never crashes if the file is missing.
+        """Load prompts configuration from JSON file, with safe fallback.
+        Returns a dict that contains the keys expected by 
+        _construct_master_prompt so single-pass generation never crashes 
+        if the file is missing.
         """
         def default_prompts() -> Dict[str, Any]:
             return {
                 "travel_guide": {
                     "base_prompt": (
-                        "You are a seasoned travel editor crafting a glossy magazine-style, personalized guide. "
-                        "Use rich, specific details, real addresses, times, booking links, and actionable tips."
+                        "You are a seasoned travel editor crafting a glossy "
+                        "magazine-style, personalized guide. Use rich, "
+                        "specific details, real addresses, times, booking "
+                        "links, and actionable tips."
                     ),
                     "components": {
                         "destination_overview": (
-                            "Provide a vivid destination overview for {destination} during {month_year}, "
-                            "considering the travel pace ({pace}), group ({group_type}), and interests."
+                            "Provide a vivid destination overview for "
+                            "{destination} during {month_year}, considering "
+                            "the travel pace ({pace}), group ({group_type}), "
+                            "and interests."
                         ),
                         "weather_analysis": (
-                            "Summarize the likely weather for {destination} from {start_date} to {end_date}, "
+                            "Summarize the likely weather for "
+                            "{destination} from {start_date} to {end_date}, "
                             "including packing and what-to-wear guidance."
                         ),
                         "personalized_recommendations": {
                             "template": (
-                                "Curate recommendations tailored to this traveler. Reflect preferences: {preferences_summary}."
+                                "Curate recommendations tailored to this "
+                                "traveler. Reflect preferences: "
+                                "{preferences_summary}."
                             )
                         },
                         "daily_itinerary": {
                             "template": (
-                                "Build a detailed day-by-day itinerary ({duration} total) with specific times and places; "
-                                "balance walking level ({walking_level}) and interests."
+                                "Build a detailed day-by-day itinerary "
+                                "({duration} total) with specific times and "
+                                "places; balance walking level "
+                                "({walking_level}) and interests."
                             )
                         },
                         "events_search": (
-                            "Include real events that align with dates ({dates}) and interests, with ticket links."
+                            "Include real events that align with dates "
+                            "({dates}) and interests, with ticket links."
                         ),
                         "restaurant_guide": {
                             "template": (
-                                "List restaurants with address, phone, cuisine, price, booking link, hours, and why it fits."
+                                "List restaurants with address, phone, "
+                                "cuisine, price, booking link, hours, and "
+                                "why it fits."
                             )
                         },
                         "local_insights": (
-                            "Add insider tips, transport guidance, money matters, safety notes, and cultural etiquette."
+                            "Add insider tips, transport guidance, money "
+                            "matters, safety notes, and cultural etiquette."
                         ),
                         "hidden_gems": (
-                            "Highlight lesser-known gems and photo spots, avoiding over-touristed cliches."
+                            "Highlight lesser-known gems and photo spots, "
+                            "avoiding over-touristed cliches."
                         ),
                         "shopping_guide": (
-                            "If relevant to preferences, suggest neighborhoods or streets and what to buy."
+                            "If relevant to preferences, suggest "
+                            "neighborhoods or streets and what to buy."
                         ),
                         "evening_entertainment": (
-                            "Offer nightlife/theater/music options based on the traveler's nightlife level."
+                            "Offer nightlife/theater/music options based on "
+                            "the traveler's nightlife level."
                         )
                     },
                     "output_format": (
-                        "Structure with sections: Summary, Destination Insights, Weather, Daily Itinerary, "
-                        "Restaurants, Attractions, Events, Neighborhoods (if relevant), Practical Info, Hidden Gems."
+                        "Structure with sections: Summary, Destination "
+                        "Insights, Weather, Daily Itinerary, Restaurants, "
+                        "Attractions, Events, Neighborhoods (if relevant), "
+                        "Practical Info, Hidden Gems."
                     )
                 }
             }
@@ -118,8 +141,11 @@ class EnhancedGuideService:
             with open(prompts_path, 'r') as f:
                 loaded = json.load(f)
                 # Ensure essential structure exists; otherwise, fallback
-                if not isinstance(loaded, dict) or "travel_guide" not in loaded:
-                    self.logger.warning("prompts.json missing expected keys; using defaults")
+                if (not isinstance(loaded, dict) or 
+                    "travel_guide" not in loaded):
+                    self.logger.warning(
+                        "prompts.json missing expected keys; using defaults"
+                    )
                     return default_prompts()
                 return loaded
         except Exception as e:
@@ -934,11 +960,15 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if isinstance(attractions, Exception):
                     print(f"[GUIDE] ❌ Attractions search failed: {attractions}")
                     attractions = []
+                elif attractions is None:
+                    attractions = []
                 else:
                     print(f"[GUIDE] ✅ Attractions search succeeded: {len(attractions)} items")
 
                 if isinstance(restaurants, Exception):
                     print(f"[GUIDE] ❌ Restaurants search failed: {restaurants}")
+                    restaurants = []
+                elif restaurants is None:
                     restaurants = []
                 else:
                     print(f"[GUIDE] ✅ Restaurants search succeeded: {len(restaurants)} items")
@@ -946,17 +976,23 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if isinstance(events, Exception):
                     print(f"[GUIDE] ❌ Events search failed: {events}")
                     events = []
+                elif events is None:
+                    events = []
                 else:
                     print(f"[GUIDE] ✅ Events search succeeded: {len(events)} items")
 
                 if isinstance(weather, Exception):
                     print(f"[GUIDE] ❌ Weather search failed: {weather}")
                     weather = []
+                elif weather is None:
+                    weather = []
                 else:
                     print(f"[GUIDE] ✅ Weather search succeeded: {len(weather) if isinstance(weather, list) else 'data available'}")
 
                 if isinstance(insights, Exception):
                     print(f"[GUIDE] ❌ Insights search failed: {insights}")
+                    insights = {}
+                elif insights is None:
                     insights = {}
                 else:
                     print(f"[GUIDE] ✅ Insights search succeeded")
@@ -970,16 +1006,22 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 await progress_callback(50, "Adding photos and booking links")
             
             # Enhance restaurants with photos and booking URLs
-            if restaurants:
-                restaurants = await self.places_enhancer.enhance_restaurants_batch(
-                    restaurants, context["destination"]
-                )
+            if restaurants and isinstance(restaurants, list):
+                try:
+                    restaurants = await self.places_enhancer.enhance_restaurants_batch(
+                        restaurants, context["destination"]
+                    )
+                except Exception as e:
+                    print(f"[GUIDE] ⚠️ Restaurant enhancement failed: {e}")
             
             # Enhance attractions with photos and details
-            if attractions:
-                attractions = await self.places_enhancer.enhance_attractions_batch(
-                    attractions, context["destination"]
-                )
+            if attractions and isinstance(attractions, list):
+                try:
+                    attractions = await self.places_enhancer.enhance_attractions_batch(
+                        attractions, context["destination"]
+                    )
+                except Exception as e:
+                    print(f"[GUIDE] ⚠️ Attraction enhancement failed: {e}")
             
             if progress_callback:
                 await progress_callback(55, "Creating personalized daily itineraries")
@@ -1017,7 +1059,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             # Ensure we have weather for all days
             weather_data = []
             weather_summary = {}
-            if weather and not weather.get("error"):
+            if weather and isinstance(weather, dict) and not weather.get("error"):
                 weather_data = weather.get("daily_forecasts", [])
                 weather_summary = weather.get("summary", {})
                 

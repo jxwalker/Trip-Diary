@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 class RealEventsService:
     """
     Service to fetch real, specific events happening during travel dates
-    Integrates with multiple event APIs to find concerts, shows, exhibitions, etc.
+    Integrates with multiple event APIs to find concerts, shows, 
+    exhibitions, etc.
     """
     
     def __init__(self):
@@ -34,26 +35,32 @@ class RealEventsService:
         """
         Get real events happening during the specific travel dates
         """
-        logger.info(f"Fetching real events for {destination} from {start_date} to {end_date}")
+        logger.info(f"Fetching real events for {destination} from "
+                    f"{start_date} to {end_date}")
         
         # Run all event sources in parallel
         tasks = []
         
         # Task 1: Ticketmaster events (concerts, sports, theater)
         if self.ticketmaster_key:
-            tasks.append(self._fetch_ticketmaster_events(destination, start_date, end_date))
+            tasks.append(self._fetch_ticketmaster_events(
+                destination, start_date, end_date))
         
         # Task 2: Eventbrite events (local events, workshops, festivals)
         if self.eventbrite_key:
-            tasks.append(self._fetch_eventbrite_events(destination, start_date, end_date))
+            tasks.append(self._fetch_eventbrite_events(
+                destination, start_date, end_date))
         
         # Task 3: SeatGeek events (sports, concerts)
         if self.seatgeek_key:
-            tasks.append(self._fetch_seatgeek_events(destination, start_date, end_date))
+            tasks.append(self._fetch_seatgeek_events(
+                destination, start_date, end_date))
         
-        # Task 4: Perplexity search for additional events (museums, galleries, etc.)
+        # Task 4: Perplexity search for additional events 
+        # (museums, galleries, etc.)
         if self.perplexity_key:
-            tasks.append(self._fetch_perplexity_events(destination, start_date, end_date, preferences))
+            tasks.append(self._fetch_perplexity_events(
+                destination, start_date, end_date, preferences))
         
         # Execute all tasks in parallel
         try:
@@ -72,12 +79,15 @@ class RealEventsService:
         
         # Deduplicate and filter events
         unique_events = self._deduplicate_events(all_events)
-        filtered_events = self._filter_events_by_preferences(unique_events, preferences)
+        filtered_events = self._filter_events_by_preferences(
+            unique_events, preferences)
         
         logger.info(f"Found {len(filtered_events)} unique events")
         return filtered_events[:12]  # Return top 12 events
     
-    async def _fetch_ticketmaster_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_ticketmaster_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch events from Ticketmaster API"""
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -88,7 +98,8 @@ class RealEventsService:
                 params = {
                     "apikey": self.ticketmaster_key,
                     "city": city,
-                    # Remove hardcoded state code - let API handle location detection
+                    # Remove hardcoded state code - let API handle 
+                    # location detection
                     "startDateTime": f"{start_date}T00:00:00Z",
                     "endDateTime": f"{end_date}T23:59:59Z",
                     "size": 20,
@@ -101,14 +112,18 @@ class RealEventsService:
                         data = await response.json()
                         events = []
                         
-                        for event in data.get("_embedded", {}).get("events", []):
+                        for event in data.get("_embedded", {}).get(
+                            "events", []):
                             # Extract event details
                             event_data = {
                                 "name": event.get("name", ""),
                                 "type": self._get_event_type(event),
-                                "date": event.get("dates", {}).get("start", {}).get("localDate", ""),
-                                "time": event.get("dates", {}).get("start", {}).get("localTime", ""),
-                                "venue": event.get("_embedded", {}).get("venues", [{}])[0].get("name", ""),
+                                "date": event.get("dates", {}).get(
+                                    "start", {}).get("localDate", ""),
+                                "time": event.get("dates", {}).get(
+                                    "start", {}).get("localTime", ""),
+                                "venue": event.get("_embedded", {}).get(
+                                    "venues", [{}])[0].get("name", ""),
                                 "address": self._get_venue_address(event),
                                 "price_range": self._get_price_range(event),
                                 "description": event.get("info", ""),
@@ -130,7 +145,9 @@ class RealEventsService:
         
         return []
     
-    async def _fetch_eventbrite_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_eventbrite_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch events from Eventbrite API"""
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -142,10 +159,12 @@ class RealEventsService:
                 params = {
                     "token": self.eventbrite_key,
                     "location.address": destination,
-                    "start_date.range_start": start_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-                    "start_date.range_end": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "start_date.range_start": start_dt.strftime(
+                        "%Y-%m-%dT%H:%M:%S"),
+                    "start_date.range_end": end_dt.strftime(
+                        "%Y-%m-%dT%H:%M:%S"),
                     "expand": "venue",
-                    "categories": "103,104,105,106,108,110",  # Arts, Music, Food, Sports, etc.
+                    "categories": "103,104,105,106,108,110",  # Arts, Music, etc.
                     "sort_by": "relevance"
                 }
                 
@@ -158,12 +177,17 @@ class RealEventsService:
                             event_data = {
                                 "name": event.get("name", {}).get("text", ""),
                                 "type": self._get_eventbrite_type(event),
-                                "date": event.get("start", {}).get("local", "").split("T")[0],
-                                "time": event.get("start", {}).get("local", "").split("T")[1][:5] if "T" in event.get("start", {}).get("local", "") else "",
+                                "date": event.get("start", {}).get(
+                                    "local", "").split("T")[0],
+                                "time": event.get("start", {}).get(
+                                    "local", "").split("T")[1][:5] if "T" in 
+                                    event.get("start", {}).get("local", "") else "",
                                 "venue": event.get("venue", {}).get("name", ""),
                                 "address": self._get_eventbrite_address(event),
                                 "price_range": self._get_eventbrite_price(event),
-                                "description": event.get("description", {}).get("text", "")[:200] + "..." if event.get("description", {}).get("text") else "",
+                                "description": (event.get("description", {}).get(
+                                    "text", "")[:200] + "..." if event.get(
+                                    "description", {}).get("text") else ""),
                                 "booking_url": event.get("url", ""),
                                 "image_url": event.get("logo", {}).get("url", ""),
                                 "source": "Eventbrite"
@@ -182,7 +206,9 @@ class RealEventsService:
         
         return []
     
-    async def _fetch_seatgeek_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_seatgeek_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch events from SeatGeek API"""
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -206,11 +232,14 @@ class RealEventsService:
                                 "name": event.get("title", ""),
                                 "type": event.get("type", ""),
                                 "date": event.get("datetime_utc", "").split("T")[0],
-                                "time": event.get("datetime_utc", "").split("T")[1][:5] if "T" in event.get("datetime_utc", "") else "",
+                                "time": event.get("datetime_utc", "").split(
+                                    "T")[1][:5] if "T" in event.get(
+                                    "datetime_utc", "") else "",
                                 "venue": event.get("venue", {}).get("name", ""),
                                 "address": self._get_seatgeek_address(event),
                                 "price_range": self._get_seatgeek_price(event),
-                                "description": f"{event.get('type', 'Event')} at {event.get('venue', {}).get('name', '')}",
+                                "description": (f"{event.get('type', 'Event')} at "
+                                    f"{event.get('venue', {}).get('name', '')}"),
                                 "booking_url": event.get("url", ""),
                                 "image_url": event.get("performers", [{}])[0].get("image", ""),
                                 "source": "SeatGeek"
@@ -277,11 +306,35 @@ IMPORTANT: Only include REAL events with specific dates during {start_date} to {
                         result = await response.json()
                         content = result.get("choices", [{}])[0].get("message", {}).get("content", "[]")
                         
-                        # Clean and parse JSON
-                        import re
-                        content = re.sub(r'\[\d+\]', '', content)
+                        from .llm_parser import LLMParser
+                        llm_parser = LLMParser()
+                        
+                        citation_cleaning_prompt = f"""Remove citation markers from this text and return clean JSON:
+
+INPUT:
+{content}
+
+INSTRUCTIONS:
+- Remove all citation markers like [1], [2], etc.
+- Keep the JSON structure intact
+- Return only the cleaned JSON
+
+OUTPUT:"""
                         
                         try:
+                            try:
+                                cleaned_content = await llm_parser._parse_with_openai(citation_cleaning_prompt)
+                                if isinstance(cleaned_content, str):
+                                    content = cleaned_content
+                                elif isinstance(cleaned_content, dict) and 'events' in cleaned_content:
+                                    events = cleaned_content['events']
+                                    return events[:10] if len(events) > 10 else events
+                            except Exception as e:
+                                # Fallback to basic cleaning
+                                logger.exception("LLM event parsing failed, using regex fallback")
+                                import re
+                                content = re.sub(r'\[\d+\]', '', content)
+                            
                             events = json.loads(content)
                             if isinstance(events, list):
                                 # Add source info

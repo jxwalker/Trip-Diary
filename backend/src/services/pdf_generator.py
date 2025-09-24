@@ -4,7 +4,10 @@ Creates beautiful PDF travel packs with enhanced guide content
 """
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image, KeepTogether
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, 
+    Image, KeepTogether
+)
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
@@ -20,8 +23,9 @@ import os
 from datetime import datetime
 import html
 import tempfile
-import urllib.request
 import hashlib
+import aiohttp
+import asyncio
 
 from .maps_service import MapsService
 
@@ -143,7 +147,9 @@ class TravelPackGenerator:
             textColor=colors.HexColor('#666666')
         ))
     
-    async def generate(self, trip_id: str, itinerary: Dict, recommendations: Dict, enhanced_guide: Dict = None) -> str:
+    async def generate(self, trip_id: str, itinerary: Dict, 
+                      recommendations: Dict, 
+                      enhanced_guide: Dict = None) -> str:
         """
         Generate PDF travel pack with enhanced guide content
         """
@@ -185,36 +191,50 @@ class TravelPackGenerator:
         
         # Accommodation information
         if itinerary.get("accommodations"):
-            story.extend(self._create_accommodation_section(itinerary["accommodations"]))
+            story.extend(
+                self._create_accommodation_section(itinerary["accommodations"])
+            )
             story.append(PageBreak())
         
         # Weather (from enhanced guide if available)
         if enhanced_guide and enhanced_guide.get("weather"):
-            story.extend(self._create_weather_section(enhanced_guide["weather"]))
+            story.extend(
+                self._create_weather_section(enhanced_guide["weather"])
+            )
             story.append(PageBreak())
 
         # Static Map (hotel + key POIs) if Maps API configured
-        static_map = await self._maybe_create_static_map(itinerary, enhanced_guide)
+        static_map = await self._maybe_create_static_map(
+            itinerary, enhanced_guide
+        )
         if static_map:
             story.extend(static_map)
             story.append(PageBreak())
 
         # Daily Itinerary (from enhanced guide or basic schedule)
         if enhanced_guide and enhanced_guide.get("daily_itinerary"):
-            story.extend(await self._create_enhanced_itinerary(enhanced_guide["daily_itinerary"], enhanced_guide))
+            story.extend(await self._create_enhanced_itinerary(
+                enhanced_guide["daily_itinerary"], enhanced_guide
+            ))
             story.append(PageBreak())
         elif itinerary.get("daily_schedule"):
-            story.extend(self._create_daily_schedule(itinerary["daily_schedule"]))
+            story.extend(
+                self._create_daily_schedule(itinerary["daily_schedule"])
+            )
             story.append(PageBreak())
         
         # Restaurant Recommendations (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("restaurants"):
-            story.extend(self._create_restaurant_section(enhanced_guide["restaurants"]))
+            story.extend(
+                await self._create_restaurant_section(enhanced_guide["restaurants"])
+            )
             story.append(PageBreak())
         
         # Attractions (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("attractions"):
-            story.extend(self._create_attractions_section(enhanced_guide["attractions"]))
+            story.extend(
+                await self._create_attractions_section(enhanced_guide["attractions"])
+            )
             story.append(PageBreak())
         
         # Basic Recommendations (fallback)
@@ -224,12 +244,16 @@ class TravelPackGenerator:
         
         # Practical Information
         if enhanced_guide and enhanced_guide.get("practical_info"):
-            story.extend(self._create_practical_info(enhanced_guide["practical_info"]))
+            story.extend(
+                self._create_practical_info(enhanced_guide["practical_info"])
+            )
             story.append(PageBreak())
         
         # Important information
         if itinerary.get("important_info"):
-            story.extend(self._create_important_info(itinerary["important_info"]))
+            story.extend(
+                self._create_important_info(itinerary["important_info"])
+            )
         
         # Build PDF
         try:
@@ -244,7 +268,11 @@ class TravelPackGenerator:
                 Paragraph("Travel Pack", self.styles['CustomTitle']),
                 Spacer(1, 0.5*inch),
                 Paragraph(f"Trip ID: {trip_id}", self.styles['InfoText']),
-                Paragraph("Your travel pack is being prepared. Please try again later.", self.styles['InfoText'])
+                Paragraph(
+                    "Your travel pack is being prepared. "
+                    "Please try again later.", 
+                    self.styles['InfoText']
+                )
             ]
             doc.build(story)
             return str(pdf_path)
@@ -257,7 +285,9 @@ class TravelPackGenerator:
         # Escape HTML entities
         text_str = html.escape(text_str)
         # Remove any control characters
-        text_str = ''.join(char for char in text_str if ord(char) >= 32 or char == '\n')
+        text_str = ''.join(
+            char for char in text_str if ord(char) >= 32 or char == '\n'
+        )
         return text_str
     
     async def _create_cover_page(self, itinerary: Dict, enhanced_guide: Optional[Dict]) -> List:
@@ -282,7 +312,8 @@ class TravelPackGenerator:
             Paragraph(f"<b>{destination}</b>", self.styles['CustomTitle']),
             Spacer(1, 0.15*inch),
             Paragraph(
-                f"{trip_summary.get('start_date', '')} - {trip_summary.get('end_date', '')}",
+                f"{trip_summary.get('start_date', '')} - "
+                f"{trip_summary.get('end_date', '')}",
                 self.styles['InfoText']
             ),
             Paragraph(f"{persona}", self.styles['SmallText']),
@@ -302,15 +333,30 @@ class TravelPackGenerator:
         # Create overview table
         data = []
         if trip_summary.get("destination"):
-            data.append(["Destination:", self._safe_text(trip_summary.get("destination"))])
+            data.append([
+                "Destination:", 
+                self._safe_text(trip_summary.get("destination"))
+            ])
         if trip_summary.get("duration"):
-            data.append(["Duration:", self._safe_text(trip_summary.get("duration"))])
+            data.append([
+                "Duration:", 
+                self._safe_text(trip_summary.get("duration"))
+            ])
         if trip_summary.get("start_date"):
-            data.append(["Start Date:", self._safe_text(trip_summary.get("start_date"))])
+            data.append([
+                "Start Date:", 
+                self._safe_text(trip_summary.get("start_date"))
+            ])
         if trip_summary.get("end_date"):
-            data.append(["End Date:", self._safe_text(trip_summary.get("end_date"))])
+            data.append([
+                "End Date:", 
+                self._safe_text(trip_summary.get("end_date"))
+            ])
         if trip_summary.get("total_passengers"):
-            data.append(["Travelers:", self._safe_text(trip_summary.get("total_passengers"))])
+            data.append([
+                "Travelers:", 
+                self._safe_text(trip_summary.get("total_passengers"))
+            ])
         
         if data:
             table = Table(data, colWidths=[2*inch, 4*inch])
@@ -327,7 +373,10 @@ class TravelPackGenerator:
     def _create_guide_summary(self, enhanced_guide: Dict) -> List:
         """Create enhanced guide summary section"""
         story = []
-        story.append(Paragraph("Your Personalized Travel Guide", self.styles['SectionHeader']))
+        story.append(Paragraph(
+            "Your Personalized Travel Guide", 
+            self.styles['SectionHeader']
+        ))
         story.append(Spacer(1, 0.2*inch))
         
         if enhanced_guide.get("summary"):
@@ -335,16 +384,25 @@ class TravelPackGenerator:
             summary_text = self._safe_text(enhanced_guide["summary"])
             for para in summary_text.split('\n'):
                 if para.strip():
-                    story.append(Paragraph(para.strip(), self.styles['InfoText']))
+                    story.append(Paragraph(
+                        para.strip(), 
+                        self.styles['InfoText']
+                    ))
                     story.append(Spacer(1, 0.1*inch))
         
         if enhanced_guide.get("destination_insights"):
             story.append(Spacer(1, 0.2*inch))
-            story.append(Paragraph("Destination Insights", self.styles['SubHeader']))
+            story.append(Paragraph(
+                "Destination Insights", 
+                self.styles['SubHeader']
+            ))
             insights_text = self._safe_text(enhanced_guide["destination_insights"])
             for para in insights_text.split('\n'):
                 if para.strip():
-                    story.append(Paragraph(para.strip(), self.styles['InfoText']))
+                    story.append(Paragraph(
+                        para.strip(), 
+                        self.styles['InfoText']
+                    ))
                     story.append(Spacer(1, 0.1*inch))
         
         return story
@@ -352,7 +410,10 @@ class TravelPackGenerator:
     def _create_flight_section(self, flights: List[Dict]) -> List:
         """Create flight information section"""
         story = []
-        story.append(Paragraph("Flight Information", self.styles['SectionHeader']))
+        story.append(Paragraph(
+            "Flight Information", 
+            self.styles['SectionHeader']
+        ))
         story.append(Spacer(1, 0.2*inch))
         
         for i, flight in enumerate(flights):
@@ -360,9 +421,14 @@ class TravelPackGenerator:
                 story.append(Spacer(1, 0.3*inch))
             
             # Flight header
-            flight_num = self._safe_text(flight.get("flight_number", f"Flight {i+1}"))
+            flight_num = self._safe_text(
+                flight.get("flight_number", f"Flight {i+1}")
+            )
             airline = self._safe_text(flight.get("airline", ""))
-            story.append(Paragraph(f"<b>{flight_num}</b> - {airline}", self.styles['SubHeader']))
+            story.append(Paragraph(
+                f"<b>{flight_num}</b> - {airline}", 
+                self.styles['SubHeader']
+            ))
             
             # Flight details table
             data = []
@@ -373,7 +439,8 @@ class TravelPackGenerator:
                 data.append([
                     "Departure:",
                     f"{self._safe_text(dep.get('airport', ''))}",
-                    f"{self._safe_text(dep.get('date', ''))} at {self._safe_text(dep.get('time', ''))}"
+                    f"{self._safe_text(dep.get('date', ''))} at "
+                    f"{self._safe_text(dep.get('time', ''))}"
                 ])
             
             # Arrival
@@ -382,14 +449,19 @@ class TravelPackGenerator:
                 data.append([
                     "Arrival:",
                     f"{self._safe_text(arr.get('airport', ''))}",
-                    f"{self._safe_text(arr.get('date', ''))} at {self._safe_text(arr.get('time', ''))}"
+                    f"{self._safe_text(arr.get('date', ''))} at "
+                    f"{self._safe_text(arr.get('time', ''))}"
                 ])
             
             # Other details
             if flight.get("seat"):
                 data.append(["Seat:", self._safe_text(flight.get("seat")), ""])
             if flight.get("class"):
-                data.append(["Class:", self._safe_text(flight.get("class")), ""])
+                data.append([
+                    "Class:", 
+                    self._safe_text(flight.get("class")), 
+                    ""
+                ])
             
             if data:
                 table = Table(data, colWidths=[1.5*inch, 2.5*inch, 2*inch])
@@ -515,7 +587,7 @@ class TravelPackGenerator:
         
         return story
     
-    def _create_restaurant_section(self, restaurants: List[Dict]) -> List:
+    async def _create_restaurant_section(self, restaurants: List[Dict]) -> List:
         """Create restaurant recommendations section with photos and QR codes"""
         story = []
         story.append(Paragraph("Recommended Restaurants", self.styles['SectionHeader']))
@@ -532,11 +604,9 @@ class TravelPackGenerator:
                     # Use synchronous helper to avoid complicating flow
                     img_path = self._image_cache.get(photo)
                     if not img_path:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                            urllib.request.urlretrieve(photo, tmp.name)
-                            img_path = tmp.name
-                            self._image_cache[photo] = img_path
-                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                        img_path = await self._download_image(photo)
+                    if img_path:
+                        story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
                     story.append(Spacer(1, 0.1*inch))
                 except Exception:
                     pass
@@ -564,7 +634,7 @@ class TravelPackGenerator:
         
         return story
     
-    def _create_attractions_section(self, attractions: List[Dict]) -> List:
+    async def _create_attractions_section(self, attractions: List[Dict]) -> List:
         """Create attractions section with photos and QR codes"""
         story = []
         story.append(Paragraph("Must-See Attractions", self.styles['SectionHeader']))
@@ -579,11 +649,9 @@ class TravelPackGenerator:
                 try:
                     img_path = self._image_cache.get(photo)
                     if not img_path:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                            urllib.request.urlretrieve(photo, tmp.name)
-                            img_path = tmp.name
-                            self._image_cache[photo] = img_path
-                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                        img_path = await self._download_image(photo)
+                    if img_path:
+                        story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
                     story.append(Spacer(1, 0.1*inch))
                 except Exception:
                     pass
@@ -740,9 +808,7 @@ class TravelPackGenerator:
                 return []
 
             # Download to temp file for ReportLab Image
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
-                urllib.request.urlretrieve(url, tmp.name)
-                tmp_path = tmp.name
+            tmp_path = await self._download_image(url)
 
             img = Image(tmp_path, width=6*inch, height=4*inch)
             return [Paragraph("Map Overview", self.styles['SectionHeader']), Spacer(1, 0.1*inch), img]
@@ -764,16 +830,21 @@ class TravelPackGenerator:
             pass
 
     async def _download_image(self, url: str) -> Optional[str]:
-        """Download and cache image, return local path."""
+        """Download and cache image, return local path (async to avoid blocking)."""
         if not url:
             return None
         if url in self._image_cache:
             return self._image_cache[url]
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                urllib.request.urlretrieve(url, tmp.name)
-                self._image_cache[url] = tmp.name
-                return tmp.name
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                            tmp.write(content)
+                            self._image_cache[url] = tmp.name
+                            return tmp.name
+            return None
         except Exception:
             return None
 

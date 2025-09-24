@@ -21,6 +21,7 @@ class LLMParser:
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        self.perplexity_api_key = os.getenv("PERPLEXITY_API_KEY", "")
         
     async def parse_guide(self, content: str) -> Dict:
         """Parse travel guide content using LLM"""
@@ -54,7 +55,8 @@ class LLMParser:
     def _create_extraction_prompt(self, content: str) -> str:
         """Create prompt for structured data extraction"""
         
-        prompt = f"""Extract structured information from this travel guide and return it as JSON.
+        prompt = f"""Extract structured information from this travel guide and \
+return it as JSON.
         
 CONTENT TO PARSE:
 {content}
@@ -206,20 +208,24 @@ Return ONLY the JSON object, no other text."""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a data extraction expert. Extract structured data from travel guides and return valid JSON."
+                            "content": ("You are a data extraction expert. "
+                                       "Extract structured data from travel "
+                                       "guides and return valid JSON.")
                         },
                         {
                             "role": "user",
                             "content": prompt
                         }
                     ],
-                    "temperature": 0.1,  # Low temperature for consistent extraction
+                    "temperature": 0.1,  # Low temperature for consistent
                     "response_format": {"type": "json_object"}
                 }
                 
                 url = "https://api.openai.com/v1/chat/completions"
                 
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         result_text = data["choices"][0]["message"]["content"]
@@ -257,7 +263,9 @@ Return ONLY the JSON object, no other text."""
                 
                 url = "https://api.anthropic.com/v1/messages"
                 
-                async with session.post(url, json=payload, headers=headers) as response:
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         result_text = data["content"][0]["text"]
@@ -275,6 +283,64 @@ Return ONLY the JSON object, no other text."""
             print(f"Error parsing with Anthropic: {e}")
             return self._basic_extraction("")
     
+    async def _parse_with_perplexity(self, prompt: str) -> Dict:
+        """Use Perplexity to parse content"""
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Authorization": f"Bearer {self.perplexity_api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": "llama-3.1-sonar-small-128k-online",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": ("You are a data extraction expert. "
+                                       "Extract structured data from travel "
+                                       "guides and return valid JSON format only.")
+                        },
+                        {
+                            "role": "user",
+                            "content": f"{prompt}\n\nPlease respond with valid JSON format only."
+                        }
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 4000
+                }
+                
+                url = "https://api.perplexity.ai/chat/completions"
+                
+                async with session.post(
+                    url, json=payload, headers=headers
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        result_text = data["choices"][0]["message"]["content"]
+                        json_start = result_text.find('{')
+                        json_end = result_text.rfind('}') + 1
+                        if json_start >= 0 and json_end > json_start:
+                            json_str = result_text[json_start:json_end]
+                            parsed_data = json.loads(json_str)
+                            parsed_data["source"] = "perplexity"
+                            return parsed_data
+                        else:
+                            try:
+                                parsed_data = json.loads(result_text)
+                                parsed_data["source"] = "perplexity"
+                                return parsed_data
+                            except json.JSONDecodeError:
+                                return {"content": result_text, "source": "perplexity"}
+                    else:
+                        print(f"Perplexity API error: {response.status}")
+                        return self._basic_extraction("")
+                        
+        except Exception as e:
+            print(f"Error parsing with Perplexity: {e}")
+            return self._basic_extraction("")
+
     def _basic_extraction(self, content: str) -> Dict:
         """Basic extraction without LLM"""
         

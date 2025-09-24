@@ -44,7 +44,9 @@ class DiningPreferences(BaseModel):
     """Consolidated dining preferences"""
     cuisine_types: List[str] = Field(default_factory=lambda: ["Local Cuisine"])
     dietary_restrictions: List[str] = Field(default_factory=list)
-    price_ranges: List[PriceRange] = Field(default_factory=lambda: [PriceRange.MODERATE])
+    price_ranges: List[PriceRange] = Field(
+        default_factory=lambda: [PriceRange.MODERATE]
+    )
     meal_preferences: Dict[str, bool] = Field(default_factory=lambda: {
         "breakfast": True,
         "brunch": False,
@@ -57,7 +59,7 @@ class DiningPreferences(BaseModel):
         "cafes": True,
         "bars": False
     })
-    booking_preference: str = Field(default="flexible")  # "advance", "flexible", "walk-in"
+    booking_preference: str = Field(default="flexible")  # advance/flexible/walk-in
 
 class InterestPreferences(BaseModel):
     """Consolidated interests and activities"""
@@ -170,17 +172,28 @@ class UserProfile(BaseModel):
                 "dining.meal_preferences.fine_dining": True,
                 "dining.meal_preferences.street_food": True,
                 "dining.meal_preferences.cafes": True,
-                "dining.price_ranges": [PriceRange.MODERATE, PriceRange.UPSCALE],
+                "dining.price_ranges": [
+                    PriceRange.MODERATE, PriceRange.UPSCALE
+                ],
                 "interests.categories.lifestyle.cooking_classes": True,
                 "interests.categories.lifestyle.wine_tasting": True,
                 "interests.categories.lifestyle.local_markets": True
             },
             "culture": {
-                "interests.categories.culture": {k: True for k in ["art_galleries", "museums", "historical_sites", "architecture", "local_culture"]},
+                "interests.categories.culture": {
+                    k: True for k in [
+                        "art_galleries", "museums", "historical_sites", 
+                        "architecture", "local_culture"
+                    ]
+                },
                 "travel_style.pace": TravelPace.BALANCED
             },
             "adventure": {
-                "interests.categories.outdoors": {k: True for k in ["hiking", "adventure_sports", "nature_parks"]},
+                "interests.categories.outdoors": {
+                    k: True for k in [
+                        "hiking", "adventure_sports", "nature_parks"
+                    ]
+                },
                 "travel_style.activity_level": ActivityLevel.VERY_ACTIVE,
                 "travel_style.adventure_level": AdventureLevel.EXPLORER
             },
@@ -191,15 +204,23 @@ class UserProfile(BaseModel):
                 "travel_style.activity_level": ActivityLevel.LIGHT
             },
             "family": {
-                "interests.categories.family": {k: True for k in self.interests.categories["family"].keys()},
+                "interests.categories.family": {
+                    k: True for k in self.interests.categories["family"].keys()
+                },
                 "travel_style.group_type": GroupType.FAMILY
             },
             "budget": {
-                "dining.price_ranges": [PriceRange.BUDGET, PriceRange.MODERATE],
-                "travel_style.accommodation_preferences.hotel_class": "2-3 star"
+                "dining.price_ranges": [
+                    PriceRange.BUDGET, PriceRange.MODERATE
+                ],
+                "travel_style.accommodation_preferences.hotel_class": (
+                    "2-3 star"
+                )
             },
             "luxury": {
-                "dining.price_ranges": [PriceRange.UPSCALE, PriceRange.LUXURY],
+                "dining.price_ranges": [
+                    PriceRange.UPSCALE, PriceRange.LUXURY
+                ],
                 "dining.meal_preferences.fine_dining": True,
                 "interests.categories.lifestyle.spa_wellness": True,
                 "travel_style.accommodation_preferences.hotel_class": "5 star"
@@ -208,15 +229,20 @@ class UserProfile(BaseModel):
         
         if template_name in templates:
             # Apply template settings
-            # This would need implementation based on your preference update logic
+            # Implementation needed for preference update logic
             pass
     
     def to_context(self) -> Dict:
         """Convert profile to context for prompt generation"""
         return {
             "cuisine_preferences": ", ".join(self.dining.cuisine_types),
-            "dietary_restrictions": ", ".join(self.dining.dietary_restrictions) if self.dining.dietary_restrictions else "None",
-            "price_ranges": ", ".join([p.value for p in self.dining.price_ranges]),
+            "dietary_restrictions": (
+                ", ".join(self.dining.dietary_restrictions) 
+                if self.dining.dietary_restrictions else "None"
+            ),
+            "price_ranges": ", ".join([
+                p.value for p in self.dining.price_ranges
+            ]),
             "interests": ", ".join(self.interests.get_active_interests()),
             "travel_pace": self.travel_style.pace.value,
             "group_type": self.travel_style.group_type.value,

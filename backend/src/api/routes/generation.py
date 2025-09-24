@@ -85,7 +85,9 @@ async def get_generation_status(
         }
         
     except Exception as e:
-        logger.error(f"Failed to get generation status for trip {trip_id}: {e}")
+        logger.error(
+            f"Failed to get generation status for trip {trip_id}: {e}"
+        )
         raise HTTPException(
             status_code=500,
             detail=create_error_response(e, "generation status check")

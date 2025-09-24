@@ -53,14 +53,16 @@ class FastGuideService:
         # Prepare all tasks to run in PARALLEL
         tasks = []
         
-        # Task 1: Get essential info (restaurants, attractions, events) in ONE call
-        tasks.append(self._get_essential_content(destination, start_date, end_date, preferences))
+        # Task 1: Get essential info (restaurants, attractions, events)
+        tasks.append(self._get_essential_content(
+            destination, start_date, end_date, preferences))
         
         # Task 2: Get weather (lightweight, fast)
         tasks.append(self._get_fast_weather(destination, start_date, end_date))
         
         # Task 3: Get quick itinerary
-        tasks.append(self._get_quick_itinerary(destination, start_date, end_date, preferences))
+        tasks.append(self._get_quick_itinerary(
+            destination, start_date, end_date, preferences))
         
         if progress_callback:
             await progress_callback(20, "Fetching data in parallel")
@@ -79,12 +81,19 @@ class FastGuideService:
             await progress_callback(80, "Assembling guide")
         
         # Unpack results
-        essential_content = results[0] if not isinstance(results[0], Exception) else {}
-        weather_data = results[1] if not isinstance(results[1], Exception) else {}
-        itinerary_result = results[2] if not isinstance(results[2], Exception) else []
+        essential_content = (results[0] 
+                             if not isinstance(results[0], Exception) 
+                             else {})
+        weather_data = (results[1] 
+                       if not isinstance(results[1], Exception) 
+                       else {})
+        itinerary_result = (results[2] 
+                           if not isinstance(results[2], Exception) 
+                           else [])
         
         # Check if itinerary is an error response
-        if isinstance(itinerary_result, dict) and itinerary_result.get("error"):
+        if (isinstance(itinerary_result, dict) and 
+            itinerary_result.get("error")):
             # Itinerary generation failed, use empty list
             itinerary = []
         elif isinstance(itinerary_result, list):
@@ -102,7 +111,8 @@ class FastGuideService:
         if essential_content.get("error"):
             return {
                 "error": essential_content["error"],
-                "message": f"Failed to generate guide for {destination}. Please check your API configuration.",
+                "message": (f"Failed to generate guide for {destination}. "
+                           f"Please check your API configuration."),
                 "destination": destination,
                 "start_date": start_date,
                 "end_date": end_date,
@@ -113,22 +123,30 @@ class FastGuideService:
         # Create comprehensive summary
         summary_parts = [f"Your personalized travel guide to {destination}"]
         if weather_forecasts:
-            avg_temp = sum(f.get("temp_high", 20) for f in weather_forecasts) // len(weather_forecasts)
+            avg_temp = (sum(f.get("temp_high", 20) for f in weather_forecasts) 
+                       // len(weather_forecasts))
             summary_parts.append(f"Expect temperatures around {avg_temp}°C")
         if restaurants:
-            summary_parts.append(f"featuring {len(restaurants)} restaurant recommendations")
+            summary_parts.append(
+                f"featuring {len(restaurants)} restaurant recommendations")
         if attractions:
-            summary_parts.append(f"and {len(attractions)} must-see attractions")
+            summary_parts.append(
+                f"and {len(attractions)} must-see attractions")
 
         # Build destination insights
-        insights_parts = [f"Discover the best of {destination} with our curated recommendations."]
+        insights_parts = [
+            f"Discover the best of {destination} with our curated "
+            f"recommendations."]
         if essential_content.get("error"):
             insights_parts.append(f"Note: {essential_content['error']}")
         else:
-            insights_parts.append("All recommendations are based on current local information and your preferences.")
+            insights_parts.append(
+                "All recommendations are based on current local information "
+                "and your preferences.")
 
         # Integrate weather into itinerary
-        enhanced_itinerary = self._integrate_weather_into_itinerary(itinerary, weather_forecasts)
+        enhanced_itinerary = self._integrate_weather_into_itinerary(
+            itinerary, weather_forecasts)
 
         guide = {
             "summary": " ".join(summary_parts),
@@ -148,7 +166,8 @@ class FastGuideService:
                 "packing": self._generate_packing_suggestions(weather_forecasts)
             },
             "hidden_gems": [],
-            "citations": ["Perplexity AI search results", "OpenWeather API", "Local travel expertise"],
+            "citations": ["Perplexity AI search results", 
+                         "OpenWeather API", "Local travel expertise"],
             "generated_with": "fast_guide_service",
             "generated_in_seconds": 15,
             "timestamp": datetime.now().isoformat(),
@@ -156,14 +175,16 @@ class FastGuideService:
         }
         
         # CRITICAL: Validate guide completeness before returning
-        is_valid, errors, validation_details = GuideValidator.validate_guide(guide)
+        is_valid, errors, validation_details = (
+            GuideValidator.validate_guide(guide))
 
         if not is_valid:
             print(f"Guide validation failed: {errors}")
             # Return error instead of fallback content
             return {
                 "error": "Guide validation failed",
-                "message": f"Generated guide for {destination} is incomplete: {', '.join(errors)}",
+                "message": (f"Generated guide for {destination} is "
+                           f"incomplete: {', '.join(errors)}"),
                 "validation_errors": errors,
                 "destination": destination,
                 "start_date": start_date,
@@ -175,7 +196,8 @@ class FastGuideService:
             guide["validation_passed"] = True
 
         # Log validation results
-        GuideValidator.log_validation_results(guide, is_valid, errors, validation_details)
+        GuideValidator.log_validation_results(
+            guide, is_valid, errors, validation_details)
 
         # Cache for future use
         self.destination_cache[cache_key] = guide
@@ -185,7 +207,9 @@ class FastGuideService:
 
         return guide
     
-    async def _get_essential_content(self, destination: str, start_date: str, end_date: str, preferences: Dict) -> Dict:
+    async def _get_essential_content(self, destination: str, 
+                                    start_date: str, end_date: str, 
+                                    preferences: Dict) -> Dict:
         """Get restaurants, attractions, and events with retry logic"""
         
         if not self.perplexity_api_key:
@@ -199,7 +223,8 @@ class FastGuideService:
             }
         
         # Smaller, focused prompt
-        prompt = f"""For {destination} from {start_date} to {end_date}, provide:
+        prompt = (f"For {destination} from {start_date} to {end_date}, "
+                 f"provide:")
 
 1. TOP 5 RESTAURANTS:
 - Name, cuisine, price ($/$$/$$$), address, why recommended
@@ -221,7 +246,8 @@ BE CONCISE - one line per item."""
 
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=base_timeout + (attempt * 5))  # 12s, 17s
+                timeout = aiohttp.ClientTimeout(
+                    total=base_timeout + (attempt * 5))  # 12s, 17s
                 print(f"Attempt {attempt + 1}/{max_retries} for Perplexity API (timeout: {timeout.total}s)")
                 
                 async with aiohttp.ClientSession(timeout=timeout) as session:

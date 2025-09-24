@@ -1,6 +1,7 @@
 """
 Optimized Guide Service
-High-performance guide generation using concurrent processing and optimized APIs
+High-performance guide generation using concurrent processing and 
+optimized APIs
 """
 import os
 import json
@@ -58,7 +59,8 @@ class OptimizedGuideService:
         hotel_info: Dict,
         preferences: Dict,
         extracted_data: Dict = None,
-        progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None
+        progress_callback: Optional[Callable[[int, str], 
+                                            Awaitable[None]]] = None
     ) -> Dict:
         """
         Generate complete travel guide using optimized concurrent processing
@@ -80,11 +82,15 @@ class OptimizedGuideService:
         
         try:
             if progress_callback:
-                await progress_callback(5, "Initializing optimized guide generation")
+                await progress_callback(
+                    5, "Initializing optimized guide generation"
+                )
             
             # Validate inputs
             if not destination or not start_date or not end_date:
-                return self._create_error_response("Missing required parameters")
+                return self._create_error_response(
+                    "Missing required parameters"
+                )
             
             # Build context for generation
             context = self._build_context(
@@ -93,11 +99,14 @@ class OptimizedGuideService:
             )
             
             if progress_callback:
-                await progress_callback(15, "Starting concurrent data fetching")
+                await progress_callback(
+                    15, "Starting concurrent data fetching"
+                )
             
             # Execute concurrent tasks
             guide_data = await self._fetch_all_data_concurrently(
-                destination, start_date, end_date, preferences, progress_callback
+                destination, start_date, end_date, preferences, 
+                progress_callback
             )
             
             if guide_data.get("error"):
@@ -112,13 +121,18 @@ class OptimizedGuideService:
             )
             
             # Validate guide completeness
-            is_valid, errors, validation_details = GuideValidator.validate_guide(complete_guide)
+            is_valid, errors, validation_details = (
+                GuideValidator.validate_guide(complete_guide)
+            )
             
             if not is_valid:
                 logger.warning(f"Guide validation failed: {errors}")
                 return {
                     "error": "Guide validation failed",
-                    "message": f"Generated guide for {destination} is incomplete: {', '.join(errors)}",
+                    "message": (
+                        f"Generated guide for {destination} is incomplete: "
+                        f"{', '.join(errors)}"
+                    ),
                     "validation_errors": errors,
                     "validation_details": validation_details,
                     "destination": destination,
@@ -142,19 +156,28 @@ class OptimizedGuideService:
             # Update stats
             self.generation_stats["successful_requests"] += 1
             self.generation_stats["average_time"] = (
-                (self.generation_stats["average_time"] * (self.generation_stats["successful_requests"] - 1) + generation_time) 
-                / self.generation_stats["successful_requests"]
+                (self.generation_stats["average_time"] * 
+                 (self.generation_stats["successful_requests"] - 1) + 
+                 generation_time) / 
+                self.generation_stats["successful_requests"]
             )
             
             if progress_callback:
-                await progress_callback(100, f"Guide ready! Generated in {generation_time:.1f}s")
+                await progress_callback(
+                    100, f"Guide ready! Generated in {generation_time:.1f}s"
+                )
             
-            logger.info(f"Guide generated successfully for {destination} in {generation_time:.1f}s")
+            logger.info(
+                f"Guide generated successfully for {destination} in "
+                f"{generation_time:.1f}s"
+            )
             return complete_guide
             
         except Exception as e:
             logger.error(f"Guide generation failed for {destination}: {e}")
-            return self._create_error_response(f"Guide generation failed: {str(e)}")
+            return self._create_error_response(
+                f"Guide generation failed: {str(e)}"
+            )
     
     async def _fetch_all_data_concurrently(
         self,
@@ -170,14 +193,20 @@ class OptimizedGuideService:
         tasks = []
         
         # Task 1: Google Places restaurants (high-quality real data)
-        google_places_restaurants_task = self._fetch_google_places_restaurants(destination, preferences)
+        google_places_restaurants_task = (
+            self._fetch_google_places_restaurants(destination, preferences)
+        )
         tasks.append(google_places_restaurants_task)
 
-        # Task 1b: Google Places attractions (high-quality real data with photos)
-        google_places_attractions_task = self._fetch_google_places_attractions(destination, preferences)
+        # Task 1b: Google Places attractions (high-quality real data 
+        # with photos)
+        google_places_attractions_task = (
+            self._fetch_google_places_attractions(destination, preferences)
+        )
         tasks.append(google_places_attractions_task)
 
-        # Task 2: Perplexity guide data (attractions, events, practical info, daily suggestions)
+        # Task 2: Perplexity guide data (attractions, events, 
+        # practical info, daily suggestions)
         # Create async callback wrapper if progress_callback exists
         perplexity_callback = None
         if progress_callback:
@@ -186,7 +215,9 @@ class OptimizedGuideService:
                     try:
                         await progress_callback(15 + p * 0.4, m)
                     except Exception as e:
-                        logger.error(f"Error in perplexity_progress callback: {e}")
+                        logger.error(
+                            f"Error in perplexity_progress callback: {e}"
+                        )
                         raise
             perplexity_callback = perplexity_progress
 
@@ -211,11 +242,15 @@ class OptimizedGuideService:
         tasks.append(events_task)
         
         # Task 4: Transportation data
-        transport_task = self._fetch_transportation_data(destination, preferences)
+        transport_task = self._fetch_transportation_data(
+            destination, preferences
+        )
         tasks.append(transport_task)
         
         # Task 5: Accessibility data
-        accessibility_task = self._fetch_accessibility_data(destination, preferences)
+        accessibility_task = self._fetch_accessibility_data(
+            destination, preferences
+        )
         tasks.append(accessibility_task)
         
         # Task 6: Budget and emergency data
@@ -230,21 +265,31 @@ class OptimizedGuideService:
             )
             
             # Unpack results - we have 7 tasks now
-            google_places_restaurants, google_places_attractions, perplexity_data, weather_data, real_events, transport_data, accessibility_data, practical_data = results
+            (google_places_restaurants, google_places_attractions, 
+             perplexity_data, weather_data, real_events, transport_data, 
+             accessibility_data, practical_data) = results
 
             # Handle Google Places restaurants data
             if isinstance(google_places_restaurants, Exception):
-                logger.warning(f"Google Places restaurants fetch failed: {google_places_restaurants}")
+                logger.warning(
+                    f"Google Places restaurants fetch failed: "
+                    f"{google_places_restaurants}"
+                )
                 google_places_restaurants = []  # Fallback to empty list
 
             # Handle Google Places attractions data
             if isinstance(google_places_attractions, Exception):
-                logger.warning(f"Google Places attractions fetch failed: {google_places_attractions}")
+                logger.warning(
+                    f"Google Places attractions fetch failed: "
+                    f"{google_places_attractions}"
+                )
                 google_places_attractions = []  # Fallback to empty list
             # Handle Perplexity data
             if isinstance(perplexity_data, Exception):
                 logger.error(f"Perplexity data fetch failed: {perplexity_data}")
-                return self._create_error_response(f"Failed to fetch guide data: {str(perplexity_data)}")
+                return self._create_error_response(
+                    f"Failed to fetch guide data: {str(perplexity_data)}"
+                )
 
             if perplexity_data.get("error"):
                 return perplexity_data  # Return Perplexity error
@@ -261,7 +306,9 @@ class OptimizedGuideService:
             
             # Handle transportation data (non-critical)
             if isinstance(transport_data, Exception):
-                logger.warning(f"Transportation data fetch failed: {transport_data}")
+                logger.warning(
+                    f"Transportation data fetch failed: {transport_data}"
+                )
                 transport_data = {"error": str(transport_data)}
             
             # Combine data

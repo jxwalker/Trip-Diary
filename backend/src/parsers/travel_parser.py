@@ -1,6 +1,8 @@
 # src/parsers/travel_parser.py
 from typing import Dict, Optional, Any, Tuple, Set
-from src.models.events import Flight, Hotel, Passenger, Location, BaggageAllowance
+from src.models.events import (
+    Flight, Hotel, Passenger, Location, BaggageAllowance
+)
 from pydantic import ValidationError
 import logging
 
@@ -105,15 +107,25 @@ class TravelDataParser:
                 passenger = cls.parse_passenger(passenger_data)
                 if passenger:
                     # Create deduplication key using normalized names
-                    # Use the first part of first name and full last name for matching
+                    # Use the first part of first name and full last name
+                    # for matching
                     first_name_parts = passenger.first_name.split()
-                    first_name_key = first_name_parts[0].upper() if first_name_parts else ""
-                    dedup_key = (passenger.title.upper(), first_name_key, passenger.last_name.upper())
+                    first_name_key = (
+                        first_name_parts[0].upper() 
+                        if first_name_parts else ""
+                    )
+                    dedup_key = (
+                        passenger.title.upper(), 
+                        first_name_key, 
+                        passenger.last_name.upper()
+                    )
                     
-                    # If we already have this passenger, keep the version with the longer first name
+                    # If we already have this passenger, keep the version
+                    # with the longer first name
                     if dedup_key in seen_passengers:
                         existing = seen_passengers[dedup_key]
-                        if len(passenger.first_name) > len(existing.first_name):
+                        if (len(passenger.first_name) > 
+                            len(existing.first_name)):
                             seen_passengers[dedup_key] = passenger
                     else:
                         seen_passengers[dedup_key] = passenger
@@ -124,7 +136,9 @@ class TravelDataParser:
                 key=lambda x: (x.last_name.upper(), x.first_name.upper())
             )
 
-            if not any([result['flights'], result['hotels'], result['passengers']]):
+            if not any([
+                result['flights'], result['hotels'], result['passengers']
+            ]):
                 result['errors'].append("No valid data found in itinerary")
 
         except Exception as e:

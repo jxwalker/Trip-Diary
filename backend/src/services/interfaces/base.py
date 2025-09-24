@@ -33,7 +33,8 @@ class ServiceConfig:
 class BaseService(ABC, Generic[T]):
     """Base class for all services"""
     
-    def __init__(self, config: ServiceConfig, logger: Optional[logging.Logger] = None):
+    def __init__(self, config: ServiceConfig, 
+                 logger: Optional[logging.Logger] = None):
         self.config = config
         self.logger = logger or logging.getLogger(self.__class__.__name__)
         self._initialized = False
@@ -85,7 +86,8 @@ class BaseService(ABC, Generic[T]):
         
         return {
             "status": self._health_status,
-            "last_check": self._last_health_check.isoformat() if self._last_health_check else None
+            "last_check": (self._last_health_check.isoformat() 
+                          if self._last_health_check else None)
         }
     
     def is_enabled(self) -> bool:
@@ -113,7 +115,8 @@ class ServiceRegistry:
         self._services: Dict[str, BaseService] = {}
         self._configs: Dict[str, ServiceConfig] = {}
     
-    def register(self, name: str, service: BaseService, config: Optional[ServiceConfig] = None):
+    def register(self, name: str, service: BaseService, 
+                 config: Optional[ServiceConfig] = None):
         """Register a service"""
         self._services[name] = service
         if config:
@@ -129,7 +132,8 @@ class ServiceRegistry:
     
     def list_services(self) -> Dict[str, str]:
         """List all registered services"""
-        return {name: service.__class__.__name__ for name, service in self._services.items()}
+        return {name: service.__class__.__name__ 
+                for name, service in self._services.items()}
     
     async def health_check_all(self) -> Dict[str, Dict[str, Any]]:
         """Health check all services"""

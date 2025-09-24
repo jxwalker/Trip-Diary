@@ -104,13 +104,16 @@ class MemoryCache:
         self.metrics.cache_hits += 1
         return entry.value
     
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, 
+                  ttl: Optional[int] = None) -> None:
         """Set value in cache"""
         if ttl is None:
             ttl = self.default_ttl
         
-        expires_at = datetime.now() + timedelta(seconds=ttl) if ttl > 0 else None
-        entry = CacheEntry(value=value, created_at=datetime.now(), expires_at=expires_at)
+        expires_at = (datetime.now() + timedelta(seconds=ttl) 
+                      if ttl > 0 else None)
+        entry = CacheEntry(value=value, created_at=datetime.now(), 
+                           expires_at=expires_at)
         
         # Remove old entry if exists
         if key in self._cache:
@@ -167,7 +170,8 @@ class MemoryCache:
 class RedisCache:
     """Redis-based distributed cache"""
     
-    def __init__(self, redis_url: str = "redis://localhost:6379", default_ttl: int = 300):
+    def __init__(self, redis_url: str = "redis://localhost:6379", 
+                 default_ttl: int = 300):
         self.redis_url = redis_url
         self.default_ttl = default_ttl
         self._redis: Optional[redis.Redis] = None
@@ -179,7 +183,8 @@ class RedisCache:
             raise RuntimeError("Redis library not available")
         
         try:
-            self._redis = redis.from_url(self.redis_url, decode_responses=False)
+            self._redis = redis.from_url(self.redis_url, 
+                                         decode_responses=False)
             await self._redis.ping()
             logger.info("Redis cache initialized successfully")
         except Exception as e:
@@ -206,7 +211,8 @@ class RedisCache:
             self.metrics.cache_misses += 1
             return None
     
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, 
+                  ttl: Optional[int] = None) -> None:
         """Set value in Redis cache"""
         if not self._redis:
             return
@@ -282,7 +288,8 @@ class PerformanceOptimizer:
         except Exception as e:
             logger.error(f"Failed to initialize performance optimizer: {e}")
     
-    async def get_cache(self, key: str, use_redis: bool = True) -> Optional[Any]:
+    async def get_cache(self, key: str, 
+                        use_redis: bool = True) -> Optional[Any]:
         """Get value from cache (Redis first, then memory)"""
         # Try Redis first if available
         if use_redis and self.redis_cache:
@@ -335,7 +342,8 @@ class PerformanceOptimizer:
         
         # Update metrics
         self.metrics.total_requests += 1
-        self.metrics.avg_response_time_ms = sum(self._response_times) / len(self._response_times)
+        self.metrics.avg_response_time_ms = (sum(self._response_times) / 
+                                             len(self._response_times))
     
     async def get_performance_metrics(self) -> Dict[str, Any]:
         """Get comprehensive performance metrics"""
@@ -350,12 +358,14 @@ class PerformanceOptimizer:
         
         if self.redis_cache:
             combined_metrics.cache_hits += self.redis_cache.metrics.cache_hits
-            combined_metrics.cache_misses += self.redis_cache.metrics.cache_misses
+            combined_metrics.cache_misses += (
+                self.redis_cache.metrics.cache_misses)
         
         return {
             "performance_metrics": combined_metrics.to_dict(),
             "memory_cache": self.memory_cache.metrics.to_dict(),
-            "redis_cache": self.redis_cache.metrics.to_dict() if self.redis_cache else None,
+            "redis_cache": (self.redis_cache.metrics.to_dict() 
+                           if self.redis_cache else None),
             "response_time_percentiles": self._calculate_percentiles(),
             "timestamp": datetime.now().isoformat()
         }
@@ -386,7 +396,8 @@ class PerformanceOptimizer:
                 
                 expired_count = await self.memory_cache.cleanup_expired()
                 if expired_count > 0:
-                    logger.debug(f"Cleaned up {expired_count} expired cache entries")
+                    logger.debug(f"Cleaned up {expired_count} expired cache "
+                                f"entries")
                 
             except asyncio.CancelledError:
                 break
@@ -421,13 +432,15 @@ def cache_result(ttl: int = 300, key_prefix: str = "", use_redis: bool = True):
             cache_key = hashlib.md5("|".join(key_parts).encode()).hexdigest()
             
             # Try to get from cache
-            cached_result = await performance_optimizer.get_cache(cache_key, use_redis)
+            cached_result = await performance_optimizer.get_cache(
+                cache_key, use_redis)
             if cached_result is not None:
                 return cached_result
             
             # Execute function and cache result
             result = await func(*args, **kwargs)
-            await performance_optimizer.set_cache(cache_key, result, ttl, use_redis)
+            await performance_optimizer.set_cache(
+                cache_key, result, ttl, use_redis)
             
             return result
         return wrapper

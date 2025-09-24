@@ -52,11 +52,15 @@ class Settings(BaseSettings):
     
     # Cleanup
     cleanup_enabled: bool = Field(default=True, env="CLEANUP_ENABLED")
-    cleanup_interval_hours: int = Field(default=1, env="CLEANUP_INTERVAL_HOURS")
+    cleanup_interval_hours: int = Field(
+        default=1, env="CLEANUP_INTERVAL_HOURS"
+    )
     file_ttl_hours: int = Field(default=24, env="FILE_TTL_HOURS")
     
     # Monitoring
-    health_check_enabled: bool = Field(default=True, env="HEALTH_CHECK_ENABLED")
+    health_check_enabled: bool = Field(
+        default=True, env="HEALTH_CHECK_ENABLED"
+    )
     metrics_enabled: bool = Field(default=False, env="METRICS_ENABLED")
     
     @validator('allowed_origins', pre=True)
@@ -103,7 +107,11 @@ class Settings(BaseSettings):
     
     def ensure_directories(self):
         """Ensure all required directories exist"""
-        for path in [self.get_upload_path(), self.get_output_path(), self.get_data_path()]:
+        for path in [
+            self.get_upload_path(), 
+            self.get_output_path(), 
+            self.get_data_path()
+        ]:
             path.mkdir(parents=True, exist_ok=True)
     
     class Config:
@@ -113,7 +121,9 @@ class Settings(BaseSettings):
         
         # Environment-specific config files
         @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
+        def customise_sources(
+            cls, init_settings, env_settings, file_secret_settings
+        ):
             return (
                 init_settings,
                 env_settings,

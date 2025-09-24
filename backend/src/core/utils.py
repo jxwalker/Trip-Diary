@@ -82,12 +82,16 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def format_datetime(dt: datetime, format_str: str = "%Y-%m-%d %H:%M:%S") -> str:
+def format_datetime(
+    dt: datetime, format_str: str = "%Y-%m-%d %H:%M:%S"
+) -> str:
     """Format datetime to string"""
     return dt.strftime(format_str)
 
 
-def parse_datetime(dt_str: str, format_str: str = "%Y-%m-%d %H:%M:%S") -> Optional[datetime]:
+def parse_datetime(
+    dt_str: str, format_str: str = "%Y-%m-%d %H:%M:%S"
+) -> Optional[datetime]:
     """Parse datetime string"""
     try:
         return datetime.strptime(dt_str, format_str)
@@ -100,7 +104,8 @@ def deep_merge(dict1: Dict, dict2: Dict) -> Dict:
     result = dict1.copy()
     
     for key, value in dict2.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+        if (key in result and isinstance(result[key], dict) and 
+            isinstance(value, dict)):
             result[key] = deep_merge(result[key], value)
         else:
             result[key] = value
@@ -133,7 +138,8 @@ def remove_duplicates(lst: List, key: Optional[str] = None) -> List:
     seen = set()
     result = []
     for item in lst:
-        item_key = item.get(key) if isinstance(item, dict) else getattr(item, key, None)
+        item_key = (item.get(key) if isinstance(item, dict) 
+                    else getattr(item, key, None))
         if item_key not in seen:
             seen.add(item_key)
             result.append(item)

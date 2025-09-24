@@ -24,11 +24,14 @@ class HTMLPDFRenderer:
         return template.render(**context)
 
     def render_pdf(self, html_content: str, output_path: Path) -> Path:
-        """Render given HTML content to PDF using Playwright. Raises if Playwright not available."""
+        """Render given HTML content to PDF using Playwright. 
+        Raises if Playwright not available."""
         try:
             from playwright.sync_api import sync_playwright
         except Exception as e:
-            raise RuntimeError("Playwright is not installed. Run: python -m playwright install chromium") from e
+            raise RuntimeError(
+                "Playwright is not installed. Run: python -m playwright install chromium"  # noqa: E501
+            ) from e
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         html_file = output_path.with_suffix('.html')
@@ -40,11 +43,26 @@ class HTMLPDFRenderer:
             page.goto(f"file://{html_file}")
             # Optional: wait for network idle or fonts loading
             page.wait_for_load_state("networkidle")
-            page.pdf(path=str(output_path), format="A4", print_background=True, margin={"top":"20mm","bottom":"20mm","left":"15mm","right":"15mm"})
+            page.pdf(
+                path=str(output_path), 
+                format="A4", 
+                print_background=True, 
+                margin={
+                    "top": "20mm",
+                    "bottom": "20mm", 
+                    "left": "15mm",
+                    "right": "15mm"
+                }
+            )
             browser.close()
         return output_path
 
-    def render_magazine_pdf(self, guide: Dict[str, Any], itinerary: Dict[str, Any], output_path: Path) -> Path:
+    def render_magazine_pdf(
+        self, 
+        guide: Dict[str, Any], 
+        itinerary: Dict[str, Any], 
+        output_path: Path
+    ) -> Path:
         html = self.render_html("magazine_guide.html", {
             "guide": guide,
             "itinerary": itinerary,

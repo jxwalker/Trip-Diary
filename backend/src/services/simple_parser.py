@@ -42,7 +42,9 @@ def parse_restaurants_simple(response: str) -> List[Dict]:
                     # Look for description on next line
                     if i + 1 < len(lines):
                         next_line = lines[i + 1].strip()
-                        if next_line and not next_line.startswith(('**', '-', '1.', '2.', '3.')):
+                        if (next_line and not 
+                            next_line.startswith(
+                                ('**', '-', '1.', '2.', '3.'))):
                             restaurant['description'] = next_line
                             i += 1
                 else:
@@ -59,23 +61,28 @@ def parse_restaurants_simple(response: str) -> List[Dict]:
                                 continue
                             
                             # Stop if we hit another restaurant
-                            if '**' in next_line or re.match(r'^\d+\.', next_line):
+                            if ('**' in next_line or 
+                                re.match(r'^\d+\.', next_line)):
                                 break
                             
                             # Check if this looks like an address
                             if any(marker in next_line for marker in 
-                                   ['Street', 'St', 'Ave', 'Avenue', 'Road', 'NY', 'New York']):
+                                   ['Street', 'St', 'Ave', 'Avenue', 'Road', 
+                                    'NY', 'New York']):
                                 restaurant['address'] = next_line.strip('- ')
                                 # Description might be after address
                                 if i + j + 1 < len(lines):
                                     desc_line = lines[i + j + 1].strip()
-                                    if desc_line and not desc_line.startswith(('**', '-', '1.', '2.')):
+                                    if (desc_line and not 
+                                        desc_line.startswith(
+                                            ('**', '-', '1.', '2.'))):
                                         restaurant['description'] = desc_line
                                 i = i + j
                                 break
                             # Check for labeled address
                             elif 'Address:' in next_line:
-                                restaurant['address'] = next_line.split(':', 1)[1].strip()
+                                restaurant['address'] = (
+                                    next_line.split(':', 1)[1].strip())
                                 i = i + j
                                 break
                             # If no address markers, might be description
@@ -99,7 +106,9 @@ def parse_attractions_simple(response: str) -> List[Dict]:
         line = lines[i].strip()
         
         # Look for attraction name in bold
-        if '**' in line and not any(skip in line.lower() for skip in ['address:', 'price:', 'hours:']):
+        if ('**' in line and not any(
+                skip in line.lower() 
+                for skip in ['address:', 'price:', 'hours:'])):
             name_match = re.search(r'\*\*(.+?)\*\*', line)
             if name_match:
                 name = name_match.group(1).strip()
@@ -113,18 +122,26 @@ def parse_attractions_simple(response: str) -> List[Dict]:
                         if not detail_line:
                             continue
                         
-                        if '**' in detail_line or re.match(r'^\d+\.', detail_line):
+                        if ('**' in detail_line or 
+                            re.match(r'^\d+\.', detail_line)):
                             break
                         
                         # Parse different types of information
-                        if any(marker in detail_line for marker in ['Street', 'St', 'Ave', 'Avenue', 'NY']):
+                        if any(marker in detail_line for marker in 
+                               ['Street', 'St', 'Ave', 'Avenue', 'NY']):
                             if 'address' not in attraction:
-                                attraction['address'] = detail_line.strip('- ')
-                        elif 'Price:' in detail_line or 'Admission:' in detail_line:
-                            attraction['price'] = detail_line.split(':', 1)[1].strip()
-                        elif 'Hours:' in detail_line or 'Open:' in detail_line:
-                            attraction['hours'] = detail_line.split(':', 1)[1].strip()
-                        elif not attraction.get('description') and len(detail_line) > 20:
+                                attraction['address'] = (
+                                    detail_line.strip('- '))
+                        elif ('Price:' in detail_line or 
+                              'Admission:' in detail_line):
+                            attraction['price'] = (
+                                detail_line.split(':', 1)[1].strip())
+                        elif ('Hours:' in detail_line or 
+                              'Open:' in detail_line):
+                            attraction['hours'] = (
+                                detail_line.split(':', 1)[1].strip())
+                        elif (not attraction.get('description') and 
+                              len(detail_line) > 20):
                             attraction['description'] = detail_line
                 
                 if attraction.get('name'):

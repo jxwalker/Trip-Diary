@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 def extract_trip_info(itinerary: Dict) -> Tuple[str, str, str]:
     """
-    Extract destination, start_date, and end_date from potentially incomplete trip data.
+    Extract destination, start_date, and end_date from potentially incomplete 
+    trip data.
     Only the destination (city) is truly required.
     
     Args:
@@ -37,7 +38,9 @@ def extract_trip_info(itinerary: Dict) -> Tuple[str, str, str]:
             # Try arrival city from structured data
             if first_flight.get('arrival_city'):
                 destination = first_flight['arrival_city']
-                logger.info(f"Got destination from arrival_city: {destination}")
+                logger.info(
+                    f"Got destination from arrival_city: {destination}"
+                )
     
     # If still no destination, try hotels
     if not destination:
@@ -62,7 +65,9 @@ def extract_trip_info(itinerary: Dict) -> Tuple[str, str, str]:
                 logger.info(f"Using first flight date as start: {start_date}")
             elif first_flight.get('arrival_date'):
                 start_date = first_flight['arrival_date']
-                logger.info(f"Using first flight arrival as start: {start_date}")
+                logger.info(
+                    f"Using first flight arrival as start: {start_date}"
+                )
         
         # Get end date from last flight
         if flights and not end_date:
@@ -136,7 +141,8 @@ def extract_hotel_info(itinerary: Dict, destination: str) -> Dict:
 
     if hotel_name:
         # Create hotel info from trip_details
-        city = destination.split(',')[0].strip() if destination != "Unknown Destination" else "City"
+        city = (destination.split(',')[0].strip() 
+                if destination != "Unknown Destination" else "City")
         return {
             'name': hotel_name,
             'city': city,
@@ -159,7 +165,8 @@ def extract_hotel_info(itinerary: Dict, destination: str) -> Dict:
         return hotel
     else:
         # Create default hotel info
-        city = destination.split(',')[0].strip() if destination != "Unknown Destination" else "City"
+        city = (destination.split(',')[0].strip() 
+                if destination != "Unknown Destination" else "City")
         return {
             'name': f'Hotel in {city}',
             'city': city,

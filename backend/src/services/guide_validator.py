@@ -54,7 +54,10 @@ class GuideValidator:
             summary_length = len(guide['summary'].strip())
             details['summary_length'] = summary_length
             if summary_length < cls.MINIMUM_CONTENT_REQUIREMENTS['summary']:
-                errors.append(f"Summary too short: {summary_length} chars (minimum {cls.MINIMUM_CONTENT_REQUIREMENTS['summary']})")
+                errors.append(
+                    f"Summary too short: {summary_length} chars "
+                    f"(minimum {cls.MINIMUM_CONTENT_REQUIREMENTS['summary']})"
+                )
         else:
             details['summary_length'] = 0
             errors.append("Summary is empty or missing")
@@ -62,8 +65,11 @@ class GuideValidator:
         if guide.get('destination_insights'):
             insights_length = len(guide['destination_insights'].strip())
             details['insights_length'] = insights_length
-            if insights_length < cls.MINIMUM_CONTENT_REQUIREMENTS['destination_insights']:
-                errors.append(f"Destination insights too short: {insights_length} chars")
+            min_insights = cls.MINIMUM_CONTENT_REQUIREMENTS['destination_insights']
+            if insights_length < min_insights:
+                errors.append(
+                    f"Destination insights too short: {insights_length} chars"
+                )
         else:
             details['insights_length'] = 0
             errors.append("Destination insights are empty or missing")
@@ -71,7 +77,8 @@ class GuideValidator:
         # Check daily itinerary
         itinerary = guide.get('daily_itinerary', [])
         details['itinerary_days'] = len(itinerary)
-        if len(itinerary) < cls.MINIMUM_CONTENT_REQUIREMENTS['daily_itinerary']:
+        min_itinerary = cls.MINIMUM_CONTENT_REQUIREMENTS['daily_itinerary']
+        if len(itinerary) < min_itinerary:
             errors.append("Daily itinerary is empty")
         else:
             # Check itinerary quality
@@ -80,12 +87,16 @@ class GuideValidator:
                 activities = day.get('activities', [])
                 if not activities or len(activities) == 0:
                     empty_days += 1
-                elif all(len(activity.strip()) < 10 for activity in activities):
+                elif all(
+                    len(activity.strip()) < 10 for activity in activities
+                ):
                     empty_days += 1  # Activities are too short/generic
             
             details['empty_itinerary_days'] = empty_days
             if empty_days > 0:
-                errors.append(f"{empty_days} days have empty or inadequate activities")
+                errors.append(
+                    f"{empty_days} days have empty or inadequate activities"
+                )
         
         # Check restaurants
         restaurants = guide.get('restaurants', [])
@@ -96,10 +107,11 @@ class GuideValidator:
             # Check restaurant quality
             incomplete_restaurants = 0
             for restaurant in restaurants:
-                if not restaurant.get('name') or len(restaurant.get('name', '').strip()) < 3:
+                if (not restaurant.get('name') or 
+                    len(restaurant.get('name', '').strip()) < 3):
                     incomplete_restaurants += 1
             details['incomplete_restaurants'] = incomplete_restaurants
-            if incomplete_restaurants > len(restaurants) // 2:  # More than half are incomplete
+            if incomplete_restaurants > len(restaurants) // 2:
                 errors.append("Too many incomplete restaurant entries")
         
         # Check attractions
@@ -111,7 +123,8 @@ class GuideValidator:
             # Check attraction quality
             incomplete_attractions = 0
             for attraction in attractions:
-                if not attraction.get('name') or len(attraction.get('name', '').strip()) < 3:
+                if (not attraction.get('name') or 
+                    len(attraction.get('name', '').strip()) < 3):
                     incomplete_attractions += 1
             details['incomplete_attractions'] = incomplete_attractions
             if incomplete_attractions > len(attractions) // 2:
@@ -149,7 +162,8 @@ class GuideValidator:
         # NO FALLBACK CONTENT - Return error guide
         return {
             "error": "Guide validation failed",
-            "message": "Unable to generate complete guide due to API failures. Please check your API configuration.",
+            "message": ("Unable to generate complete guide due to API "
+                       "failures. Please check your API configuration."),
             "validation_failed": True,
             "original_guide": guide,
             "timestamp": "validation_error"
@@ -158,12 +172,19 @@ class GuideValidator:
 
     
     @classmethod
-    def log_validation_results(cls, guide: Dict, is_valid: bool, errors: List[str], details: Dict):
+    def log_validation_results(cls, guide: Dict, is_valid: bool, 
+                              errors: List[str], details: Dict):
         """Log validation results for monitoring"""
         if is_valid:
-            logger.info(f"Guide validation passed: {details.get('restaurants_count', 0)} restaurants, "
-                       f"{details.get('attractions_count', 0)} attractions, "
-                       f"{details.get('itinerary_days', 0)} days")
+            logger.info(
+                f"Guide validation passed: "
+                f"{details.get('restaurants_count', 0)} restaurants, "
+                f"{details.get('attractions_count', 0)} attractions, "
+                f"{details.get('itinerary_days', 0)} days"
+            )
         else:
-            logger.warning(f"Guide validation failed with {len(errors)} errors: {', '.join(errors[:3])}")
+            logger.warning(
+                f"Guide validation failed with {len(errors)} errors: "
+                f"{', '.join(errors[:3])}"
+            )
             logger.debug(f"Full validation details: {details}")

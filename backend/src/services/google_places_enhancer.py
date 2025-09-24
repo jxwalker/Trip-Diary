@@ -23,40 +23,163 @@ class GooglePlacesEnhancer:
             self.client = googlemaps.Client(key=self.api_key)
         else:
             self.client = None
-            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment variables")
-            print("[INFO] To enable enhanced maps and attraction details, get a free API key from: https://developers.google.com/maps/documentation/places/web-service/get-api-key")
-            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment or .env file")
+            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment "
+                  "variables")
+            print("[INFO] To enable enhanced maps and attraction details, "
+                  "get a free API key from:")
+            print("https://developers.google.com/maps/documentation/places/"
+                  "web-service/get-api-key")
+            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment "
+                  "or .env file")
+    
+    async def initialize(self):
+        """Initialize the Google Places enhancer service"""
+        pass
+    
+    async def search_attractions(self, location: str, limit: int = 10) -> List[Dict]:
+        """Search for attractions in a location"""
+        if not self.client:
+            print("[WARNING] Google Maps API key not configured")
+            return []
+        
+        try:
+            # Search for tourist attractions using Places API (New)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.types,places.id,places.photos,places.regularOpeningHours,places.priceLevel"
+                }
+                payload = {
+                    "textQuery": f"tourist attractions in {location}",
+                    "maxResultCount": limit
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        print(f"Places API (New) search failed: {error_text}")
+                        return []
+                    
+                    data = await response.json()
+                    places_result = {"results": data.get("places", [])}
             
-    async def enhance_restaurant(self, restaurant: Dict, destination: str) -> Dict:
+            attractions = []
+            for place in places_result.get('results', [])[:limit]:
+                attraction = {
+                    "name": place.get('displayName', {}).get('text', ''),
+                    "address": place.get('formattedAddress', ''),
+                    "rating": place.get('rating', 0),
+                    "types": place.get('types', []),
+                    "place_id": place.get('id', ''),
+                    "price_level": place.get('priceLevel'),
+                    "opening_hours": place.get('regularOpeningHours', {}),
+                    "photos": []
+                }
+                
+                if place.get('photos'):
+                    for photo in place['photos'][:3]:  # Max 3 photos
+                        photo_url = (
+                            f"https://maps.googleapis.com/maps/api/place/photo"
+                            f"?maxwidth=400&photoreference={photo['photo_reference']}"
+                            f"&key={self.api_key}"
+                        )
+                        attraction['photos'].append(photo_url)
+                
+                attractions.append(attraction)
+            
+            return attractions
+            
+        except Exception as e:
+            print(f"Error searching attractions: {e}")
+            return []
+            
+    async def enhance_restaurant(self, restaurant: Dict, 
+                                 destination: str) -> Dict:
         """
-        Enhance a restaurant with Google Places data including photos and booking URLs
+        Enhance a restaurant with Google Places data including photos and 
+        booking URLs
         """
         if not self.client:
             print("[WARNING] Google Maps API key not configured")
             return restaurant
             
         try:
-            # Search for the restaurant
-            query = f"{restaurant.get('name', '')} restaurant {restaurant.get('address', '')} {destination}"
-            places_result = self.client.places(query=query)
+            # Search for the restaurant using Places API (New)
+            query = (f"{restaurant.get('name', '')} restaurant "
+                    f"{restaurant.get('address', '')} {destination}")
             
-            if not places_result.get('results'):
-                print(f"[DEBUG] No Google Places results for: {query}")
-                return restaurant
-                
-            place = places_result['results'][0]
-            place_id = place['place_id']
+            import aiohttp
+            import json
             
-            # Get detailed information
-            details = self.client.place(place_id)['result']
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.photos,places.regularOpeningHours,places.website,places.nationalPhoneNumber,places.location,places.id'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            request_body = {
+                "textQuery": query,
+                "maxResultCount": 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places = data.get('places', [])
+                        if not places:
+                            print(f"[DEBUG] No Google Places results for: {query}")
+                            return restaurant
+                        
+                        place = places[0]
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'price_level': place.get('priceLevel', 0),
+                            'photos': place.get('photos', []),
+                            'opening_hours': place.get('regularOpeningHours', {}),
+                            'website': place.get('website', ''),
+                            'formatted_phone_number': place.get('nationalPhoneNumber', ''),
+                            'geometry': {
+                                'location': {
+                                    'lat': place.get('location', {}).get('latitude', 0),
+                                    'lng': place.get('location', {}).get('longitude', 0)
+                                }
+                            }
+                        }
+                    else:
+                        print(f"[DEBUG] Places API error: {response.status}")
+                        if hasattr(self, 'client') and self.client:
+                            try:
+                                places_result = self.client.places(query=query)
+                                if places_result.get('results'):
+                                    place = places_result['results'][0]
+                                    place_id = place['place_id']
+                                    details = self.client.place(place_id)['result']
+                                else:
+                                    return restaurant
+                            except Exception as e:
+                                print(f"[DEBUG] Legacy API fallback failed: {e}")
+                                return restaurant
+                        else:
+                            return restaurant
             
             # Enhance restaurant data
             enhanced = restaurant.copy()
             
             # Add Google data
             enhanced['google_place_id'] = place_id
-            enhanced['rating'] = details.get('rating', restaurant.get('rating'))
-            enhanced['user_ratings_total'] = details.get('user_ratings_total', 0)
+            enhanced['rating'] = details.get('rating', 
+                                            restaurant.get('rating'))
+            enhanced['user_ratings_total'] = details.get('user_ratings_total', 
+                                                        0)
             enhanced['price_level'] = details.get('price_level', '')
             
             # Full address
@@ -83,7 +206,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:  # Get up to 3 photos
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
@@ -97,8 +221,9 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                # Store coordinates instead of full URL to avoid exposing API key
-                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=restaurant"
+                # Store coordinates instead of full URL to avoid exposing 
+                static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
+                                f"&type=restaurant")
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 
@@ -115,20 +240,23 @@ class GooglePlacesEnhancer:
                 enhanced['reviews'] = [
                     {
                         'rating': r.get('rating'),
-                        'text': r.get('text', '')[:200],  # Truncate long reviews
+                        'text': r.get('text', '')[:200],  # Truncate reviews
                         'time': r.get('relative_time_description', '')
                     }
                     for r in reviews
                 ]
                 
-            print(f"[DEBUG] Enhanced {restaurant.get('name')} with Google Places data")
+            print(f"[DEBUG] Enhanced {restaurant.get('name')} with "
+                  f"Google Places data")
             return enhanced
             
         except Exception as e:
-            print(f"[ERROR] Failed to enhance restaurant {restaurant.get('name')}: {e}")
+            print(f"[ERROR] Failed to enhance restaurant "
+                  f"{restaurant.get('name')}: {e}")
             return restaurant
             
-    async def _find_booking_url(self, restaurant_name: str, city: str, website: str = "") -> str:
+    async def _find_booking_url(self, restaurant_name: str, city: str, 
+                                website: str = "") -> str:
         """
         Try to find or construct a booking URL for the restaurant
         """
@@ -138,31 +266,37 @@ class GooglePlacesEnhancer:
         
         # Check if website is already a booking platform
         if website:
-            if 'opentable.com' in website or 'resy.com' in website or 'yelp.com/biz' in website:
+            if ('opentable.com' in website or 'resy.com' in website or 
+                'yelp.com/biz' in website):
                 return website
                 
         # Try common booking platforms
         booking_urls = {
-            'opentable': f"https://www.opentable.com/s/?term={clean_name}&location={city}",
-            'resy': f"https://resy.com/cities/{city.lower()}?query={clean_name}",
-            'yelp': f"https://www.yelp.com/search?find_desc={clean_name}&find_loc={city}"
+            'opentable': (f"https://www.opentable.com/s/?term={clean_name}"
+                         f"&location={city}"),
+            'resy': (f"https://resy.com/cities/{city.lower()}"
+                    f"?query={clean_name}"),
+            'yelp': (f"https://www.yelp.com/search?find_desc={clean_name}"
+                    f"&find_loc={city}")
         }
         
         # Return OpenTable as default
         return booking_urls['opentable']
         
-    async def enhance_restaurants_batch(self, restaurants: List[Dict], destination: str) -> List[Dict]:
+    async def enhance_restaurants_batch(self, restaurants: List[Dict], 
+                                        destination: str) -> List[Dict]:
         """
         Enhance multiple restaurants in parallel
         """
         if not restaurants:
             return []
             
-        print(f"[DEBUG] Enhancing {len(restaurants)} restaurants with Google Places data...")
+        print(f"[DEBUG] Enhancing {len(restaurants)} restaurants with "
+              f"Google Places data...")
         
         # Process in parallel with rate limiting
         enhanced_restaurants = []
-        for i in range(0, len(restaurants), 3):  # Process 3 at a time to avoid rate limits
+        for i in range(0, len(restaurants), 3):  # Process 3 at a time
             batch = restaurants[i:i+3]
             tasks = [self.enhance_restaurant(r, destination) for r in batch]
             results = await asyncio.gather(*tasks)
@@ -174,7 +308,8 @@ class GooglePlacesEnhancer:
                 
         return enhanced_restaurants
         
-    async def enhance_attraction(self, attraction: Dict, destination: str) -> Dict:
+    async def enhance_attraction(self, attraction: Dict, 
+                                 destination: str) -> Dict:
         """
         Enhance an attraction with Google Places data
         """
@@ -182,26 +317,75 @@ class GooglePlacesEnhancer:
             return attraction
             
         try:
-            # Search for the attraction
-            query = f"{attraction.get('name', '')} {attraction.get('address', '')} {destination}"
-            places_result = self.client.places(query=query)
+            # Search for the attraction using Places API (New)
+            query = (f"{attraction.get('name', '')} "
+                    f"{attraction.get('address', '')} {destination}")
             
-            if not places_result.get('results'):
-                return attraction
-                
-            place = places_result['results'][0]
-            place_id = place['place_id']
+            import aiohttp
+            import json
             
-            # Get detailed information
-            details = self.client.place(place_id)['result']
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.photos,places.types,places.regularOpeningHours,places.website,places.location,places.id'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            request_body = {
+                "textQuery": query,
+                "maxResultCount": 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places = data.get('places', [])
+                        if not places:
+                            return attraction
+                        
+                        place = places[0]
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'user_ratings_total': place.get('userRatingCount', 0),
+                            'photos': place.get('photos', []),
+                            'types': place.get('types', []),
+                            'opening_hours': place.get('regularOpeningHours', {}),
+                            'website': place.get('website', ''),
+                            'geometry': {
+                                'location': {
+                                    'lat': place.get('location', {}).get('latitude', 0),
+                                    'lng': place.get('location', {}).get('longitude', 0)
+                                }
+                            }
+                        }
+                    else:
+                        if hasattr(self, 'client') and self.client:
+                            try:
+                                places_result = self.client.places(query=query)
+                                if places_result.get('results'):
+                                    place = places_result['results'][0]
+                                    place_id = place['place_id']
+                                    details = self.client.place(place_id)['result']
+                                else:
+                                    return attraction
+                            except Exception as e:
+                                return attraction
+                        else:
+                            return attraction
             
             # Enhance attraction data
             enhanced = attraction.copy()
             
             # Add Google data
             enhanced['google_place_id'] = place_id
-            enhanced['rating'] = details.get('rating', attraction.get('rating'))
-            enhanced['user_ratings_total'] = details.get('user_ratings_total', 0)
+            enhanced['rating'] = details.get('rating', 
+                                            attraction.get('rating'))
+            enhanced['user_ratings_total'] = details.get('user_ratings_total', 
+                                                        0)
             
             # Full address
             if details.get('formatted_address'):
@@ -223,7 +407,8 @@ class GooglePlacesEnhancer:
                 for photo in details['photos'][:3]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photo_refs.append(photo_url)
                 enhanced['photos'] = photo_refs
@@ -237,41 +422,54 @@ class GooglePlacesEnhancer:
             if details.get('geometry', {}).get('location'):
                 location = details['geometry']['location']
                 lat, lng = location['lat'], location['lng']
-                # Store coordinates instead of full URL to avoid exposing API key
-                static_map_url = f"/api/places/staticmap?lat={lat}&lng={lng}&type=attraction"
+                # Store coordinates instead of full URL to avoid exposing 
+                static_map_url = (f"/api/places/staticmap?lat={lat}&lng={lng}"
+                                f"&type=attraction")
                 enhanced['static_map_url'] = static_map_url
                 enhanced['coordinates'] = {"lat": lat, "lng": lng}
                 
             # Enhanced booking URLs for different attraction types
             attraction_type = attraction.get('type', '').lower()
             if 'museum' in attraction_type or 'gallery' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://www.viator.com/searchResults/all?text={attraction.get('name', '')}&destId={destination}"
-                enhanced['ticket_info'] = "Advance booking recommended for popular museums"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://www.viator.com/searchResults/all?text="
+                    f"{attraction.get('name', '')}&destId={destination}")
+                enhanced['ticket_info'] = ("Advance booking recommended for "
+                    "popular museums")
             elif 'park' in attraction_type or 'garden' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
                 enhanced['ticket_info'] = "Free entry - no booking required"
             elif 'monument' in attraction_type or 'landmark' in attraction_type:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
-                enhanced['ticket_info'] = "Check website for entry requirements"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
+                enhanced['ticket_info'] = ("Check website for entry "
+                    "requirements")
             else:
-                enhanced['booking_url'] = details.get('website', '') or f"https://maps.google.com/?cid={place_id}"
-                enhanced['ticket_info'] = "Check website for entry requirements"
+                enhanced['booking_url'] = (details.get('website', '') or 
+                    f"https://maps.google.com/?cid={place_id}")
+                enhanced['ticket_info'] = ("Check website for entry "
+                    "requirements")
                 
-            print(f"[DEBUG] Enhanced {attraction.get('name')} with Google Places data")
+            print(f"[DEBUG] Enhanced {attraction.get('name')} with "
+                  f"Google Places data")
             return enhanced
             
         except Exception as e:
-            print(f"[ERROR] Failed to enhance attraction {attraction.get('name')}: {e}")
+            print(f"[ERROR] Failed to enhance attraction "
+                  f"{attraction.get('name')}: {e}")
             return attraction
             
-    async def enhance_attractions_batch(self, attractions: List[Dict], destination: str) -> List[Dict]:
+    async def enhance_attractions_batch(self, attractions: List[Dict], 
+                                        destination: str) -> List[Dict]:
         """
         Enhance multiple attractions in parallel
         """
         if not attractions:
             return []
             
-        print(f"[DEBUG] Enhancing {len(attractions)} attractions with Google Places data...")
+        print(f"[DEBUG] Enhancing {len(attractions)} attractions with "
+              f"Google Places data...")
         
         # Process in parallel with rate limiting
         enhanced_attractions = []
@@ -288,13 +486,16 @@ class GooglePlacesEnhancer:
     
     async def get_destination_map_data(self, destination: str) -> Dict:
         """
-        Get comprehensive map data for a destination including coordinates and map URLs
+        Get comprehensive map data for a destination including coordinates 
+        and map URLs
         """
         if not self.client:
             return {
                 "destination": destination,
                 "error": "Google Maps API key not configured",
-                "setup_instructions": "Get a free API key from https://developers.google.com/maps/documentation/places/web-service/get-api-key"
+                "setup_instructions": ("Get a free API key from "
+                    "https://developers.google.com/maps/documentation/"
+                    "places/web-service/get-api-key")
             }
         
         try:
@@ -312,8 +513,10 @@ class GooglePlacesEnhancer:
             # Create various map URLs
             map_urls = {
                 "google_maps": f"https://maps.google.com/?q={lat},{lng}",
-                "google_maps_embed": f"https://www.google.com/maps/embed/v1/place?key={self.api_key}&q={lat},{lng}",
-                "directions": f"https://maps.google.com/maps/dir/?api=1&destination={lat},{lng}",
+                "google_maps_embed": (f"https://www.google.com/maps/embed/"
+                    f"v1/place?key={self.api_key}&q={lat},{lng}"),
+                "directions": (f"https://maps.google.com/maps/dir/?api=1"
+                    f"&destination={lat},{lng}"),
                 "street_view": f"https://maps.google.com/maps/@?api=1&map_action=pano&viewpoint={lat},{lng}"
             }
             

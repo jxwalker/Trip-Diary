@@ -12,18 +12,21 @@ import json
 logger = logging.getLogger(__name__)
 
 class PDFProcessor:
-    SYSTEM_PROMPT = """You are a travel itinerary parser. Extract all flight, hotel, and passenger information into a structured format.
+    SYSTEM_PROMPT = """You are a travel itinerary parser. Extract all flight, 
+    hotel, and passenger information into a structured format.
     
     For dates, use YYYY-MM-DD format (e.g., 2024-12-25).
     For times, use 24-hour HH:MM format (e.g., 14:30).
     For flight numbers, remove any spaces (e.g., 'BA 123' becomes 'BA123').
     
-    If a date is not provided, use the closest logical date based on the itinerary sequence.
+    If a date is not provided, use the closest logical date based on the 
+    itinerary sequence.
     If a time is not provided, use these defaults:
     - Hotel check-in: 15:00
     - Hotel check-out: 11:00
     
-    Never return 'Not provided' for required fields - make a logical assumption based on context.
+    Never return 'Not provided' for required fields - make a logical 
+    assumption based on context.
     
     For passenger names:
     - Titles must be one of: MR, MRS, MS, MISS (in uppercase)
@@ -31,7 +34,10 @@ class PDFProcessor:
     - Remove any extra spaces"""
 
     @staticmethod
-    def process_files(file_paths: List[str], gpt_provider: GPTInterface) -> Tuple[List[Dict], List[str], float]:
+    def process_files(
+        file_paths: List[str], 
+        gpt_provider: GPTInterface
+    ) -> Tuple[List[Dict], List[str], float]:
         """Process multiple PDF files and return consolidated data."""
         itineraries = []
         errors = []
@@ -48,16 +54,22 @@ class PDFProcessor:
                 
                 # Use GPT to extract structured data
                 logger.info("Extracting structured data with GPT...")
-                itinerary = PDFProcessor.extract_itinerary_with_gpt(text, gpt_provider)
+                itinerary = PDFProcessor.extract_itinerary_with_gpt(
+                    text, gpt_provider
+                )
                 
                 if itinerary:
                     # Validate the extracted data
                     logger.info("Validating extracted data...")
-                    ContentValidator.validate_itinerary_data(itinerary, file_path)
+                    ContentValidator.validate_itinerary_data(
+                        itinerary, file_path
+                    )
                     itineraries.append(itinerary)
                     logger.info("Validation successful")
                 else:
-                    logger.error(f"Failed to extract valid data from {file_path}")
+                    logger.error(
+                        f"Failed to extract valid data from {file_path}"
+                    )
                 
                 end_time = time.perf_counter()
                 file_time = end_time - start_time
@@ -72,7 +84,10 @@ class PDFProcessor:
         return itineraries, errors, total_time
 
     @staticmethod
-    def extract_itinerary_with_gpt(text: str, gpt_provider: GPTInterface) -> Optional[Dict]:
+    def extract_itinerary_with_gpt(
+        text: str, 
+        gpt_provider: GPTInterface
+    ) -> Optional[Dict]:
         """Extract itinerary information using GPT."""
         try:
             response = gpt_provider.generate_text(
@@ -94,13 +109,19 @@ class PDFProcessor:
             logger.error(f"Error extracting itinerary: {str(e)}")
             return None
 
-    def process_chunk(self, chunk: str, gpt_provider: GPTInterface) -> Optional[Dict]:
+    def process_chunk(
+        self, 
+        chunk: str, 
+        gpt_provider: GPTInterface
+    ) -> Optional[Dict]:
         """Process a single chunk of text."""
         try:
             # Changed from system_prompt to system to match interface
             structured_data = gpt_provider.generate_text(
                 prompt=chunk,
-                system="You are a travel itinerary parser. Extract all flight, hotel, and passenger information from the provided text. Include all details found in the text."
+                system=("You are a travel itinerary parser. Extract all "
+                        "flight, hotel, and passenger information from the "
+                        "provided text. Include all details found in the text.")
             )
             
             if not structured_data:

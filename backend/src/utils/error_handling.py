@@ -53,14 +53,18 @@ def safe_execute(
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                return _handle_error(e, operation, logger, default_return, raise_on_error)
+                return _handle_error(
+                    e, operation, logger, default_return, raise_on_error
+                )
 
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                return _handle_error(e, operation, logger, default_return, raise_on_error)
+                return _handle_error(
+                    e, operation, logger, default_return, raise_on_error
+                )
 
         # Return appropriate wrapper based on function type
         import asyncio

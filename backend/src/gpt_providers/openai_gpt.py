@@ -8,9 +8,10 @@ class OpenAIGPT:
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo-1106" # "gpt-4-turbo-preview"  # or "gpt-3.5-turbo-1106"
+        self.model = "gpt-3.5-turbo-1106"  # "gpt-4-turbo-preview"
 
-    def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
+    def generate_text(self, prompt: str, 
+                      system: str | None = None) -> Dict[str, Any]:
         """Generate structured travel data from text."""
         try:
             messages = []
@@ -22,10 +23,13 @@ class OpenAIGPT:
                 "content": """You are a travel itinerary parser. Extract all flight, hotel, and passenger information.
                 
                 For flights, include:
-                - All flight details (number, operator, departure, arrival, class, baggage)
-                - Passengers on each specific flight (who is traveling on which flight)
+                - All flight details (number, operator, departure, arrival, 
+                  class, baggage)
+                - Passengers on each specific flight (who is traveling on 
+                  which flight)
                 
-                For hotels, always include detailed room information including:
+                For hotels, always include detailed room information 
+                including:
                 - Room type
                 - Bed configuration
                 - Room size
@@ -37,7 +41,8 @@ class OpenAIGPT:
                 - All passengers mentioned in the document
                 - Assign passengers to the specific flights they are on
                 
-                Format the response as a JSON object with 'flights', 'hotels', and 'passengers' arrays."""
+                Format the response as a JSON object with 'flights', 
+                'hotels', and 'passengers' arrays."""
             })
 
             messages.append({"role": "user", "content": prompt})
@@ -58,28 +63,59 @@ class OpenAIGPT:
                                         "type": "object",
                                         "properties": {
                                             "location": {"type": "string"},
-                                            "terminal": {"type": "string", "nullable": True},
-                                            "date": {"type": "string", "format": "date"},
-                                            "time": {"type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"}
+                                            "terminal": {
+                                                "type": "string", 
+                                                "nullable": True
+                                            },
+                                            "date": {
+                                                "type": "string", 
+                                                "format": "date"
+                                            },
+                                            "time": {
+                                                "type": "string", 
+                                                "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                            }
                                         },
-                                        "required": ["location", "date", "time"]
+                                        "required": [
+                                            "location", "date", "time"
+                                        ]
                                     },
                                     "arrival": {
                                         "type": "object",
                                         "properties": {
                                             "location": {"type": "string"},
-                                            "terminal": {"type": "string", "nullable": True},
-                                            "date": {"type": "string", "format": "date"},
-                                            "time": {"type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"}
+                                            "terminal": {
+                                                "type": "string", 
+                                                "nullable": True
+                                            },
+                                            "date": {
+                                                "type": "string", 
+                                                "format": "date"
+                                            },
+                                            "time": {
+                                                "type": "string", 
+                                                "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                            }
                                         },
-                                        "required": ["location", "date", "time"]
+                                        "required": [
+                                            "location", "date", "time"
+                                        ]
                                     },
-                                    "travel_class": {"type": "string", "default": "Economy"},
+                                    "travel_class": {
+                                        "type": "string", 
+                                        "default": "Economy"
+                                    },
                                     "baggage_allowance": {
                                         "type": "object",
                                         "properties": {
-                                            "checked_baggage": {"type": "string", "nullable": True},
-                                            "hand_baggage": {"type": "string", "nullable": True}
+                                            "checked_baggage": {
+                                                "type": "string", 
+                                                "nullable": True
+                                            },
+                                            "hand_baggage": {
+                                                "type": "string", 
+                                                "nullable": True
+                                            }
                                         }
                                     },
                                     "passengers": {
@@ -87,16 +123,27 @@ class OpenAIGPT:
                                         "items": {
                                             "type": "object",
                                             "properties": {
-                                                "title": {"type": "string", "enum": ["MR", "MRS", "MS", "MISS"]},
+                                                "title": {
+                                                    "type": "string", 
+                                                    "enum": ["MR", "MRS", "MS", "MISS"]
+                                                },
                                                 "first_name": {"type": "string"},
                                                 "last_name": {"type": "string"},
-                                                "frequent_flyer": {"type": "string", "nullable": True}
+                                                "frequent_flyer": {
+                                                    "type": "string", 
+                                                    "nullable": True
+                                                }
                                             },
-                                            "required": ["title", "first_name", "last_name"]
+                                            "required": [
+                                                "title", "first_name", "last_name"
+                                            ]
                                         }
                                     }
                                 },
-                                "required": ["flight_number", "operator", "departure", "arrival"]
+                                "required": [
+                                    "flight_number", "operator", 
+                                    "departure", "arrival"
+                                ]
                             }
                         },
                         "hotels": {
@@ -127,7 +174,10 @@ class OpenAIGPT:
                                         }
                                     }
                                 },
-                                "required": ["name", "city", "check_in_date", "check_out_date"]
+                                "required": [
+                                    "name", "city", 
+                                    "check_in_date", "check_out_date"
+                                ]
                             }
                         },
                         "passengers": {
@@ -154,7 +204,9 @@ class OpenAIGPT:
                 function_call={"name": "parse_travel_details"}
             )
 
-            return json.loads(response.choices[0].message.function_call.arguments)
+            return json.loads(
+                response.choices[0].message.function_call.arguments
+            )
         except Exception as e:
             logger.error(f"Error generating text: {str(e)}")
             return None

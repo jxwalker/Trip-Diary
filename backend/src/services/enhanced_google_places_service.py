@@ -1,7 +1,8 @@
 """
 Enhanced Google Places Service
 Comprehensive restaurant and attraction data using Google Places API
-Cost-effective alternative to Yelp with rich data including photos, reviews, and booking info
+Cost-effective alternative to Yelp with rich data including photos, 
+reviews, and booking info
 """
 import asyncio
 import aiohttp
@@ -33,7 +34,8 @@ class ConfigurationError(Exception):
 
 
 class EnhancedGooglePlacesService:
-    """Enhanced Google Places API service for comprehensive restaurant and attraction data"""
+    """Enhanced Google Places API service for comprehensive restaurant 
+    and attraction data"""
     
     def __init__(self):
         """Initialize Google Places service"""
@@ -52,6 +54,8 @@ class EnhancedGooglePlacesService:
         
         # Simple in-memory cache for testing
         self._cache = {}
+        
+        self.use_places_api_new = False
         
     @property
     def service_name(self) -> str:
@@ -97,18 +101,47 @@ class EnhancedGooglePlacesService:
         pass
     
     async def validate_api_key(self) -> bool:
-        """Validate the Google Places API key"""
-        if not self.api_key or not self.client:
+        """Validate the Google Places API key with fallback to legacy API"""
+        if not self.api_key:
             raise ConfigurationError("GOOGLE_MAPS_API_KEY not configured")
         
         try:
-            # Test with a simple place search
-            result = self.client.places(query="restaurant", location="New York, NY")
-            return bool(result.get('results'))
+            # First try Places API (New) Text Search
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.id"
+                }
+                payload = {
+                    "textQuery": "restaurant in New York"
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        self.use_places_api_new = True
+                        logger.info("Places API (New) validation successful")
+                        return bool(data.get("places"))
+                    elif response.status == 403:
+                        error_text = await response.text()
+                        if "Places API (New)" in error_text and "not been used" in error_text:
+                            logger.warning("Places API (New) not enabled, will use legacy API as fallback")
+                            self.use_places_api_new = False
+                            return True
+                        else:
+                            raise Exception(f"Places API validation failed: {error_text}")
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"Places API (New) validation failed: {error_text}")
             
         except Exception as e:
             logger.error(f"Google Places API key validation failed: {e}")
-            raise ConfigurationError(f"Invalid Google Places API key: {e}")
+            self.use_places_api_new = False
+            logger.warning("Falling back to legacy Google Places API")
+            return True
     
     async def search_restaurants(
         self,
@@ -140,9 +173,15 @@ class EnhancedGooglePlacesService:
             query = f"{cuisine_type} restaurant in {location}"
         
         # Check cache first
-        cache_key = f"google_restaurants_{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()}"
+        cache_key = (
+            f"google_restaurants_"
+            f"{hashlib.md5(f'{query}_{price_range}_{limit}'.encode()).hexdigest()[:16]}"
+        )
         if cache_key in self._cache:
-            logger.info(f"Returning cached Google Places restaurant search for {location}")
+            logger.info(
+                f"Returning cached Google Places restaurant search for "
+                f"{location}"
+            )
             return self._cache[cache_key]
         
         try:
@@ -157,47 +196,169 @@ class EnhancedGooglePlacesService:
             lat_lng = geocode_result[0]['geometry']['location']
             coordinates = (lat_lng['lat'], lat_lng['lng'])
 
-            # Use nearby search with coordinates for better location accuracy
+            # Use Text Search API (Places API New) instead of legacy nearby search
             search_radius = radius if radius else 5000  # Default 5km radius
-            places_result = self.client.places_nearby(
-                location=coordinates,
-                radius=search_radius,
-                type='restaurant',
-                keyword=cuisine_type
-            )
+            
+            # Use direct HTTP calls to Places API (New) Text Search
+            import aiohttp
+            import json
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': self.api_key,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.userRatingCount,places.photos,places.types,places.location'
+            }
+            
+            text_search_url = "https://places.googleapis.com/v1/places:searchText"
+            
+            request_body = {
+                "textQuery": query,
+                "locationBias": {
+                    "circle": {
+                        "center": {
+                            "latitude": coordinates[0],
+                            "longitude": coordinates[1]
+                        },
+                        "radius": search_radius
+                    }
+                },
+                "maxResultCount": min(limit, 20)
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(text_search_url, headers=headers, json=request_body) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        places_results = data.get('places', [])
+                    elif response.status == 403:
+                        logger.warning("Places API (New) not enabled, falling back to legacy API")
+                        self.use_legacy_api = True
+                        places_result = self.client.places_nearby(
+                            location=coordinates,
+                            radius=search_radius,
+                            type='restaurant',
+                            keyword=cuisine_type
+                        )
+                        places_results = places_result.get('results', [])
+                    else:
+                        logger.error(f"Places API error: {response.status}")
+                        return []
+            query = f"restaurant {cuisine_type} near {location}" if cuisine_type else f"restaurant near {location}"
+            
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                }
+                payload = {
+                    "textQuery": query,
+                    "maxResultCount": limit if 'limit' in locals() else 20
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Places API (New) search failed: {error_text}")
+                        places_result = {"results": [], "status": "FAILED"}
+                    else:
+                        data = await response.json()
+                        places_result = {"results": data.get("places", []), "status": "OK"}
+            
+            if places_result.get('status') == 'OK':
+                results = places_result.get('results', [])
+                # Filter by distance if coordinates available
+                filtered_results = []
+                for place in results:
+                    if 'geometry' in place and 'location' in place['geometry']:
+                        place_coords = place['geometry']['location']
+                        filtered_results.append(place)
+                places_result['results'] = filtered_results[:limit]
             
             # Process results
             for place in places_result.get('results', [])[:limit]:
                 try:
-                    # Get detailed information
-                    place_id = place['place_id']
-                    details = self.client.place(
-                        place_id,
-                        fields=[
-                            'name', 'formatted_address', 'formatted_phone_number',
-                            'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
-                            'type', 'business_status'
-                        ]
-                    )['result']
+                    # Get detailed information using Places API (New) Place Details
+                    place_id = place.get('id') or place.get('place_id')
+                    if not place_id:
+                        continue
+                    
+                    # Use Places API (New) Place Details endpoint
+                    async with aiohttp.ClientSession() as session:
+                        url = f"https://places.googleapis.com/v1/places/{place_id}"
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Goog-Api-Key": self.api_key,
+                            "X-Goog-FieldMask": "displayName,formattedAddress,internationalPhoneNumber,rating,userRatingCount,priceLevel,websiteUri,regularOpeningHours,photos,reviews,googleMapsUri,location,types,businessStatus"
+                        }
+                        
+                        async with session.get(url, headers=headers) as response:
+                            if response.status == 200:
+                                place_data = await response.json()
+                                details = {
+                                    'name': place_data.get('displayName', {}).get('text', ''),
+                                    'formatted_address': place_data.get('formattedAddress', ''),
+                                    'formatted_phone_number': place_data.get('internationalPhoneNumber', ''),
+                                    'rating': place_data.get('rating', 0),
+                                    'user_ratings_total': place_data.get('userRatingCount', 0),
+                                    'price_level': place_data.get('priceLevel', 0),
+                                    'website': place_data.get('websiteUri', ''),
+                                    'opening_hours': place_data.get('regularOpeningHours', {}),
+                                    'photos': place_data.get('photos', []),
+                                    'reviews': place_data.get('reviews', []),
+                                    'url': place_data.get('googleMapsUri', ''),
+                                    'geometry': {
+                                        'location': {
+                                            'lat': place_data.get('location', {}).get('latitude', 0),
+                                            'lng': place_data.get('location', {}).get('longitude', 0)
+                                        }
+                                    },
+                                    'types': place_data.get('types', []),
+                                    'business_status': place_data.get('businessStatus', '')
+                                }
+                            else:
+                                details = self.client.place(
+                                    place_id,
+                                    fields=[
+                                        'name', 'formatted_address', 
+                                        'formatted_phone_number', 'rating', 
+                                        'user_ratings_total', 'price_level', 'website',
+                                        'opening_hours', 'photos', 'reviews', 'url', 
+                                        'geometry',
+                                        'types', 'business_status'
+                                    ]
+                                )['result']
                     
                     # Format restaurant data
-                    restaurant = await self._format_restaurant_data(details, place_id)
+                    restaurant = await self._format_restaurant_data(
+                        details, place_id
+                    )
                     
                     # Filter by price range if specified
                     if price_range and restaurant.get('price_level_numeric'):
-                        target_price = self._convert_price_range_to_numeric(price_range)
-                        if target_price and restaurant['price_level_numeric'] != target_price:
+                        target_price = self._convert_price_range_to_numeric(
+                            price_range
+                        )
+                        if (target_price and 
+                            restaurant['price_level_numeric'] != target_price):
                             continue
                     
                     restaurants.append(restaurant)
                     
                 except Exception as e:
-                    logger.warning(f"Failed to process restaurant {place.get('name', 'unknown')}: {e}")
+                    logger.warning(
+                        f"Failed to process restaurant "
+                        f"{place.get('displayName', {}).get('text', 'unknown')}: {e}"
+                    )
                     continue
             
             # Sort by rating and review count
-            restaurants.sort(key=lambda x: (x.get('rating', 0), x.get('review_count', 0)), reverse=True)
+            restaurants.sort(
+                key=lambda x: (x.get('rating', 0), x.get('review_count', 0)), 
+                reverse=True
+            )
             
             # Cache the results
             self._cache[cache_key] = restaurants
@@ -209,7 +370,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places restaurant search failed: {e}")
             raise ServiceError(f"Restaurant search failed: {e}")
     
-    async def _format_restaurant_data(self, details: Dict[str, Any], place_id: str) -> Dict[str, Any]:
+    async def _format_restaurant_data(
+        self, details: Dict[str, Any], place_id: str
+    ) -> Dict[str, Any]:
         """Format Google Places data into standardized restaurant format"""
         
         # Extract cuisine types from Google Places types
@@ -241,7 +404,8 @@ class EnhancedGooglePlacesService:
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    # Store photo reference instead of full URL to avoid exposing API key
+                    # Store photo reference instead of full URL to avoid 
+                    # exposing API key
                     photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
         
@@ -252,7 +416,7 @@ class EnhancedGooglePlacesService:
                 reviews.append({
                     'author_name': review.get('author_name', ''),
                     'rating': review.get('rating', 0),
-                    'text': review.get('text', '')[:300],  # Truncate long reviews
+                    'text': review.get('text', '')[:300],  # Truncate reviews
                     'time': review.get('relative_time_description', ''),
                     'source': 'google'
                 })
@@ -275,7 +439,9 @@ class EnhancedGooglePlacesService:
             "phone": details.get('formatted_phone_number', ''),
             "rating": details.get('rating', 0),
             "review_count": details.get('user_ratings_total', 0),
-            "price_level": self._format_price_level(details.get('price_level')),
+            "price_level": self._format_price_level(
+                details.get('price_level')
+            ),
             "price_level_numeric": details.get('price_level'),
             "website": details.get('website', ''),
             "google_maps_url": details.get('url', ''),
@@ -285,12 +451,19 @@ class EnhancedGooglePlacesService:
             "opening_hours": opening_hours,
             "open_now": open_now,
             "coordinates": {
-                "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
-                "longitude": details.get('geometry', {}).get('location', {}).get('lng')
+                "latitude": details.get('geometry', {}).get('location', {}).get(
+                    'lat'
+                ),
+                "longitude": details.get('geometry', {}).get('location', {}).get(
+                    'lng'
+                )
             },
             "business_status": details.get('business_status', ''),
             "booking_urls": booking_urls,
-            "primary_booking_url": booking_urls.get('opentable') or booking_urls.get('google_maps'),
+            "primary_booking_url": (
+                booking_urls.get('opentable') or 
+                booking_urls.get('google_maps')
+            ),
             "source": "google_places"
         }
     
@@ -300,12 +473,16 @@ class EnhancedGooglePlacesService:
             return ""  # No fallback - return empty string if no price data
         return "$" * (price_level + 1) if price_level >= 0 else ""
     
-    def _convert_price_range_to_numeric(self, price_range: str) -> Optional[int]:
+    def _convert_price_range_to_numeric(
+        self, price_range: str
+    ) -> Optional[int]:
         """Convert price range string to Google's numeric format"""
         mapping = {"$": 0, "$$": 1, "$$$": 2, "$$$$": 3}
         return mapping.get(price_range)
     
-    async def _generate_booking_urls(self, details: Dict[str, Any]) -> Dict[str, str]:
+    async def _generate_booking_urls(
+        self, details: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate booking URLs for the restaurant"""
         name = details.get('name', '')
         website = details.get('website', '')
@@ -331,7 +508,9 @@ class EnhancedGooglePlacesService:
         # Generate OpenTable search URL
         if name:
             clean_name = name.replace(' ', '+').replace('&', 'and')
-            booking_urls['opentable_search'] = f"https://www.opentable.com/s/?term={clean_name}"
+            booking_urls['opentable_search'] = (
+                f"https://www.opentable.com/s/?term={clean_name}"
+            )
         
         return booking_urls
 
@@ -370,13 +549,29 @@ class EnhancedGooglePlacesService:
             raise ConfigurationError("Google Places API not configured")
 
         try:
-            # Use nearby search
-            places_result = self.client.places_nearby(
-                location=(lat, lng),
-                radius=radius,
-                type='restaurant',
-                keyword=cuisine_type
-            )
+            # Use Text Search API (Places API New) instead of legacy nearby search
+            query = f"restaurant {cuisine_type} near {lat},{lng}" if cuisine_type else f"restaurant near {lat},{lng}"
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = "https://places.googleapis.com/v1/places:searchText"
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                }
+                payload = {
+                    "textQuery": query,
+                    "maxResultCount": limit if 'limit' in locals() else 20
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Places API (New) search failed: {error_text}")
+                        places_result = {"results": [], "status": "FAILED"}
+                    else:
+                        data = await response.json()
+                        places_result = {"results": data.get("places", []), "status": "OK"}
 
             restaurants = []
             for place in places_result.get('results', [])[:limit]:
@@ -385,14 +580,18 @@ class EnhancedGooglePlacesService:
                     details = self.client.place(
                         place_id,
                         fields=[
-                            'name', 'formatted_address', 'formatted_phone_number',
-                            'rating', 'user_ratings_total', 'price_level', 'website',
-                            'opening_hours', 'photo', 'reviews', 'url', 'geometry',
-                            'type', 'business_status'
+                            'name', 'formatted_address', 
+                            'formatted_phone_number', 'rating', 
+                            'user_ratings_total', 'price_level', 'website',
+                            'opening_hours', 'photos', 'reviews', 'url', 
+                            'geometry',
+                            'types', 'business_status'
                         ]
                     )['result']
 
-                    restaurant = await self._format_restaurant_data(details, place_id)
+                    restaurant = await self._format_restaurant_data(
+                        details, place_id
+                    )
                     restaurants.append(restaurant)
 
                 except Exception as e:
@@ -410,7 +609,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places nearby search failed: {e}")
             raise ServiceError(f"Nearby search failed: {e}")
 
-    async def get_place_photos(self, place_id: str, max_photos: int = 5) -> List[str]:
+    async def get_place_photos(
+        self, place_id: str, max_photos: int = 5
+    ) -> List[str]:
         """Get photos for a Google Places location"""
         if not self.client:
             return []
@@ -423,7 +624,8 @@ class EnhancedGooglePlacesService:
                 for photo in details['photos'][:max_photos]:
                     photo_ref = photo.get('photo_reference')
                     if photo_ref:
-                        # Store photo reference instead of full URL to avoid exposing API key
+                        # Store photo reference instead of full URL to avoid 
+                        # exposing API key
                         photo_url = f"/api/places/photo/{photo_ref}"
                         photos.append(photo_url)
 
@@ -433,7 +635,9 @@ class EnhancedGooglePlacesService:
             logger.error(f"Google Places photos fetch failed: {e}")
             return []
 
-    async def get_place_reviews(self, place_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def get_place_reviews(
+        self, place_id: str, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """Get reviews for a specific place"""
         if not self.client:
             return []
@@ -449,7 +653,9 @@ class EnhancedGooglePlacesService:
                         "rating": review.get('rating', 0),
                         "text": review.get('text', ''),
                         "time": review.get('relative_time_description', ''),
-                        "profile_photo_url": review.get('profile_photo_url', ''),
+                        "profile_photo_url": review.get(
+                            'profile_photo_url', ''
+                        ),
                         "source": "google"
                     }
                     reviews.append(formatted_review)
@@ -490,34 +696,62 @@ class EnhancedGooglePlacesService:
 
             for attraction_type in attraction_types:
                 try:
-                    logger.info(f"Searching for {attraction_type} near {coordinates}")
-                    places_result = self.client.places_nearby(
-                        location=coordinates,
-                        radius=5000,  # 5km radius
-                        type=attraction_type
+                    logger.info(
+                        f"Searching for {attraction_type} near {coordinates}"
                     )
+                    # Use Places API (New) Text Search for attractions
+                    query = f"{attraction_type.replace('_', ' ')} near {location}"
+                    
+                    import aiohttp
+                    async with aiohttp.ClientSession() as session:
+                        url = "https://places.googleapis.com/v1/places:searchText"
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Goog-Api-Key": self.api_key,
+                            "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.photos"
+                        }
+                        payload = {
+                            "textQuery": query,
+                            "maxResultCount": 5
+                        }
+                        
+                        async with session.post(url, json=payload, headers=headers) as response:
+                            if response.status != 200:
+                                error_text = await response.text()
+                                logger.error(f"Places API (New) search failed: {error_text}")
+                                places_result = {"results": [], "status": "FAILED"}
+                            else:
+                                data = await response.json()
+                                places_result = {"results": data.get("places", []), "status": "OK"}
 
                     if places_result.get('status') != 'OK':
-                        logger.warning(f"Places nearby search failed for {attraction_type}: {places_result.get('status')}")
+                        logger.warning(
+                            f"Places search failed for {attraction_type}: "
+                            f"{places_result.get('status')}"
+                        )
                         continue
 
                 except Exception as e:
                     logger.error(f"Error searching for {attraction_type}: {e}")
                     continue
 
-                for place in places_result.get('results', [])[:5]:  # Top 5 per type
+                # Top 5 per type
+                for place in places_result.get('results', [])[:5]:
                     try:
-                        place_id = place['place_id']
-                        details = self.client.place(
-                            place_id,
-                            fields=[
-                                'name', 'formatted_address', 'formatted_phone_number',
-                                'rating', 'user_ratings_total', 'website', 'opening_hours',
-                                'photo', 'url', 'geometry', 'type', 'business_status'
-                            ]
-                        )['result']
+                        place_id = place.get('id', '')
+                        details = {
+                            'name': place.get('displayName', {}).get('text', ''),
+                            'formatted_address': place.get('formattedAddress', ''),
+                            'rating': place.get('rating', 0),
+                            'types': place.get('types', []),
+                            'photos': place.get('photos', []),
+                            'place_id': place_id,
+                            'business_status': 'OPERATIONAL'
+                        }
 
-                        attraction = await self._format_attraction_data(details, place_id, attraction_type)
+                        attraction = await self._format_attraction_data(
+                            details, place_id, attraction_type
+                        )
                         attractions.append(attraction)
 
                     except Exception as e:
@@ -536,30 +770,31 @@ class EnhancedGooglePlacesService:
                     seen_names.add(name)
                     unique_attractions.append(attraction)
 
-            unique_attractions.sort(key=lambda x: x.get('rating', 0), reverse=True)
+            unique_attractions.sort(
+                key=lambda x: x.get('rating', 0), reverse=True
+            )
             return unique_attractions[:limit]
 
         except Exception as e:
             logger.error(f"Google Places attraction search failed: {e}")
             raise ServiceError(f"Attraction search failed: {e}")
 
-    async def _format_attraction_data(self, details: Dict[str, Any], place_id: str, attraction_type: str) -> Dict[str, Any]:
+    async def _format_attraction_data(
+        self, details: Dict[str, Any], place_id: str, attraction_type: str
+    ) -> Dict[str, Any]:
         """Format Google Places data into standardized attraction format"""
 
         # Format photos
         photos = []
-        photo_data = details.get('photo') or details.get('photos', [])
+        photo_data = details.get('photos', [])
         if photo_data:
-            # Handle both single photo and photos array
-            if isinstance(photo_data, list):
-                photo_list = photo_data[:3]  # Get up to 3 photos
-            else:
-                photo_list = [photo_data]  # Single photo
+            photo_list = photo_data[:3]  # Get up to 3 photos
 
             for photo in photo_list:
                 photo_ref = photo.get('photo_reference')
                 if photo_ref:
-                    # Store photo reference instead of full URL to avoid exposing API key
+                    # Store photo reference instead of full URL to avoid 
+                    # exposing API key
                     photo_url = f"/api/places/photo/{photo_ref}"
                     photos.append(photo_url)
 
@@ -585,12 +820,20 @@ class EnhancedGooglePlacesService:
             "opening_hours": opening_hours,
             "open_now": open_now,
             "coordinates": {
-                "latitude": details.get('geometry', {}).get('location', {}).get('lat'),
-                "longitude": details.get('geometry', {}).get('location', {}).get('lng')
+                "latitude": details.get('geometry', {}).get('location', {}).get(
+                    'lat'
+                ),
+                "longitude": details.get('geometry', {}).get('location', {}).get(
+                    'lng'
+                )
             },
             "business_status": details.get('business_status', ''),
-            "estimated_duration": self._estimate_visit_duration(attraction_type),
-            "best_time_to_visit": self._suggest_visit_time(attraction_type),
+            "estimated_duration": self._estimate_visit_duration(
+                attraction_type
+            ),
+            "best_time_to_visit": self._suggest_visit_time(
+                attraction_type
+            ),
             "source": "google_places"
         }
 

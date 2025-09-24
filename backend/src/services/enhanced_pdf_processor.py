@@ -55,7 +55,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         """Initialize the PDF processor"""
         try:
             if not self._pdf_libraries_available:
-                raise ProcessingError("Required PDF processing libraries not available")
+                raise ProcessingError(
+                    "Required PDF processing libraries not available"
+                )
             
             logger.info("Enhanced PDF processor initialized successfully")
             
@@ -69,7 +71,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             return {
                 "status": "healthy",
                 "processing_type": self.processing_type.value,
-                "supported_file_types": [ft.value for ft in self.supported_file_types],
+                "supported_file_types": [
+                    ft.value for ft in self.supported_file_types
+                ],
                 "max_file_size_mb": self.max_file_size_mb,
                 "libraries_available": self._pdf_libraries_available,
                 "cache_enabled": self.config.cache_enabled,
@@ -89,7 +93,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         self._cache.clear()
         logger.info("Enhanced PDF processor cleanup completed")
     
-    async def process_file(self, request: ProcessingRequest) -> ProcessingResult:
+    async def process_file(
+        self, request: ProcessingRequest
+    ) -> ProcessingResult:
         """Process a PDF file with Redis caching"""
         try:
             start_time = datetime.now()
@@ -100,7 +106,10 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             
             # Generate cache key based on file content hash and options
             file_path = Path(request.file_path)
-            file_hash = hashlib.md5(file_path.read_bytes()).hexdigest() if file_path.exists() else ""
+            file_hash = (
+                hashlib.md5(file_path.read_bytes()).hexdigest()
+                if file_path.exists() else ""
+            )
             
             cache_key_data = {
                 "file_hash": file_hash,
@@ -110,19 +119,29 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             
             # Check Redis cache first
             if self.config.cache_enabled:
-                cached_result = await cache_manager.get("pdf_extraction", cache_key_data)
+                cached_result = await cache_manager.get(
+                    "pdf_extraction", cache_key_data
+                )
                 if cached_result:
-                    logger.info(f"Redis cache HIT for PDF: {request.file_path}")
+                    logger.info(
+                        f"Redis cache HIT for PDF: {request.file_path}"
+                    )
                     # Convert dict back to ProcessingResult
                     return ProcessingResult(**cached_result)
             
             # Check local memory cache as fallback
-            local_cache_key = f"{request.file_path}_{hash(str(request.options))}"
+            local_cache_key = (
+                f"{request.file_path}_{hash(str(request.options))}"
+            )
             if self.config.cache_enabled and local_cache_key in self._cache:
                 cached_result = self._cache[local_cache_key]
-                logger.debug(f"Memory cache HIT for PDF: {request.file_path}")
+                logger.debug(
+                    f"Memory cache HIT for PDF: {request.file_path}"
+                )
                 # Also store in Redis for next time
-                await cache_manager.set("pdf_extraction", cache_key_data, cached_result.__dict__)
+                await cache_manager.set(
+                    "pdf_extraction", cache_key_data, cached_result.__dict__
+                )
                 return cached_result
             
             # Extract text and metadata
@@ -142,7 +161,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             if request.options.get("extract_images", False):
                 images = await self.extract_images(request.file_path)
             
-            processing_time = (datetime.now() - start_time).total_seconds() * 1000
+            processing_time = (
+                (datetime.now() - start_time).total_seconds() * 1000
+            )
             
             result = ProcessingResult.success_result(
                 extracted_text=extracted_text,
@@ -159,7 +180,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             # Cache result in both Redis and memory
             if self.config.cache_enabled:
                 # Store in Redis
-                await cache_manager.set("pdf_extraction", cache_key_data, result.__dict__)
+                await cache_manager.set(
+                    "pdf_extraction", cache_key_data, result.__dict__
+                )
                 # Store in memory cache
                 self._cache[local_cache_key] = result
             
@@ -187,7 +210,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             logger.error(f"Failed to extract text from {file_path}: {e}")
             raise ProcessingError(f"Text extraction failed: {e}")
     
-    async def extract_metadata(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    async def extract_metadata(
+        self, file_path: Union[str, Path]
+    ) -> Dict[str, Any]:
         """Extract metadata from PDF"""
         try:
             file_path = Path(file_path)
@@ -197,8 +222,12 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             metadata = {
                 "file_size": stat.st_size,
                 "file_size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "created_time": datetime.fromtimestamp(stat.st_ctime).isoformat(),
-                "modified_time": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                "created_time": datetime.fromtimestamp(
+                    stat.st_ctime
+                ).isoformat(),
+                "modified_time": datetime.fromtimestamp(
+                    stat.st_mtime
+                ).isoformat()
             }
             
             # PDF-specific metadata
@@ -211,7 +240,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                     metadata.update({
                         "page_count": len(pdf_reader.pages),
                         "is_encrypted": pdf_reader.is_encrypted,
-                        "pdf_version": getattr(pdf_reader, 'pdf_version', 'Unknown')
+                        "pdf_version": getattr(
+                            pdf_reader, 'pdf_version', 'Unknown'
+                        )
                     })
                     
                     # Document info
@@ -223,8 +254,12 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                             "subject": doc_info.get("/Subject", ""),
                             "creator": doc_info.get("/Creator", ""),
                             "producer": doc_info.get("/Producer", ""),
-                            "creation_date": str(doc_info.get("/CreationDate", "")),
-                            "modification_date": str(doc_info.get("/ModDate", ""))
+                            "creation_date": str(
+                                doc_info.get("/CreationDate", "")
+                            ),
+                            "modification_date": str(
+                                doc_info.get("/ModDate", "")
+                            )
                         })
                         
             except Exception as e:
@@ -252,27 +287,38 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                     
                     for page_num, page in enumerate(pdf_reader.pages):
                         if '/XObject' in page['/Resources']:
-                            xObject = page['/Resources']['/XObject'].get_object()
+                            xObject = page['/Resources'][
+                                '/XObject'
+                            ].get_object()
                             
                             for obj in xObject:
                                 if xObject[obj]['/Subtype'] == '/Image':
                                     try:
-                                        size = (xObject[obj]['/Width'], xObject[obj]['/Height'])
+                                        size = (
+                                            xObject[obj]['/Width'], 
+                                            xObject[obj]['/Height']
+                                        )
                                         data = xObject[obj].get_data()
                                         
-                                        if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
+                                        if (xObject[obj]['/ColorSpace'] == 
+                                            '/DeviceRGB'):
                                             mode = "RGB"
                                         else:
                                             mode = "P"
                                         
-                                        # Convert to PIL Image and then to bytes
-                                        img = PIL.Image.frombytes(mode, size, data)
+                                        # Convert to PIL Image and bytes
+                                        img = PIL.Image.frombytes(
+                                            mode, size, data
+                                        )
                                         img_bytes = io.BytesIO()
                                         img.save(img_bytes, format='PNG')
                                         images.append(img_bytes.getvalue())
                                         
                                     except Exception as img_error:
-                                        logger.warning(f"Failed to extract image from page {page_num}: {img_error}")
+                                        logger.warning(
+                                            f"Failed to extract image from "
+                                            f"page {page_num}: {img_error}"
+                                        )
                                         continue
                                         
             except Exception as e:
@@ -298,7 +344,9 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
                         page_text = page.extract_text()
                         text += page_text + "\n"
                     except Exception as e:
-                        logger.warning(f"Failed to extract text from page: {e}")
+                        logger.warning(
+                            f"Failed to extract text from page: {e}"
+                        )
                         continue
             
             return text
@@ -313,14 +361,18 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
         try:
             # This would require additional OCR libraries like pytesseract
             # For now, return a placeholder
-            logger.warning("OCR text extraction not implemented - would require pytesseract")
+            logger.warning(
+                "OCR text extraction not implemented - would require pytesseract"
+            )
             return ""
             
         except Exception as e:
             logger.error(f"OCR text extraction failed: {e}")
             return ""
     
-    async def _extract_structured_data(self, text: str, extraction_type: str) -> Dict[str, Any]:
+    async def _extract_structured_data(
+        self, text: str, extraction_type: str
+    ) -> Dict[str, Any]:
         """Extract structured data from text using LLM"""
         try:
             # Import LLM service
@@ -333,7 +385,8 @@ class EnhancedPDFProcessor(PDFProcessorInterface):
             # Create extraction prompt based on type
             if extraction_type == "travel":
                 prompt = f"""
-                Extract travel information from the following text and return as JSON:
+                Extract travel information from the following text and 
+                return as JSON:
                 
                 Text: {text[:4000]}  # Limit text length
                 

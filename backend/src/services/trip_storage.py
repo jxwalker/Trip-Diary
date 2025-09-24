@@ -63,7 +63,8 @@ class TripStorageService:
             for file in self.metadata_path.glob("*.json"):
                 with open(file, 'r') as f:
                     data = json.load(f)
-                    self._metadata_cache[data["trip_id"]] = TripMetadata(**data)
+                    self._metadata_cache[data["trip_id"]] = TripMetadata(
+                        **data)
         except Exception as e:
             print(f"Error loading metadata cache: {e}")
     
@@ -183,7 +184,8 @@ class TripStorageService:
                 continue
             
             # Search in travelers
-            if any(query_lower in traveler.lower() for traveler in trip.travelers):
+            if any(query_lower in traveler.lower() 
+                   for traveler in trip.travelers):
                 results.append(trip)
         
         return results
@@ -277,7 +279,8 @@ class TripStorageService:
         
         for metadata in self._metadata_cache.values():
             # Count by status
-            status_counts[metadata.status] = status_counts.get(metadata.status, 0) + 1
+            status_counts[metadata.status] = (
+                status_counts.get(metadata.status, 0) + 1)
             
             # Count by destination
             dest = metadata.destination

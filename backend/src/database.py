@@ -33,7 +33,9 @@ class TripDatabase:
         except:
             return {}
     
-    async def save_trip(self, trip_id: str, trip_data: Dict, user_id: str = "default") -> bool:
+    async def save_trip(
+        self, trip_id: str, trip_data: Dict, user_id: str = "default"
+    ) -> bool:
         """Save a trip to the database"""
         try:
             # Add metadata
@@ -60,7 +62,10 @@ class TripDatabase:
                 "end_date": trip_summary.get("end_date", ""),
                 "duration": trip_summary.get("duration", ""),
                 "saved_at": trip_data["saved_at"],
-                "title": f"{trip_summary.get('destination', 'Trip')} - {trip_summary.get('start_date', '')}",
+                "title": (
+                    f"{trip_summary.get('destination', 'Trip')} - "
+                    f"{trip_summary.get('start_date', '')}"
+                ),
                 "passengers": len(itinerary.get("passengers", [])),
                 "flights": len(itinerary.get("flights", [])),
                 "hotels": len(itinerary.get("accommodations", []))
@@ -86,7 +91,9 @@ class TripDatabase:
             print(f"Error loading trip: {e}")
             return None
     
-    async def update_trip_enhanced_guide(self, trip_id: str, enhanced_guide: Dict) -> bool:
+    async def update_trip_enhanced_guide(
+        self, trip_id: str, enhanced_guide: Dict
+    ) -> bool:
         """Update a trip with enhanced guide data"""
         try:
             # Load existing trip
@@ -97,7 +104,9 @@ class TripDatabase:
             
             # Add enhanced guide
             trip_data["enhanced_guide"] = enhanced_guide
-            trip_data["enhanced_guide_generated_at"] = datetime.now().isoformat()
+            trip_data["enhanced_guide_generated_at"] = (
+                datetime.now().isoformat()
+            )
             
             # Save updated trip
             trip_file = self.data_dir / f"{trip_id}.json"
@@ -108,10 +117,14 @@ class TripDatabase:
             index = self._load_index()
             if trip_id in index:
                 index[trip_id]["has_enhanced_guide"] = True
-                index[trip_id]["guide_generated_at"] = trip_data["enhanced_guide_generated_at"]
+                index[trip_id]["guide_generated_at"] = (
+                    trip_data["enhanced_guide_generated_at"]
+                )
                 self._save_index(index)
             
-            print(f"[DEBUG] Successfully saved enhanced guide for trip {trip_id}")
+            print(
+                f"[DEBUG] Successfully saved enhanced guide for trip {trip_id}"
+            )
             return True
         except Exception as e:
             print(f"Error updating trip with enhanced guide: {e}")
@@ -152,7 +165,9 @@ class TripDatabase:
             print(f"Error deleting trip: {e}")
             return False
     
-    async def search_trips(self, query: str, user_id: str = "default") -> List[Dict]:
+    async def search_trips(
+        self, query: str, user_id: str = "default"
+    ) -> List[Dict]:
         """Search trips by destination or date"""
         try:
             trips = await self.list_trips(user_id)

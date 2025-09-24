@@ -14,7 +14,9 @@ class RealtimeDataService:
         self.openweather_key = os.getenv("OPENWEATHER_API_KEY", "")
         self.ticketmaster_key = os.getenv("TICKETMASTER_API_KEY", "")
         
-    async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
+    async def get_weather_forecast(
+        self, destination: str, start_date: str, end_date: str
+    ) -> Dict:
         """Get weather forecast for destination"""
         try:
             if not self.openweather_key:
@@ -43,7 +45,9 @@ class RealtimeDataService:
                             lon = geo_data[0]["lon"]
                             
                             # Get weather forecast
-                            weather_url = "https://api.openweathermap.org/data/2.5/forecast"
+                            weather_url = (
+                                "https://api.openweathermap.org/data/2.5/forecast"
+                            )
                             weather_params = {
                                 "lat": lat,
                                 "lon": lon,
@@ -51,10 +55,14 @@ class RealtimeDataService:
                                 "units": "metric"
                             }
                             
-                            async with session.get(weather_url, params=weather_params) as weather_response:
+                            async with session.get(
+                                weather_url, params=weather_params
+                            ) as weather_response:
                                 if weather_response.status == 200:
                                     weather_data = await weather_response.json()
-                                    return self._format_weather_data(weather_data, start_date, end_date)
+                                    return self._format_weather_data(
+                                        weather_data, start_date, end_date
+                                    )
         except Exception as e:
             print(f"Weather API error: {e}")
         
@@ -67,12 +75,18 @@ class RealtimeDataService:
     
     # Removed typical weather generator to comply with no-mocks policy
     
-    def _format_weather_data(self, weather_data: Dict, start_date: str, end_date: str) -> Dict:
+    def _format_weather_data(
+        self, weather_data: Dict, start_date: str, end_date: str
+    ) -> Dict:
         """Format weather API data"""
         forecast_list = weather_data.get("list", [])
         
         if not forecast_list:
-            return self._get_typical_weather(weather_data.get("city", {}).get("name", ""), start_date)
+            return {
+                "error": "No forecast data available",
+                "message": "Weather forecast data is not available for this location and date range",
+                "fallback": True
+            }
         
         # Get average conditions
         temps = []
@@ -83,12 +97,17 @@ class RealtimeDataService:
             conditions.append(item["weather"][0]["description"])
         
         avg_temp = sum(temps) / len(temps) if temps else 20
-        most_common_condition = max(set(conditions), key=conditions.count) if conditions else "clear"
+        most_common_condition = (
+            max(set(conditions), key=conditions.count) 
+            if conditions else "clear"
+        )
         
         return {
             "temperature": f"{int(avg_temp-5)}-{int(avg_temp+5)}°C",
             "conditions": most_common_condition.title(),
-            "packing_tips": self._get_packing_tips(avg_temp, most_common_condition),
+            "packing_tips": self._get_packing_tips(
+                avg_temp, most_common_condition
+            ),
             "detailed_forecast": forecast_list[:5]  # First 5 time periods
         }
     
@@ -112,7 +131,10 @@ class RealtimeDataService:
         
         return ", ".join(tips).capitalize()
     
-    async def get_events(self, destination: str, start_date: str, end_date: str, interests: List[str] = None) -> List[Dict]:
+    async def get_events(
+        self, destination: str, start_date: str, end_date: str, 
+        interests: List[str] = None
+    ) -> List[Dict]:
         """Get events happening during the trip"""
         events = []
         
@@ -121,14 +143,18 @@ class RealtimeDataService:
         
         # If we have Ticketmaster API, fetch real events
         if self.ticketmaster_key:
-            real_events = await self._fetch_ticketmaster_events(destination, start_date, end_date)
+            real_events = await self._fetch_ticketmaster_events(
+                destination, start_date, end_date
+            )
             events.extend(real_events)
         
         return events
     
     # Removed typical events to comply with no-mocks policy
     
-    async def _fetch_ticketmaster_events(self, destination: str, start_date: str, end_date: str) -> List[Dict]:
+    async def _fetch_ticketmaster_events(
+        self, destination: str, start_date: str, end_date: str
+    ) -> List[Dict]:
         """Fetch real events from Ticketmaster API"""
         if not self.ticketmaster_key:
             return []
@@ -150,14 +176,24 @@ class RealtimeDataService:
                         data = await response.json()
                         events = []
                         
-                        for event in data.get("_embedded", {}).get("events", [])[:10]:
+                        for event in data.get("_embedded", {}).get(
+                            "events", []
+                        )[:10]:
                             events.append({
                                 "name": event.get("name"),
-                                "type": event.get("classifications", [{}])[0].get("segment", {}).get("name", "Event"),
+                                "type": event.get("classifications", [{}])[0].get(
+                                    "segment", {}
+                                ).get("name", "Event"),
                                 "description": event.get("info", ""),
-                                "date": event.get("dates", {}).get("start", {}).get("localDate"),
-                                "time": event.get("dates", {}).get("start", {}).get("localTime"),
-                                "venue": event.get("_embedded", {}).get("venues", [{}])[0].get("name"),
+                                "date": event.get("dates", {}).get(
+                                    "start", {}
+                                ).get("localDate"),
+                                "time": event.get("dates", {}).get(
+                                    "start", {}
+                                ).get("localTime"),
+                                "venue": event.get("_embedded", {}).get(
+                                    "venues", [{}]
+                                )[0].get("name"),
                                 "ticket_info": event.get("url", "")
                             })
                         
@@ -169,5 +205,5 @@ class RealtimeDataService:
     
     async def get_local_tips(self, destination: str) -> Dict:
         """Get local tips - should be fetched dynamically"""
-        # Return empty dict - let Perplexity provide real-time local information
+        # Return empty dict - let Perplexity provide real-time local info
         return {}

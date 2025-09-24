@@ -24,11 +24,15 @@ class WeatherService:
         
         # If no API key, provide helpful error message
         if not self.api_key:
-            print("[WARNING] OPENWEATHER_API_KEY not found in environment variables")
-            print("[INFO] To enable weather forecasts, get a free API key from: https://openweathermap.org/api")
-            print("[INFO] Then set OPENWEATHER_API_KEY in your environment or .env file")
+            print("[WARNING] OPENWEATHER_API_KEY not found in environment "
+                  "variables")
+            print("[INFO] To enable weather forecasts, get a free API key "
+                  "from: https://openweathermap.org/api")
+            print("[INFO] Then set OPENWEATHER_API_KEY in your environment "
+                  "or .env file")
         
-    async def get_weather_forecast(self, destination: str, start_date: str, end_date: str) -> Dict:
+    async def get_weather_forecast(self, destination: str, 
+                                   start_date: str, end_date: str) -> Dict:
         """
         Get weather forecast for a destination during trip dates
 
@@ -49,8 +53,11 @@ class WeatherService:
                 "daily_forecasts": [],
                 "summary": {
                     "setup_required": True,
-                    "message": "Weather forecasts require an OpenWeatherMap API key",
-                    "instructions": "Get a free API key from https://openweathermap.org/api and set OPENWEATHER_API_KEY in your environment"
+                    "message": "Weather forecasts require an OpenWeatherMap "
+                               "API key",
+                    "instructions": "Get a free API key from "
+                                    "https://openweathermap.org/api and set "
+                                    "OPENWEATHER_API_KEY in your environment"
                 },
                 "error": "OPENWEATHER_API_KEY not configured"
             }
@@ -67,9 +74,13 @@ class WeatherService:
                 "forecast_period": {"start": start_date, "end": end_date},
                 "daily_forecasts": [],
                 "summary": {
-                    "message": f"Historical weather data for {destination} during {start_date} to {end_date}",
-                    "note": "This trip occurred in the past. For current weather forecasts, please use current or future dates.",
-                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                    "message": f"Historical weather data for {destination} "
+                               f"during {start_date} to {end_date}",
+                    "note": "This trip occurred in the past. For current "
+                            "weather forecasts, please use current or future "
+                            "dates.",
+                    "typical_weather": self._get_typical_weather(
+                        destination, start_dt.month)
                 },
                 "historical": True
             }
@@ -81,22 +92,27 @@ class WeatherService:
                 "forecast_period": {"start": start_date, "end": end_date},
                 "daily_forecasts": [],
                 "summary": {
-                    "message": f"Typical weather for {destination} during {start_date} to {end_date}",
-                    "note": "Detailed forecasts are only available for the next 5 days. Showing typical weather patterns.",
-                    "typical_weather": self._get_typical_weather(destination, start_dt.month)
+                    "message": f"Typical weather for {destination} during "
+                               f"{start_date} to {end_date}",
+                    "note": "Detailed forecasts are only available for the "
+                            "next 5 days. Showing typical weather patterns.",
+                    "typical_weather": self._get_typical_weather(
+                        destination, start_dt.month)
                 },
                 "typical_weather": True
             }
         
         try:
-            # Check if dates are within 5-day forecast range (OpenWeather free tier limitation)
+            # Check if dates are within 5-day forecast range
+            # (OpenWeather free tier limitation)
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             today = datetime.now()
             days_ahead = (start_dt - today).days
 
             if days_ahead > 5:
                 # For dates beyond 5 days, provide seasonal weather estimates
-                return await self._get_seasonal_weather_estimate(destination, start_date, end_date)
+                return await self._get_seasonal_weather_estimate(
+                    destination, start_date, end_date)
 
             # Get coordinates for the destination
             coords = await self._get_coordinates(destination)
@@ -110,17 +126,21 @@ class WeatherService:
                 }
             
             # Get forecast data
-            forecast_url = f"{self.base_url}/forecast?lat={coords['lat']}&lon={coords['lon']}&appid={self.api_key}&units=metric"
+            forecast_url = (f"{self.base_url}/forecast?"
+                            f"lat={coords['lat']}&lon={coords['lon']}&"
+                            f"appid={self.api_key}&units=metric")
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(forecast_url) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return self._format_forecast(data, destination, start_date, end_date)
+                        return self._format_forecast(
+                            data, destination, start_date, end_date)
                     else:
                         return {
                             "destination": destination,
-                            "forecast_period": {"start": start_date, "end": end_date},
+                            "forecast_period": {"start": start_date, 
+                                                "end": end_date},
                             "daily_forecasts": [],
                             "summary": {},
                             "error": "OpenWeather forecast unavailable"
@@ -138,7 +158,8 @@ class WeatherService:
     
     async def _get_coordinates(self, location: str) -> Optional[Dict]:
         """Get latitude and longitude for a location"""
-        geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={self.api_key}"
+        geo_url = (f"http://api.openweathermap.org/geo/1.0/direct?"
+                   f"q={location}&limit=1&appid={self.api_key}")
         
         try:
             async with aiohttp.ClientSession() as session:
@@ -151,7 +172,9 @@ class WeatherService:
             pass
         return None
 
-    async def _get_seasonal_weather_estimate(self, destination: str, start_date: str, end_date: str) -> Dict:
+    async def _get_seasonal_weather_estimate(self, destination: str, 
+                                             start_date: str, 
+                                             end_date: str) -> Dict:
         """
         Provide seasonal weather estimates for dates beyond 5-day forecast
         Based on historical climate data for major destinations
@@ -190,15 +213,18 @@ class WeatherService:
             current_date += timedelta(days=1)
 
         # Create summary
-        avg_high = sum(d["temperature"]["high"] for d in daily_forecasts) / len(daily_forecasts)
-        avg_low = sum(d["temperature"]["low"] for d in daily_forecasts) / len(daily_forecasts)
+        avg_high = (sum(d["temperature"]["high"] for d in daily_forecasts) 
+                    / len(daily_forecasts))
+        avg_low = (sum(d["temperature"]["low"] for d in daily_forecasts) 
+                   / len(daily_forecasts))
 
         condition = daily_forecasts[0]["condition"] if daily_forecasts else ""
         summary = {
             "average_high": round(avg_high, 1),
             "average_low": round(avg_low, 1),
             "general_conditions": condition,
-            "packing_suggestions": self._get_packing_suggestions(avg_high, avg_low, condition),
+            "packing_suggestions": self._get_packing_suggestions(
+                avg_high, avg_low, condition),
             "note": "Weather estimates based on seasonal patterns"
         }
 
@@ -215,16 +241,36 @@ class WeatherService:
         # Seasonal patterns for major destinations
         seasonal_patterns = {
             "paris": {
-                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 70, "humidity": 80, "wind_speed": 15},
-                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", "description": "Cool with occasional rain", "precipitation": 60, "humidity": 75, "wind_speed": 12},
-                3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", "description": "Mild spring weather", "precipitation": 50, "humidity": 70, "wind_speed": 10},
-                4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", "description": "Pleasant spring weather", "precipitation": 45, "humidity": 65, "wind_speed": 8},
-                5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", "description": "Warm and pleasant", "precipitation": 40, "humidity": 60, "wind_speed": 8},
-                6: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
-                7: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm and dry", "precipitation": 30, "humidity": 50, "wind_speed": 7},
-                8: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", "description": "Warm summer weather", "precipitation": 35, "humidity": 55, "wind_speed": 7},
-                9: {"temp_high": 22, "temp_low": 13, "condition": "Partly Cloudy", "description": "Pleasant autumn weather", "precipitation": 45, "humidity": 65, "wind_speed": 9},
-                10: {"temp_high": 17, "temp_low": 9, "condition": "Cloudy", "description": "Cool autumn weather", "precipitation": 55, "humidity": 75, "wind_speed": 12},
+                1: {"temp_high": 7, "temp_low": 2, "condition": "Cloudy", 
+                    "description": "Cool and often rainy", "precipitation": 70, 
+                    "humidity": 80, "wind_speed": 15},
+                2: {"temp_high": 9, "temp_low": 3, "condition": "Partly Cloudy", 
+                    "description": "Cool with occasional rain", "precipitation": 60, 
+                    "humidity": 75, "wind_speed": 12},
+                3: {"temp_high": 13, "temp_low": 5, "condition": "Partly Cloudy", 
+                    "description": "Mild spring weather", "precipitation": 50, 
+                    "humidity": 70, "wind_speed": 10},
+                4: {"temp_high": 17, "temp_low": 8, "condition": "Partly Cloudy", 
+                    "description": "Pleasant spring weather", "precipitation": 45, 
+                    "humidity": 65, "wind_speed": 8},
+                5: {"temp_high": 21, "temp_low": 12, "condition": "Sunny", 
+                    "description": "Warm and pleasant", "precipitation": 40, 
+                    "humidity": 60, "wind_speed": 8},
+                6: {"temp_high": 24, "temp_low": 15, "condition": "Sunny", 
+                    "description": "Warm summer weather", "precipitation": 35, 
+                    "humidity": 55, "wind_speed": 7},
+                7: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", 
+                    "description": "Warm and dry", "precipitation": 30, 
+                    "humidity": 50, "wind_speed": 7},
+                8: {"temp_high": 26, "temp_low": 17, "condition": "Sunny", 
+                    "description": "Warm summer weather", "precipitation": 35, 
+                    "humidity": 55, "wind_speed": 7},
+                9: {"temp_high": 22, "temp_low": 13, "condition": "Partly Cloudy", 
+                    "description": "Pleasant autumn weather", "precipitation": 45, 
+                    "humidity": 65, "wind_speed": 9},
+                10: {"temp_high": 17, "temp_low": 9, "condition": "Cloudy", 
+                     "description": "Cool autumn weather", "precipitation": 55, 
+                     "humidity": 75, "wind_speed": 12},
                 11: {"temp_high": 11, "temp_low": 5, "condition": "Cloudy", "description": "Cool and often rainy", "precipitation": 65, "humidity": 80, "wind_speed": 14},
                 12: {"temp_high": 8, "temp_low": 3, "condition": "Cloudy", "description": "Cold winter weather", "precipitation": 70, "humidity": 85, "wind_speed": 15}
             }
@@ -357,30 +403,6 @@ class WeatherService:
             )
         }
     
-    def _get_packing_suggestions(self, forecasts: List[Dict]) -> List[str]:
-        """Generate packing suggestions based on weather"""
-        suggestions = ["Comfortable walking shoes", "Sunglasses"]
-        
-        # Check temperatures
-        temps = [f["temp_high"] for f in forecasts] + [f["temp_low"] for f in forecasts]
-        avg_temp = sum(temps) / len(temps)
-        
-        if avg_temp < 10:
-            suggestions.extend(["Warm jacket", "Gloves", "Scarf"])
-        elif avg_temp < 20:
-            suggestions.extend(["Light jacket", "Long pants", "Sweater"])
-        else:
-            suggestions.extend(["Light clothing", "Shorts", "T-shirts"])
-        
-        # Check for rain
-        if any("rain" in f["condition"].lower() for f in forecasts):
-            suggestions.extend(["Umbrella", "Rain jacket"])
-        
-        # Check for sun
-        if any(f["condition"] == "Clear" for f in forecasts):
-            suggestions.append("Sunscreen")
-        
-        return list(set(suggestions))  # Remove duplicates
     
     def _get_typical_weather(self, destination: str, month: int) -> Dict:
         """Get typical weather patterns for a destination and month - NO HARDCODED DATA"""

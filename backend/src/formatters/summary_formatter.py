@@ -10,7 +10,8 @@ class SummaryFormatter:
     """Formats travel information into readable summaries."""
     
     @staticmethod
-    def format_summary(flights: List[Flight], hotels: List[Hotel], passengers: List[Passenger]) -> str:
+    def format_summary(flights: List[Flight], hotels: List[Hotel], 
+                       passengers: List[Passenger]) -> str:
         """Format the complete itinerary summary."""
         summary = []
         
@@ -23,10 +24,13 @@ class SummaryFormatter:
         # Add passenger information
         if unique_passengers:
             summary.append("Passengers:")
-            for passenger in sorted(unique_passengers, key=lambda p: (p.last_name, p.first_name)):
-                summary.append(f"  {passenger.title} {passenger.first_name} {passenger.last_name}")
+            for passenger in sorted(unique_passengers, 
+                                   key=lambda p: (p.last_name, p.first_name)):
+                summary.append(f"  {passenger.title} {passenger.first_name} "
+                              f"{passenger.last_name}")
                 if passenger.frequent_flyer:
-                    summary.append(f"    Frequent Flyer: {passenger.frequent_flyer}")
+                    summary.append(f"    Frequent Flyer: "
+                                  f"{passenger.frequent_flyer}")
             summary.append("")
         
         # Add timeline
@@ -41,20 +45,27 @@ class SummaryFormatter:
         # Add date range if we have events
         all_dates = []
         if flights:
-            all_dates.extend([datetime.strptime(f.departure.date, '%Y-%m-%d') for f in flights])
-            all_dates.extend([datetime.strptime(f.arrival.date, '%Y-%m-%d') for f in flights])
+            all_dates.extend([datetime.strptime(f.departure.date, '%Y-%m-%d') 
+                             for f in flights])
+            all_dates.extend([datetime.strptime(f.arrival.date, '%Y-%m-%d') 
+                             for f in flights])
         if hotels:
-            all_dates.extend([datetime.strptime(h.check_in_date, '%Y-%m-%d') for h in hotels])
-            all_dates.extend([datetime.strptime(h.check_out_date, '%Y-%m-%d') for h in hotels])
+            all_dates.extend([datetime.strptime(h.check_in_date, '%Y-%m-%d') 
+                             for h in hotels])
+            all_dates.extend([datetime.strptime(h.check_out_date, '%Y-%m-%d') 
+                             for h in hotels])
             
         if all_dates:
-            summary.append(f"Date Range: {min(all_dates).strftime('%Y-%m-%d')} to {max(all_dates).strftime('%Y-%m-%d')}")
+            summary.append(f"Date Range: {min(all_dates).strftime('%Y-%m-%d')} "
+                          f"to {max(all_dates).strftime('%Y-%m-%d')}")
             summary.append("")
         
         # Add flights
         if flights:
             summary.append("Flights:")
-            sorted_flights = sorted(flights, key=lambda f: (f.departure.date, f.departure.time))
+            sorted_flights = sorted(flights, 
+                                   key=lambda f: (f.departure.date, 
+                                                 f.departure.time))
             for flight in sorted_flights:
                 summary.append(SummaryFormatter.format_flight_details(flight))
             summary.append("")
@@ -72,7 +83,8 @@ class SummaryFormatter:
     @staticmethod
     def format_passenger_details(passenger: Passenger) -> str:
         """Format passenger details."""
-        details = [f"  {passenger.title} {passenger.first_name} {passenger.last_name}"]
+        details = [f"  {passenger.title} {passenger.first_name} "
+                  f"{passenger.last_name}"]
         if passenger.frequent_flyer:
             details.append(f"    Frequent Flyer: {passenger.frequent_flyer}")
         return "\n".join(details)
@@ -81,7 +93,8 @@ class SummaryFormatter:
     def format_flight_details(flight: Flight) -> str:
         """Format flight details."""
         # Use TimelineFormatter for consistent location formatting
-        dep_location = TimelineFormatter.format_location(flight.departure.location, flight.departure.terminal)
+        dep_location = TimelineFormatter.format_location(
+            flight.departure.location, flight.departure.terminal)
         arr_location = TimelineFormatter.format_location(flight.arrival.location, flight.arrival.terminal)
         
         details = [

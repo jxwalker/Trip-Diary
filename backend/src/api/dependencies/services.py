@@ -70,11 +70,23 @@ def get_luxury_guide_service() -> LuxuryGuideService:
 # Type aliases for dependency injection
 PDFProcessorDep = Annotated[PDFProcessor, Depends(get_pdf_processor)]
 LLMExtractorDep = Annotated[LLMExtractor, Depends(get_llm_extractor)]
-EnhancedGuideServiceDep = Annotated[EnhancedGuideService, Depends(get_enhanced_guide_service)]
-FastGuideServiceDep = Annotated[FastGuideService, Depends(get_fast_guide_service)]
-OptimizedGuideServiceDep = Annotated[OptimizedGuideService, Depends(get_optimized_guide_service)]
-ImmediateGuideGeneratorDep = Annotated[ImmediateGuideGenerator, Depends(get_immediate_guide_generator)]
+EnhancedGuideServiceDep = Annotated[
+    EnhancedGuideService, Depends(get_enhanced_guide_service)
+]
+FastGuideServiceDep = Annotated[
+    FastGuideService, Depends(get_fast_guide_service)
+]
+OptimizedGuideServiceDep = Annotated[
+    OptimizedGuideService, Depends(get_optimized_guide_service)
+]
+ImmediateGuideGeneratorDep = Annotated[
+    ImmediateGuideGenerator, Depends(get_immediate_guide_generator)
+]
 CleanupServiceDep = Annotated[CleanupService, Depends(get_cleanup_service)]
-DatabaseServiceDep = Annotated[EnhancedDatabaseService, Depends(get_database_service)]
+DatabaseServiceDep = Annotated[
+    EnhancedDatabaseService, Depends(get_database_service)
+]
 TripDatabaseDep = Annotated[TripDatabase, Depends(get_trip_database)]
-LuxuryGuideServiceDep = Annotated[LuxuryGuideService, Depends(get_luxury_guide_service)]
+LuxuryGuideServiceDep = Annotated[
+    LuxuryGuideService, Depends(get_luxury_guide_service)
+]

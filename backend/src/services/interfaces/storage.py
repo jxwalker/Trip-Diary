@@ -92,7 +92,9 @@ class StorageServiceInterface(BaseService):
         pass
     
     @abstractmethod
-    async def create_backup(self, backup_path: Optional[str] = None) -> StorageResult:
+    async def create_backup(
+        self, backup_path: Optional[str] = None
+    ) -> StorageResult:
         """Create a backup of the storage"""
         pass
     
@@ -152,7 +154,9 @@ class StorageServiceInterface(BaseService):
         pass
     
     @abstractmethod
-    async def get_processing_state(self, trip_id: str) -> Optional[ProcessingState]:
+    async def get_processing_state(
+        self, trip_id: str
+    ) -> Optional[ProcessingState]:
         """Get processing state"""
         pass
     
@@ -201,7 +205,9 @@ class StorageServiceInterface(BaseService):
         pass
     
     @abstractmethod
-    async def cleanup_old_data(self, older_than_days: int = 30) -> StorageResult:
+    async def cleanup_old_data(
+        self, older_than_days: int = 30
+    ) -> StorageResult:
         """Clean up old data"""
         pass
     
@@ -263,7 +269,9 @@ class StorageServiceInterface(BaseService):
         user_id: Optional[str] = None
     ) -> List[TripMetadata]:
         """Get trips by destination"""
-        filter_dest = self.build_filter("destination", QueryOperator.CONTAINS, destination)
+        filter_dest = self.build_filter(
+            "destination", QueryOperator.CONTAINS, destination
+        )
         options = self.build_query_options(filters=[filter_dest])
         return await self.list_trips(user_id=user_id, options=options)
     
@@ -275,7 +283,9 @@ class StorageServiceInterface(BaseService):
     ) -> List[TripMetadata]:
         """Get trips within date range"""
         filters = [
-            self.build_filter("start_date", QueryOperator.GREATER_THAN, start_date),
+            self.build_filter(
+                "start_date", QueryOperator.GREATER_THAN, start_date
+            ),
             self.build_filter("end_date", QueryOperator.LESS_THAN, end_date)
         ]
         options = self.build_query_options(filters=filters)

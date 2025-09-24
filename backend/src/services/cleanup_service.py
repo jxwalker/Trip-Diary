@@ -18,7 +18,8 @@ class CleanupService:
     Service to manage automatic cleanup of temporary files
     """
     
-    def __init__(self, uploads_dir: str = "uploads", outputs_dir: str = "output", ttl_hours: int = 24):
+    def __init__(self, uploads_dir: str = "uploads", 
+                 outputs_dir: str = "output", ttl_hours: int = 24):
         """
         Initialize cleanup service
         
@@ -121,7 +122,8 @@ class FileManager:
     Manager for creating files with automatic TTL tracking
     """
     
-    def __init__(self, base_dir: str, cleanup_service: Optional[CleanupService] = None):
+    def __init__(self, base_dir: str, 
+                 cleanup_service: Optional[CleanupService] = None):
         """
         Initialize file manager
         
@@ -133,7 +135,8 @@ class FileManager:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.cleanup_service = cleanup_service
         
-    def create_temp_file(self, content: bytes, suffix: str = ".pdf", prefix: str = "temp_") -> Path:
+    def create_temp_file(self, content: bytes, suffix: str = ".pdf", 
+                         prefix: str = "temp_") -> Path:
         """
         Create a temporary file with automatic cleanup tracking
         

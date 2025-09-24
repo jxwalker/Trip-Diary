@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
     """Add correlation ID to all requests"""
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         # Generate or extract correlation ID
         correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
         
@@ -52,7 +53,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.settings = get_settings()
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         start_time = time.time()
         correlation_id = getattr(request.state, 'correlation_id', 'unknown')
         
@@ -66,7 +68,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             duration_ms = (time.time() - start_time) * 1000
             
             # Log response
-            await self._log_response(request, response, duration_ms, correlation_id)
+            await self._log_response(request, response, duration_ms, 
+                                    correlation_id)
             
             return response
             
@@ -163,7 +166,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     """Enhanced error handling with custom exceptions"""
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         try:
             return await call_next(request)
         except HTTPException:
@@ -245,7 +249,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.settings = get_settings()
         self.request_counts: Dict[str, Dict[str, Any]] = {}
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         if not self.settings.rate_limit_enabled:
             return await call_next(request)
         
@@ -281,7 +286,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if req_time > window_start
         ]
         
-        return len(client_data["requests"]) >= self.settings.rate_limit_requests
+        return (len(client_data["requests"]) >= 
+                self.settings.rate_limit_requests)
     
     async def _record_request(self, client_ip: str):
         """Record a request for rate limiting"""
@@ -304,7 +310,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to responses"""
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         response = await call_next(request)
         
         # Add security headers
@@ -326,15 +333,18 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.settings = get_settings()
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, 
+                      call_next: Callable) -> Response:
         # Check content length
         content_length = request.headers.get("content-length")
         if content_length:
             size_mb = int(content_length) / (1024 * 1024)
-            if size_mb > self.settings.api.max_request_size / (1024 * 1024):
+            if (size_mb > 
+                self.settings.api.max_request_size / (1024 * 1024)):
                 raise ValidationError(
                     message="Request too large",
-                    details={"max_size_mb": self.settings.api.max_request_size / (1024 * 1024)}
+                    details={"max_size_mb": 
+                            self.settings.api.max_request_size / (1024 * 1024)}
                 )
         
         return await call_next(request)

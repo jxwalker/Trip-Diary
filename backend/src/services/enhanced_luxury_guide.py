@@ -31,7 +31,9 @@ class EnhancedLuxuryGuideService:
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         
         # Supported languages for multi-language support
-        self.supported_languages = ["en", "es", "fr", "it", "de", "ja", "zh", "pt"]
+        self.supported_languages = [
+            "en", "es", "fr", "it", "de", "ja", "zh", "pt"
+        ]
     
     async def generate_enhanced_guide(
         self,
@@ -55,7 +57,8 @@ class EnhancedLuxuryGuideService:
             "en": "Creating your enhanced luxury travel guide...",
             "es": "Creando su guía de viaje de lujo mejorada...",
             "fr": "Création de votre guide de voyage de luxe amélioré...",
-            "it": "Creazione della tua guida di viaggio di lusso migliorata...",
+            "it": "Creazione della tua guida di viaggio di lusso "
+                  "migliorata...",
             "de": "Erstelle Ihren erweiterten Luxus-Reiseführer...",
             "ja": "高級旅行ガイドを作成中...",
             "zh": "正在创建您的豪华旅行指南...",
@@ -63,11 +66,15 @@ class EnhancedLuxuryGuideService:
         }
         
         if progress_callback:
-            await progress_callback(5, progress_messages.get(language, progress_messages["en"]))
+            await progress_callback(
+                5, progress_messages.get(language, progress_messages["en"])
+            )
         
         # Extract passenger info
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (
+            passengers[0]["full_name"] if passengers else "Traveler"
+        )
         
         # Calculate trip duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -78,19 +85,31 @@ class EnhancedLuxuryGuideService:
         tasks = []
         
         # Original tasks
-        tasks.append(self._get_premium_content(destination, start_date, end_date, preferences, primary_traveler))
-        tasks.append(self._get_detailed_weather(destination, start_date, end_date))
+        tasks.append(self._get_premium_content(
+            destination, start_date, end_date, preferences, primary_traveler
+        ))
+        tasks.append(self._get_detailed_weather(
+            destination, start_date, end_date
+        ))
         
         # New enhanced tasks
-        tasks.append(self._get_flight_status(extracted_data.get("flights", [])))
-        tasks.append(self._generate_smart_packing_list(destination, start_date, end_date, preferences))
+        tasks.append(self._get_flight_status(
+            extracted_data.get("flights", [])
+        ))
+        tasks.append(self._generate_smart_packing_list(
+            destination, start_date, end_date, preferences
+        ))
         tasks.append(self._get_accessibility_info(destination))
         tasks.append(self._get_local_transportation(destination))
-        tasks.append(self._calculate_budget_estimates(destination, num_days, preferences))
+        tasks.append(self._calculate_budget_estimates(
+            destination, num_days, preferences
+        ))
         tasks.append(self._get_emergency_contacts(destination))
         
         if progress_callback:
-            await progress_callback(20, "Gathering enhanced travel intelligence...")
+            await progress_callback(
+                20, "Gathering enhanced travel intelligence..."
+            )
         
         try:
             results = await asyncio.wait_for(
@@ -102,17 +121,35 @@ class EnhancedLuxuryGuideService:
             results = [None] * len(tasks)
         
         # Unpack results
-        premium_content = results[0] if not isinstance(results[0], Exception) else {}
-        weather_data = results[1] if not isinstance(results[1], Exception) else {}
-        flight_status = results[2] if not isinstance(results[2], Exception) else {}
-        packing_list = results[3] if not isinstance(results[3], Exception) else {}
-        accessibility = results[4] if not isinstance(results[4], Exception) else {}
-        transportation = results[5] if not isinstance(results[5], Exception) else {}
-        budget_estimate = results[6] if not isinstance(results[6], Exception) else {}
-        emergency_info = results[7] if not isinstance(results[7], Exception) else {}
+        premium_content = (
+            results[0] if not isinstance(results[0], Exception) else {}
+        )
+        weather_data = (
+            results[1] if not isinstance(results[1], Exception) else {}
+        )
+        flight_status = (
+            results[2] if not isinstance(results[2], Exception) else {}
+        )
+        packing_list = (
+            results[3] if not isinstance(results[3], Exception) else {}
+        )
+        accessibility = (
+            results[4] if not isinstance(results[4], Exception) else {}
+        )
+        transportation = (
+            results[5] if not isinstance(results[5], Exception) else {}
+        )
+        budget_estimate = (
+            results[6] if not isinstance(results[6], Exception) else {}
+        )
+        emergency_info = (
+            results[7] if not isinstance(results[7], Exception) else {}
+        )
         
         if progress_callback:
-            await progress_callback(80, "Assembling your personalized guide...")
+            await progress_callback(
+                80, "Assembling your personalized guide..."
+            )
         
         # Assemble enhanced guide
         guide = {
@@ -198,7 +235,10 @@ class EnhancedLuxuryGuideService:
                     "terminal": "TBD",
                     "gate": "TBD"
                 },
-                "tracking_url": f"https://flightaware.com/live/flight/{flight.get('flight_number')}",
+                "tracking_url": (
+                    f"https://flightaware.com/live/flight/"
+                    f"{flight.get('flight_number')}"
+                ),
                 "check_in_opens": "24 hours before departure",
                 "baggage_allowance": "Check airline website"
             }
@@ -210,20 +250,26 @@ class EnhancedLuxuryGuideService:
             "tracking_enabled": True
         }
     
-    async def _generate_smart_packing_list(self, destination: str, start_date: str, end_date: str, preferences: Dict) -> Dict:
+    async def _generate_smart_packing_list(
+        self, destination: str, start_date: str, end_date: str, 
+        preferences: Dict
+    ) -> Dict:
         """Generate intelligent packing list based on weather and activities"""
         
         if not self.perplexity_api_key:
             return {}
         
-        prompt = f"""Create a smart packing list for {destination} from {start_date} to {end_date}.
-Consider:
-- Weather conditions and season
-- Cultural dress codes
-- Activities: {preferences.get('interests', {})}
-- Trip duration
-
-Format as JSON with categories: essentials, clothing, accessories, electronics, toiletries, documents"""
+        prompt = (
+            f"Create a smart packing list for {destination} "
+            f"from {start_date} to {end_date}.\n"
+            "Consider:\n"
+            "- Weather conditions and season\n"
+            "- Cultural dress codes\n"
+            f"- Activities: {preferences.get('interests', {})}\n"
+            "- Trip duration\n\n"
+            "Format as JSON with categories: essentials, clothing, "
+            "accessories, electronics, toiletries, documents"
+        )
 
         try:
             timeout = aiohttp.ClientTimeout(total=15)
@@ -239,11 +285,16 @@ Format as JSON with categories: essentials, clothing, accessories, electronics, 
                     "temperature": 0.3
                 }
                 
-                async with session.post("https://api.perplexity.ai/chat/completions", 
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions", 
+                    headers=headers, json=data
+                ) as response:
                     if response.status == 200:
                         result = await response.json()
-                        content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+                        content = (
+                            result.get("choices", [{}])[0]
+                            .get("message", {}).get("content", "{}")
+                        )
                         
                         # Parse and structure packing list
                         return {
@@ -256,7 +307,9 @@ Format as JSON with categories: essentials, clothing, accessories, electronics, 
                                 "Phone charger",
                                 "Medications"
                             ],
-                            "clothing": self._get_clothing_for_destination(destination, preferences),
+                            "clothing": self._get_clothing_for_destination(
+                                destination, preferences
+                            ),
                             "accessories": [
                                 "Sunglasses",
                                 "Travel adapter",
@@ -271,7 +324,9 @@ Format as JSON with categories: essentials, clothing, accessories, electronics, 
                                 "Hand sanitizer",
                                 "Face masks"
                             ],
-                            "destination_specific": self._get_destination_specific_items(destination)
+                            "destination_specific": (
+                                self._get_destination_specific_items(destination)
+                            )
                         }
         except Exception as e:
             logger.error(f"Failed to generate packing list: {e}")
@@ -284,13 +339,16 @@ Format as JSON with categories: essentials, clothing, accessories, electronics, 
         if not self.perplexity_api_key:
             return {}
         
-        prompt = f"""Provide accessibility information for travelers in {destination}:
-- Wheelchair accessible attractions
-- Public transport accessibility
-- Accessible restaurants
-- Medical facilities
-- Mobility equipment rental
-Format as JSON."""
+        prompt = (
+            f"Provide accessibility information for travelers in "
+            f"{destination}:\n"
+            "- Wheelchair accessible attractions\n"
+            "- Public transport accessibility\n"
+            "- Accessible restaurants\n"
+            "- Medical facilities\n"
+            "- Mobility equipment rental\n"
+            "Format as JSON."
+        )"""
 
         try:
             timeout = aiohttp.ClientTimeout(total=10)
@@ -306,11 +364,16 @@ Format as JSON."""
                     "temperature": 0.2
                 }
                 
-                async with session.post("https://api.perplexity.ai/chat/completions", 
-                                       headers=headers, json=data) as response:
+                async with session.post(
+                    "https://api.perplexity.ai/chat/completions", 
+                    headers=headers, json=data
+                ) as response:
                     if response.status == 200:
                         result = await response.json()
-                        content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+                        content = (
+                            result.get("choices", [{}])[0]
+                            .get("message", {}).get("content", "{}")
+                        )
                         
                         return {
                             "wheelchair_accessible": True,

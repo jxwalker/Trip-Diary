@@ -48,11 +48,15 @@ class LuxuryGuideService:
         """Generate a premium travel guide with rich content"""
         
         if progress_callback:
-            await progress_callback(5, "Creating your personalized luxury travel guide...")
+            await progress_callback(
+                5, "Creating your personalized luxury travel guide..."
+            )
         
         # Extract passenger names for personalization
         passengers = extracted_data.get("passengers", [])
-        primary_traveler = passengers[0]["full_name"] if passengers else "Traveler"
+        primary_traveler = (
+            passengers[0]["full_name"] if passengers else "Traveler"
+        )
         
         # Calculate trip duration
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -68,17 +72,22 @@ class LuxuryGuideService:
         ))
         
         # Task 2: Get detailed weather with hourly forecasts
-        tasks.append(self._get_detailed_weather(destination, start_date, end_date))
+        tasks.append(
+            self._get_detailed_weather(destination, start_date, end_date)
+        )
         
         # Task 3: Get location intelligence and maps
         tasks.append(self._get_location_intelligence(destination, hotel_info))
         
         # Task 4: Get contemporary events and news
-        tasks.append(self._get_contemporary_content(destination, start_date, end_date))
+        tasks.append(
+            self._get_contemporary_content(destination, start_date, end_date)
+        )
         
         # Task 5: Create personalized daily itinerary
         tasks.append(self._create_luxury_itinerary(
-            destination, start_date, end_date, preferences, hotel_info, primary_traveler
+            destination, start_date, end_date, preferences, 
+            hotel_info, primary_traveler
         ))
         
         if progress_callback:
@@ -102,28 +111,42 @@ class LuxuryGuideService:
                     results.append({})  # Empty dict on failure
         
         if progress_callback:
-            await progress_callback(70, "Crafting your bespoke travel experience...")
+            await progress_callback(
+                70, "Crafting your bespoke travel experience..."
+            )
         
         # Unpack results and check for failures
-        premium_content = results[0] if not isinstance(results[0], Exception) else {}
-        weather_data = results[1] if not isinstance(results[1], Exception) else {}
-        location_data = results[2] if not isinstance(results[2], Exception) else {}
-        contemporary = results[3] if not isinstance(results[3], Exception) else {}
-        luxury_itinerary = results[4] if not isinstance(results[4], Exception) else []
+        premium_content = (
+            results[0] if not isinstance(results[0], Exception) else {}
+        )
+        weather_data = (
+            results[1] if not isinstance(results[1], Exception) else {}
+        )
+        location_data = (
+            results[2] if not isinstance(results[2], Exception) else {}
+        )
+        contemporary = (
+            results[3] if not isinstance(results[3], Exception) else {}
+        )
+        luxury_itinerary = (
+            results[4] if not isinstance(results[4], Exception) else []
+        )
         
         # Check if we have minimum required content
         if not premium_content or premium_content.get("error"):
             logger.error("Failed to get premium content")
             return {
                 "error": "Content generation failed",
-                "message": "Unable to retrieve restaurant and attraction data. Please ensure API keys are configured."
+                "message": ("Unable to retrieve restaurant and attraction "
+                           "data. Please ensure API keys are configured.")
             }
         
         if not luxury_itinerary:
             logger.error("Failed to generate itinerary")
             return {
                 "error": "Itinerary generation failed", 
-                "message": "Unable to create daily itinerary. Please try again."
+                "message": ("Unable to create daily itinerary. "
+                           "Please try again.")
             }
         
         # Create the luxury guide
@@ -164,9 +187,11 @@ class LuxuryGuideService:
         
         # Adapt restaurant request to preferences
         if budget == 'budget':
-            restaurant_type = "authentic LOCAL EATERIES and STREET FOOD spots (under €20 per meal)"
+            restaurant_type = ("authentic LOCAL EATERIES and STREET FOOD "
+                              "spots (under €20 per meal)")
         elif budget == 'moderate':
-            restaurant_type = "highly-rated BISTROS and LOCAL FAVORITES (€20-50 per meal)"
+            restaurant_type = ("highly-rated BISTROS and LOCAL FAVORITES "
+                              "(€20-50 per meal)")
         else:
             restaurant_type = "Michelin-starred and FINE DINING restaurants"
         
@@ -184,9 +209,11 @@ Traveler Preferences:
 
 Based on these preferences, provide:
 1. TEN {restaurant_type} focusing on {', '.join(cuisine_types)} cuisine
-   Include: name, cuisine type, price range, signature dish, location/neighborhood
+   Include: name, cuisine type, price range, signature dish, 
+   location/neighborhood
 2. EIGHT attractions related to {', '.join(interest_list[:3])}
-   Include: name, type, best time to visit, entry fee, why it matches their interests
+   Include: name, type, best time to visit, entry fee, 
+   why it matches their interests
 3. FIVE experiences matching their {budget} budget and interests
    Include: activity name, duration, cost, booking requirements
 4. FIVE events/happenings during their visit dates
@@ -197,7 +224,9 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
         max_retries = 2
         for attempt in range(max_retries):
             try:
-                timeout = aiohttp.ClientTimeout(total=30 + (attempt * 10))  # 30s, then 40s
+                timeout = aiohttp.ClientTimeout(
+                    total=30 + (attempt * 10)
+                )  # 30s, then 40s
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     headers = {
                         "Authorization": f"Bearer {self.perplexity_api_key}",
@@ -209,7 +238,10 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a luxury travel concierge creating bespoke guides for discerning travelers. Provide accurate, current information with rich details."
+                            "content": ("You are a luxury travel concierge "
+                                       "creating bespoke guides for discerning "
+                                       "travelers. Provide accurate, current "
+                                       "information with rich details.")
                         },
                         {
                             "role": "user",
@@ -239,16 +271,25 @@ Format as JSON with keys: restaurants, attractions, experiences, events"""
                                 json_start = content_clean.find('{')
                                 json_end = content_clean.rfind('}') + 1
                                 if json_start >= 0 and json_end > json_start:
-                                    json_str = content_clean[json_start:json_end]
+                                    json_str = content_clean[
+                                        json_start:json_end
+                                    ]
                                     parsed = json.loads(json_str)
                                     # Ensure we have the expected keys
-                                    if not all(k in parsed for k in ['restaurants', 'attractions']):
+                                    required_keys = ['restaurants', 'attractions']
+                                    if not all(k in parsed for k in required_keys):
                                         # Try to extract from markdown code block
                                         if '```json' in content:
-                                            json_start = content.find('```json') + 7
-                                            json_end = content.find('```', json_start)
+                                            json_start = (
+                                                content.find('```json') + 7
+                                            )
+                                            json_end = content.find(
+                                                '```', json_start
+                                            )
                                             if json_end > json_start:
-                                                parsed = json.loads(content[json_start:json_end])
+                                                parsed = json.loads(
+                                                    content[json_start:json_end]
+                                                )
                                     return self._enhance_premium_content(parsed)
                             except json.JSONDecodeError as e:
                                 logger.error(f"Failed to parse premium content JSON: {e}")
