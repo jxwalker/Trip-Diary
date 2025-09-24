@@ -23,8 +23,9 @@ import os
 from datetime import datetime
 import html
 import tempfile
-import urllib.request
 import hashlib
+import aiohttp
+import asyncio
 
 from .maps_service import MapsService
 
@@ -225,14 +226,14 @@ class TravelPackGenerator:
         # Restaurant Recommendations (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("restaurants"):
             story.extend(
-                self._create_restaurant_section(enhanced_guide["restaurants"])
+                await self._create_restaurant_section(enhanced_guide["restaurants"])
             )
             story.append(PageBreak())
         
         # Attractions (from enhanced guide)
         if enhanced_guide and enhanced_guide.get("attractions"):
             story.extend(
-                self._create_attractions_section(enhanced_guide["attractions"])
+                await self._create_attractions_section(enhanced_guide["attractions"])
             )
             story.append(PageBreak())
         
@@ -586,7 +587,7 @@ class TravelPackGenerator:
         
         return story
     
-    def _create_restaurant_section(self, restaurants: List[Dict]) -> List:
+    async def _create_restaurant_section(self, restaurants: List[Dict]) -> List:
         """Create restaurant recommendations section with photos and QR codes"""
         story = []
         story.append(Paragraph("Recommended Restaurants", self.styles['SectionHeader']))
@@ -603,11 +604,9 @@ class TravelPackGenerator:
                     # Use synchronous helper to avoid complicating flow
                     img_path = self._image_cache.get(photo)
                     if not img_path:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                            urllib.request.urlretrieve(photo, tmp.name)
-                            img_path = tmp.name
-                            self._image_cache[photo] = img_path
-                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                        img_path = await self._download_image(photo)
+                    if img_path:
+                        story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
                     story.append(Spacer(1, 0.1*inch))
                 except Exception:
                     pass
@@ -635,7 +634,7 @@ class TravelPackGenerator:
         
         return story
     
-    def _create_attractions_section(self, attractions: List[Dict]) -> List:
+    async def _create_attractions_section(self, attractions: List[Dict]) -> List:
         """Create attractions section with photos and QR codes"""
         story = []
         story.append(Paragraph("Must-See Attractions", self.styles['SectionHeader']))
@@ -650,11 +649,9 @@ class TravelPackGenerator:
                 try:
                     img_path = self._image_cache.get(photo)
                     if not img_path:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
-                            urllib.request.urlretrieve(photo, tmp.name)
-                            img_path = tmp.name
-                            self._image_cache[photo] = img_path
-                    story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
+                        img_path = await self._download_image(photo)
+                    if img_path:
+                        story.append(Image(img_path, width=3.5*inch, height=2.3*inch))
                     story.append(Spacer(1, 0.1*inch))
                 except Exception:
                     pass
@@ -811,9 +808,7 @@ class TravelPackGenerator:
                 return []
 
             # Download to temp file for ReportLab Image
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
-                urllib.request.urlretrieve(url, tmp.name)
-                tmp_path = tmp.name
+            tmp_path = await self._download_image(url)
 
             img = Image(tmp_path, width=6*inch, height=4*inch)
             return [Paragraph("Map Overview", self.styles['SectionHeader']), Spacer(1, 0.1*inch), img]
@@ -841,9 +836,6 @@ class TravelPackGenerator:
         if url in self._image_cache:
             return self._image_cache[url]
         try:
-            import asyncio
-            import aiohttp
-            
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     if response.status == 200:
