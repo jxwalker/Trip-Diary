@@ -69,19 +69,25 @@ async def run_complete_test():
     except requests.Timeout:
         print("⚠️ Fast guide timed out")
     
-    # Fallback to offline generation if needed
+    # Fallback to standard generation if needed
     if not guide:
-        print("Using fallback guide generation (no external APIs)...")
+        print("Using standard guide generation...")
         response = requests.post(
-            f"{backend_url}/api/generate-fallback-guide/{trip_id}",
-            timeout=15
+            f"{backend_url}/api/generate-guide/{trip_id}",
+            timeout=30
         )
         
         if response.status_code == 200:
             result = response.json()
-            guide = result.get("guide")
-            guide_type = "fallback"
-            print("✅ Fallback guide generated successfully!")
+            guide_response = requests.get(f"{backend_url}/api/enhanced-guide/{trip_id}")
+            if guide_response.status_code == 200:
+                guide_result = guide_response.json()
+                guide = guide_result.get("guide")
+                guide_type = "standard"
+                print("✅ Standard guide generated successfully!")
+            else:
+                print(f"❌ Failed to retrieve generated guide: {guide_response.status_code}")
+                return False
         else:
             print(f"❌ Guide generation failed: {response.status_code}")
             return False

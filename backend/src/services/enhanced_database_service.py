@@ -552,7 +552,7 @@ class EnhancedDatabaseService(StorageServiceInterface):
             
             async with aiofiles.open(state_file, 'r') as f:
                 data = json.loads(await f.read())
-                state = ProcessingState(**data)
+                state = ProcessingState.from_dict(data)
             
             # Update cache
             if self.config.cache_enabled:

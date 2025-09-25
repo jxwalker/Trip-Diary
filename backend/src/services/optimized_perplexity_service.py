@@ -57,6 +57,12 @@ class OptimizedPerplexityService:
         self._cache_timestamps: Dict[str, datetime] = {}
         self._semaphore = asyncio.Semaphore(self.config.max_concurrent)
         
+        self._failure_count = 0
+        self._last_failure_time = None
+        self._circuit_open = False
+        self._circuit_breaker_threshold = 5
+        self._circuit_breaker_timeout = 300
+        
         # OpenAI client for parsing (if available)
         openai_api_key = os.getenv('OPENAI_API_KEY')
         if openai_api_key:
@@ -293,12 +299,169 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
             logger.warning(f"Daily suggestions fetch failed: {e}")
             return []
 
+    def _check_circuit_breaker(self) -> bool:
+        """Check if circuit breaker should prevent API calls"""
+        if not self._circuit_open:
+            return False
+            
+        # Check if enough time has passed to try again
+        if self._last_failure_time:
+            time_since_failure = (datetime.now() - self._last_failure_time).total_seconds()
+            if time_since_failure > self._circuit_breaker_timeout:
+                logger.info("Circuit breaker timeout expired, allowing API calls")
+                self._circuit_open = False
+                self._failure_count = 0
+                return False
+        
+        return True
+    
+    def _record_success(self):
+        """Record successful API call"""
+        self._failure_count = 0
+        self._circuit_open = False
+        self._last_failure_time = None
+    
+    def _record_failure(self):
+        """Record failed API call and potentially open circuit breaker"""
+        self._failure_count += 1
+        self._last_failure_time = datetime.now()
+        
+        if self._failure_count >= self._circuit_breaker_threshold:
+            self._circuit_open = True
+            logger.warning(f"Circuit breaker opened after {self._failure_count} consecutive failures")
+
+    async def search(
+        self,
+        query: str,
+        max_results: int = 10,
+        search_type: str = "web"
+    ) -> Dict[str, Any]:
+        """
+        Perform a search query using Perplexity API
+        
+        Args:
+            query: Search query string
+            max_results: Maximum number of results to return
+            search_type: Type of search (web, academic, etc.)
+            
+        Returns:
+            Dictionary containing search results
+        """
+        try:
+            search_prompt = f"""
+            Search for: {query}
+            
+            Please provide comprehensive information about this query.
+            Include relevant facts, current information, and practical details.
+            Format the response as structured information that would be useful for travel planning.
+            
+            Limit to {max_results} key pieces of information.
+            """
+            
+            response = await self._make_api_request(search_prompt)
+            
+            if response and not isinstance(response, str):
+                return {
+                    "query": query,
+                    "results": response,
+                    "search_type": search_type,
+                    "max_results": max_results,
+                    "success": True
+                }
+            else:
+                logger.error(f"Search failed for query: {query}")
+                return {
+                    "query": query,
+                    "results": [],
+                    "error": "Search request failed",
+                    "success": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Search error for query '{query}': {e}")
+            return {
+                "query": query,
+                "results": [],
+                "error": str(e),
+                "success": False
+            }
+
+    async def search_with_context(
+        self,
+        query: str,
+        context: str,
+        max_results: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Search with additional context using Perplexity API
+        
+        Args:
+            query: Search query string
+            context: Additional context for the search
+            max_results: Maximum number of results to return
+            
+        Returns:
+            Dictionary containing search results with context
+        """
+        try:
+            # Combine query and context for better search results
+            contextual_prompt = f"""
+            Context: {context}
+            
+            Search for: {query}
+            
+            Please provide comprehensive information about this query within the given context.
+            Include relevant facts, current information, and practical details.
+            Format the response as structured information that would be useful for travel planning.
+            
+            Limit to {max_results} key pieces of information.
+            """
+            
+            response = await self._make_api_request(contextual_prompt)
+            
+            if response and isinstance(response, str):
+                return {
+                    "query": query,
+                    "context": context,
+                    "results": response,
+                    "max_results": max_results,
+                    "success": True
+                }
+            else:
+                logger.error(f"Contextual search failed for query: {query}")
+                return {
+                    "query": query,
+                    "context": context,
+                    "results": [],
+                    "error": "Contextual search request failed",
+                    "success": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Contextual search error for query '{query}': {e}")
+            return {
+                "query": query,
+                "context": context,
+                "results": [],
+                "error": str(e),
+                "success": False
+            }
+
     async def _make_api_request(self, prompt: str) -> str:
-        """Make optimized API request to Perplexity with retry logic"""
+        """Make optimized API request to Perplexity with retry logic and circuit breaker"""
+        if self._check_circuit_breaker():
+            logger.warning("Circuit breaker is open, skipping Perplexity API call")
+            raise Exception("Circuit breaker is open - too many recent failures")
+        
         async with self._semaphore:  # Limit concurrent requests
             for attempt in range(self.config.retry_attempts):
                 try:
-                    timeout = aiohttp.ClientTimeout(total=self.config.timeout)
+                    timeout = aiohttp.ClientTimeout(
+                        total=min(self.config.timeout, 15),  # Cap at 15 seconds
+                        connect=5,  # 5 second connect timeout
+                        sock_read=10  # 10 second read timeout
+                    )
+                    
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         headers = {
                             "Authorization": f"Bearer {self.config.api_key}",
@@ -325,20 +488,32 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
                                                json=payload, headers=headers) as response:
                             if response.status == 200:
                                 data = await response.json()
-                                return data["choices"][0]["message"]["content"]
+                                content = data["choices"][0]["message"]["content"]
+                                self._record_success()
+                                return content
                             else:
                                 error_text = await response.text()
-                                raise Exception(f"API error {response.status}: {error_text}")
+                                logger.warning(f"Perplexity API error {response.status}: {error_text}")
+                                
+                                # Return error response for non-retryable errors
+                                if response.status in [401, 403, 429]:
+                                    self._record_failure()
+                                    raise Exception(f"API error {response.status}: {error_text}")
 
                 except asyncio.TimeoutError:
-                    logger.warning(f"Perplexity timeout (attempt {attempt + 1})")
-                    if attempt < self.config.retry_attempts - 1:
-                        await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+                    logger.warning(f"Perplexity timeout (attempt {attempt + 1}/{self.config.retry_attempts})")
+                except aiohttp.ClientError as e:
+                    logger.warning(f"Perplexity client error (attempt {attempt + 1}): {e}")
                 except Exception as e:
                     logger.warning(f"Perplexity error (attempt {attempt + 1}): {e}")
-                    if attempt < self.config.retry_attempts - 1:
-                        await asyncio.sleep(self.config.retry_delay)
+                    if "401" in str(e) or "403" in str(e) or "429" in str(e):
+                        self._record_failure()
+                        raise e
 
+                if attempt < self.config.retry_attempts - 1:
+                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+
+            self._record_failure()
             raise Exception(f"Failed after {self.config.retry_attempts} attempts")
 
     async def _parse_json_response(self, response: str, data_type: str) -> Any:
