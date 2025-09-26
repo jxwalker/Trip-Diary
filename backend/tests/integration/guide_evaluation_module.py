@@ -447,8 +447,21 @@ class GuideEvaluator:
         Be thorough, constructive, and specific in your evaluation. Consider both professional standards and traveler needs."""
 
         try:
-            response = await self.openai_client.chat.completions.create(
-                model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
+            model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+            
+            # Use OpenRouter endpoint for OpenRouter models
+            if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
+                from openai import AsyncOpenAI
+                openrouter_client = AsyncOpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=os.getenv("OPENROUTER_API_KEY", os.getenv("OPENAI_API_KEY"))
+                )
+                client = openrouter_client
+            else:
+                client = self.openai_client
+            
+            response = await client.chat.completions.create(
+                model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
