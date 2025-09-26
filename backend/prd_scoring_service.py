@@ -219,7 +219,7 @@ class PRDScoringService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-4o-mini",
+                model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                 messages=[
                     {"role": "system", "content": "You are a product quality evaluator for a travel guide application."},
                     {"role": "user", "content": prompt}

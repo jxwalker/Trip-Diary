@@ -15,8 +15,16 @@ class OpenAIMultimodal:
     def __init__(self, api_key: str = None):
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
-        self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4o"  # GPT-4 with vision capabilities
+        
+        self.model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+        
+        if "/" in self.model and self.model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/")):
+            self.client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY", api_key)
+            )
+        else:
+            self.client = OpenAI(api_key=api_key)
         
     def encode_image(self, image_path: str) -> str:
         """Encode image to base64."""

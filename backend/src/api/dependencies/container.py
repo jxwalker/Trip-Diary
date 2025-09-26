@@ -140,10 +140,10 @@ class ServiceContainer:
     def get_database_service(self):
         """Get database service"""
         service = self.get_service('database_service')
-        # Ensure we're getting the correct DatabaseService instance
-        from ...services.database_service import DatabaseService
-        if not isinstance(service, DatabaseService):
-            logger.error(f"Database service type mismatch: expected DatabaseService, got {type(service)}")
+        # Ensure we're getting the correct EnhancedDatabaseService instance
+        from ...services.enhanced_database_service import EnhancedDatabaseService
+        if not isinstance(service, EnhancedDatabaseService):
+            logger.error(f"Database service type mismatch: expected EnhancedDatabaseService, got {type(service)}")
             # Force return the correct service
             return self._services['database_service']
         return service

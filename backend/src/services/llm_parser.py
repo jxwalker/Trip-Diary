@@ -196,13 +196,23 @@ Return ONLY the JSON object, no other text."""
         
         try:
             async with aiohttp.ClientSession() as session:
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+                
+                # Use OpenRouter endpoint for OpenRouter models
+                if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
+                    url = "https://openrouter.ai/api/v1/chat/completions"
+                    api_key = os.getenv("OPENROUTER_API_KEY", self.openai_api_key)
+                else:
+                    url = "https://api.openai.com/v1/chat/completions"
+                    api_key = self.openai_api_key
+                
                 headers = {
-                    "Authorization": f"Bearer {self.openai_api_key}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 }
                 
                 payload = {
-                    "model": "gpt-4-turbo-preview",
+                    "model": model,
                     "messages": [
                         {
                             "role": "system",
@@ -217,7 +227,6 @@ Return ONLY the JSON object, no other text."""
                     "response_format": {"type": "json_object"}
                 }
                 
-                url = "https://api.openai.com/v1/chat/completions"
                 
                 async with session.post(url, json=payload, headers=headers) as response:
                     if response.status == 200:
@@ -244,7 +253,7 @@ Return ONLY the JSON object, no other text."""
                 }
                 
                 payload = {
-                    "model": "claude-3-haiku-20240307",
+                    "model": os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                     "max_tokens": 4000,
                     "messages": [
                         {

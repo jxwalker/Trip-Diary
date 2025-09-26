@@ -7,8 +7,19 @@ class OpenAIGPT:
     def __init__(self, api_key: str = None):
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
-        self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo-1106" # "gpt-4-turbo-preview"  # or "gpt-3.5-turbo-1106"
+        
+        self.model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+        
+        if "/" in self.model and (
+            self.model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) 
+            or ":" in self.model
+        ):
+            self.client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY", api_key)
+            )
+        else:
+            self.client = OpenAI(api_key=api_key)
 
     def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
         """Generate structured travel data from text."""
@@ -156,5 +167,5 @@ class OpenAIGPT:
 
             return json.loads(response.choices[0].message.function_call.arguments)
         except Exception as e:
-            logger.error(f"Error generating text: {str(e)}")
+            print(f"Error generating text: {str(e)}")
             return None

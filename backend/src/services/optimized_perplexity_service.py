@@ -57,6 +57,12 @@ class OptimizedPerplexityService:
         self._cache_timestamps: Dict[str, datetime] = {}
         self._semaphore = asyncio.Semaphore(self.config.max_concurrent)
         
+        self._failure_count = 0
+        self._last_failure_time = None
+        self._circuit_open = False
+        self._circuit_breaker_threshold = 10  # Increase threshold to be less aggressive
+        self._circuit_breaker_timeout = 180  # Reduce timeout to 3 minutes
+        
         # OpenAI client for parsing (if available)
         openai_api_key = os.getenv('OPENAI_API_KEY')
         if openai_api_key:
@@ -64,6 +70,8 @@ class OptimizedPerplexityService:
             self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         else:
             self.openai_client = None
+        
+        self.reset_circuit_breaker()
     
     async def generate_complete_guide_data(
         self,
@@ -293,20 +301,186 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
             logger.warning(f"Daily suggestions fetch failed: {e}")
             return []
 
+    def _check_circuit_breaker(self) -> bool:
+        """Check if circuit breaker should prevent API calls"""
+        if not self._circuit_open:
+            return False
+            
+        # Check if enough time has passed to try again
+        if self._last_failure_time:
+            time_since_failure = (datetime.now() - self._last_failure_time).total_seconds()
+            if time_since_failure > self._circuit_breaker_timeout:
+                logger.info("Circuit breaker timeout expired, allowing API calls")
+                self._circuit_open = False
+                self._failure_count = 0
+                return False
+        
+        return True
+    
+    def reset_circuit_breaker(self):
+        """Reset circuit breaker to allow API calls"""
+        self._circuit_open = False
+        self._failure_count = 0
+        self._last_failure_time = None
+        logger.info("Circuit breaker manually reset")
+    
+    def _record_success(self):
+        """Record successful API call"""
+        self._failure_count = 0
+        self._circuit_open = False
+        self._last_failure_time = None
+    
+    def _record_failure(self):
+        """Record failed API call and potentially open circuit breaker"""
+        self._failure_count += 1
+        self._last_failure_time = datetime.now()
+        
+        if self._failure_count >= self._circuit_breaker_threshold:
+            self._circuit_open = True
+            logger.warning(f"Circuit breaker opened after {self._failure_count} consecutive failures")
+
+    async def search(
+        self,
+        query: str,
+        max_results: int = 10,
+        search_type: str = "web"
+    ) -> Dict[str, Any]:
+        """
+        Perform a search query using Perplexity API
+        
+        Args:
+            query: Search query string
+            max_results: Maximum number of results to return
+            search_type: Type of search (web, academic, etc.)
+            
+        Returns:
+            Dictionary containing search results
+        """
+        try:
+            search_prompt = f"""
+            Search for: {query}
+            
+            Please provide comprehensive information about this query.
+            Include relevant facts, current information, and practical details.
+            Format the response as structured information that would be useful for travel planning.
+            
+            Limit to {max_results} key pieces of information.
+            """
+            
+            response = await self._make_api_request(search_prompt)
+            
+            if response and isinstance(response, str) and response.strip():
+                return {
+                    "query": query,
+                    "results": response,
+                    "search_type": search_type,
+                    "max_results": max_results,
+                    "success": True
+                }
+            else:
+                logger.error(f"Search failed for query: {query}")
+                return {
+                    "query": query,
+                    "results": [],
+                    "error": "Search request failed",
+                    "success": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Search error for query '{query}': {e}")
+            return {
+                "query": query,
+                "results": [],
+                "error": str(e),
+                "success": False
+            }
+
+    async def search_with_context(
+        self,
+        query: str,
+        context: str,
+        max_results: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Search with additional context using Perplexity API
+        
+        Args:
+            query: Search query string
+            context: Additional context for the search
+            max_results: Maximum number of results to return
+            
+        Returns:
+            Dictionary containing search results with context
+        """
+        try:
+            # Combine query and context for better search results
+            contextual_prompt = f"""
+            Context: {context}
+            
+            Search for: {query}
+            
+            Please provide comprehensive information about this query within the given context.
+            Include relevant facts, current information, and practical details.
+            Format the response as structured information that would be useful for travel planning.
+            
+            Limit to {max_results} key pieces of information.
+            """
+            
+            response = await self._make_api_request(contextual_prompt)
+            
+            if response and isinstance(response, str) and response.strip():
+                return {
+                    "query": query,
+                    "context": context,
+                    "results": response,
+                    "max_results": max_results,
+                    "success": True
+                }
+            else:
+                logger.error(f"Empty or invalid response for contextual search: {query}")
+                return {
+                    "query": query,
+                    "context": context,
+                    "results": [],
+                    "error": "Contextual search request failed",
+                    "success": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Contextual search error for query '{query}': {e}")
+            return {
+                "query": query,
+                "context": context,
+                "results": [],
+                "error": str(e),
+                "success": False
+            }
+
     async def _make_api_request(self, prompt: str) -> str:
-        """Make optimized API request to Perplexity with retry logic"""
+        """Make optimized API request to Perplexity with retry logic and circuit breaker"""
+        if self._check_circuit_breaker():
+            logger.warning("Circuit breaker is open, skipping Perplexity API call")
+            raise Exception("Circuit breaker is open - too many recent failures")
+        
         async with self._semaphore:  # Limit concurrent requests
             for attempt in range(self.config.retry_attempts):
                 try:
-                    timeout = aiohttp.ClientTimeout(total=self.config.timeout)
+                    timeout = aiohttp.ClientTimeout(
+                        total=min(self.config.timeout, 30),  # Increase to 30 seconds
+                        connect=10,  # 10 second connect timeout
+                        sock_read=20  # 20 second read timeout
+                    )
+                    
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         headers = {
                             "Authorization": f"Bearer {self.config.api_key}",
                             "Content-Type": "application/json"
                         }
 
+                        model_name = self.config.model if self.config.model in ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro", "sonar-deep-research"] else "sonar"
+                        
                         payload = {
-                            "model": self.config.model,
+                            "model": model_name,
                             "messages": [
                                 {
                                     "role": "system",
@@ -325,20 +499,32 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
                                                json=payload, headers=headers) as response:
                             if response.status == 200:
                                 data = await response.json()
-                                return data["choices"][0]["message"]["content"]
+                                content = data["choices"][0]["message"]["content"]
+                                self._record_success()
+                                return content
                             else:
                                 error_text = await response.text()
-                                raise Exception(f"API error {response.status}: {error_text}")
+                                logger.warning(f"Perplexity API error {response.status}: {error_text}")
+                                
+                                # Return error response for non-retryable errors
+                                if response.status in [401, 403, 429]:
+                                    self._record_failure()
+                                    raise Exception(f"API error {response.status}: {error_text}")
 
                 except asyncio.TimeoutError:
-                    logger.warning(f"Perplexity timeout (attempt {attempt + 1})")
-                    if attempt < self.config.retry_attempts - 1:
-                        await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+                    logger.warning(f"Perplexity timeout (attempt {attempt + 1}/{self.config.retry_attempts})")
+                except aiohttp.ClientError as e:
+                    logger.warning(f"Perplexity client error (attempt {attempt + 1}): {e}")
                 except Exception as e:
                     logger.warning(f"Perplexity error (attempt {attempt + 1}): {e}")
-                    if attempt < self.config.retry_attempts - 1:
-                        await asyncio.sleep(self.config.retry_delay)
+                    if "401" in str(e) or "403" in str(e) or "429" in str(e):
+                        self._record_failure()
+                        raise e
 
+                if attempt < self.config.retry_attempts - 1:
+                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+
+            self._record_failure()
             raise Exception(f"Failed after {self.config.retry_attempts} attempts")
 
     async def _parse_json_response(self, response: str, data_type: str) -> Any:
@@ -363,8 +549,21 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
 
 Return only the JSON, no markdown, no explanations."""
 
-                llm_response = await self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+                
+                # Use OpenRouter endpoint for OpenRouter models
+                if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
+                    from openai import AsyncOpenAI
+                    openrouter_client = AsyncOpenAI(
+                        base_url="https://openrouter.ai/api/v1",
+                        api_key=os.getenv("OPENROUTER_API_KEY", os.getenv("OPENAI_API_KEY"))
+                    )
+                    client = openrouter_client
+                else:
+                    client = self.openai_client
+                
+                llm_response = await client.chat.completions.create(
+                    model=model,
                     messages=[
                         {"role": "system", "content": f"Extract {data_type} data as JSON."},
                         {"role": "user", "content": parse_prompt}
@@ -414,3 +613,128 @@ Return only the JSON, no markdown, no explanations."""
             "daily_suggestions": [],
             "generated_at": datetime.now().isoformat()
         }
+    
+    async def search_events(self, destination: str, start_date: str, end_date: str, preferences: str) -> List[Dict]:
+        """Search for events in destination during specified dates"""
+        try:
+            query = f"Events and activities in {destination} from {start_date} to {end_date}. Preferences: {preferences}"
+            response = await self.search(query, search_type="events", max_results=10)
+            
+            if response.get("success") and response.get("results"):
+                events_text = response["results"]
+                events = []
+                
+                if isinstance(events_text, str):
+                    lines = events_text.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if line and isinstance(line, str) and any(keyword in line.lower() for keyword in ['event', 'festival', 'concert', 'show', 'exhibition', 'market']):
+                            events.append({
+                                "name": line[:100],  # Truncate long names
+                                "description": line,
+                                "date": start_date,  # Default to start date
+                                "category": "event"
+                            })
+                            if len(events) >= 5:  # Limit to 5 events
+                                break
+                
+                return events
+            else:
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error searching events: {e}")
+            return []
+    
+    async def search_local_insights(self, destination: str, dates_dict: Dict) -> Dict:
+        """Search for local insights and practical information"""
+        try:
+            query = f"Local insights, tips, transportation, and practical information for {destination}"
+            response = await self.search(query, search_type="insights", max_results=5)
+            
+            if response.get("success") and response.get("results"):
+                insights_text = response["results"]
+                
+                if isinstance(insights_text, str):
+                    return {
+                        "transportation": [insights_text[:200]],  # Truncate for transportation
+                        "money": ["Local currency and payment tips"],
+                        "cultural": ["Local customs and etiquette"],
+                        "updates": ["Current local information"],
+                        "tips": [insights_text[:300]] if insights_text else []
+                    }
+                else:
+                    return {
+                        "transportation": [],
+                        "money": [],
+                        "cultural": [],
+                        "updates": [],
+                        "tips": []
+                    }
+            else:
+                return {
+                    "transportation": [],
+                    "money": [],
+                    "cultural": [],
+                    "updates": [],
+                    "tips": []
+                }
+                
+        except Exception as e:
+            logger.error(f"Error searching local insights: {e}")
+            return {
+                "transportation": [],
+                "money": [],
+                "cultural": [],
+                "updates": [],
+                "tips": []
+            }
+    
+    async def search_daily_itinerary(self, destination: str, day_num: int, date_str: str, 
+                                   hotel_address: str, preferences: str, previous_days: List) -> Dict:
+        """Search for daily itinerary suggestions"""
+        try:
+            query = f"Day {day_num} itinerary for {destination} on {date_str}. Hotel: {hotel_address}. Preferences: {preferences}"
+            response = await self.search(query, search_type="itinerary", max_results=3)
+            
+            if response.get("success") and response.get("results"):
+                itinerary_text = response["results"]
+                
+                if isinstance(itinerary_text, str):
+                    return {
+                        "day": day_num,
+                        "date": date_str,
+                        "morning": [f"Morning activity in {destination}"],
+                        "afternoon": [f"Afternoon activity in {destination}"],
+                        "evening": [f"Evening activity in {destination}"],
+                        "notes": itinerary_text[:200] if itinerary_text else ""
+                    }
+                else:
+                    return {
+                        "day": day_num,
+                        "date": date_str,
+                        "morning": [],
+                        "afternoon": [],
+                        "evening": [],
+                        "notes": ""
+                    }
+            else:
+                return {
+                    "day": day_num,
+                    "date": date_str,
+                    "morning": [],
+                    "afternoon": [],
+                    "evening": [],
+                    "notes": ""
+                }
+                
+        except Exception as e:
+            logger.error(f"Error searching daily itinerary: {e}")
+            return {
+                "day": day_num,
+                "date": date_str,
+                "morning": [],
+                "afternoon": [],
+                "evening": [],
+                "notes": ""
+            }

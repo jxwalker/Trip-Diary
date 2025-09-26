@@ -113,8 +113,18 @@ Return ONLY the JSON object, no markdown, no explanations."""
         
         try:
             if self.openai_client:
-                # Use cheap model for testing
-                model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                # Use cheap model for testing - check if it's an OpenRouter model
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+                
+                if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
+                    from openai import AsyncOpenAI
+                    openrouter_client = AsyncOpenAI(
+                        base_url="https://openrouter.ai/api/v1",
+                        api_key=os.getenv("OPENROUTER_API_KEY", os.getenv("OPENAI_API_KEY"))
+                    )
+                    client = openrouter_client
+                else:
+                    client = self.openai_client
                 
                 # More specific prompt for better extraction
                 system_prompt = """You are an expert travel document parser specialized in extracting structured data from flight tickets, hotel bookings, and itineraries.
@@ -126,7 +136,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
 
                 try:
                     # Try with response_format first (only works with newer models)
-                    response = await self.openai_client.chat.completions.create(
+                    response = await client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
@@ -138,7 +148,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
                 except Exception as format_error:
                     print(f"[EXTRACTION] ⚠️  Using fallback without response_format")
                     # Fallback without response_format
-                    response = await self.openai_client.chat.completions.create(
+                    response = await client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
@@ -189,7 +199,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
                 
             elif self.claude_client:
                 response = await self.claude_client.messages.create(
-                    model="claude-3-haiku-20240307",
+                    model=os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                     max_tokens=2000,
                     temperature=0.1,
                     messages=[
