@@ -501,7 +501,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             }
     
     async def _generate_with_openai(self, prompt: str, context: Dict) -> Dict:
-        """Generate guide using OpenAI GPT-4"""
+        """Generate guide using configured LLM model (DeepSeek V3, Llama 3.3, etc.)"""
         
         if not self.openai_api_key:
             return {
@@ -521,15 +521,23 @@ Make it feel like a personalized concierge service, not a generic guide."""
         
         try:
             async with aiohttp.ClientSession() as session:
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
+                
+                # Use OpenRouter endpoint for OpenRouter models
+                if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
+                    url = "https://openrouter.ai/api/v1/chat/completions"
+                    api_key = os.getenv("OPENROUTER_API_KEY", os.getenv("OPENAI_API_KEY"))
+                else:
+                    url = "https://api.openai.com/v1/chat/completions"
+                    api_key = os.getenv("OPENAI_API_KEY")
+                
                 headers = {
-                    "Authorization": f"Bearer {self.openai_api_key}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 }
                 
-                url = "https://api.openai.com/v1/chat/completions"
-                
                 payload = {
-                    "model": os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
+                    "model": model,
                     "messages": [
                         {
                             "role": "system",

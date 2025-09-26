@@ -433,7 +433,12 @@ class EnhancedLLMService(LLMServiceInterface):
     def _get_provider_models(self) -> List[str]:
         """Get available models for the provider"""
         if self._provider == LLMProvider.OPENAI:
-            return ["xai/grok-4-fast-free", "meta-llama/Llama-3.2-3B-Instruct-Turbo", "llama-3.1-8b-instant", "gpt-4o-mini"]
+            return [
+                os.getenv("PRIMARY_MODEL", "deepseek/deepseek-v3"),
+                "meta-llama/Llama-3.3-70B-Instruct-Turbo", 
+                "llama-3.3-70b-versatile",
+                "gpt-4o-mini"  # Keep for vision tasks
+            ]
         elif self._provider == LLMProvider.ANTHROPIC:
             return [os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")]
         elif self._provider == LLMProvider.PERPLEXITY:

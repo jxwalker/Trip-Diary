@@ -161,7 +161,6 @@ class MultimodalLLMExtractor:
             if not image_data_list:
                 return self._empty_result("No valid image data")
             
-            # Use OpenAI GPT-4 Vision
             if self.openai_client:
                 messages = [
                     {"role": "system", "content": system_prompt},
@@ -183,8 +182,11 @@ class MultimodalLLMExtractor:
                         }
                     })
                 
-                response = await self.openai_client.chat.completions.create(
-                    model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
+                model = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
+                client = self.openai_client
+                
+                response = await client.chat.completions.create(
+                    model=model,
                     messages=messages,
                     max_tokens=4096,
                     temperature=0.1
@@ -203,7 +205,7 @@ class MultimodalLLMExtractor:
                 # Add metadata
                 result['_metadata'] = {
                     'extraction_method': 'multimodal_vision',
-                    'model': os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
+                    'model': model,
                     'pages_processed': len(image_data_list)
                 }
                 

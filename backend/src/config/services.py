@@ -9,10 +9,10 @@ from typing import Optional, Dict, Any
 class ServicesConfig(BaseSettings):
     """External services configuration"""
     
-    # OpenAI Configuration (fallback for vision tasks)
+    # OpenAI Configuration (fallback for vision tasks only)
     openai_enabled: bool = Field(default=True, env="OPENAI_ENABLED")
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    openai_model: str = Field(default="gpt-4o-mini", env="OPENAI_MODEL")
+    openai_model: str = Field(default="gpt-4o-mini", env="OPENAI_MODEL")  # Keep for vision tasks
     openai_vision_model: str = Field(default="gpt-4o-mini", env="OPENAI_VISION_MODEL")
     openai_max_tokens: int = Field(default=4000, env="OPENAI_MAX_TOKENS")
     openai_temperature: float = Field(default=0.7, env="OPENAI_TEMPERATURE")
@@ -36,27 +36,27 @@ class ServicesConfig(BaseSettings):
 
     openrouter_enabled: bool = Field(default=True, env="OPENROUTER_ENABLED")
     openrouter_api_key: Optional[str] = Field(default=None, env="OPENROUTER_API_KEY")
-    openrouter_model: str = Field(default="xai/grok-4-fast-free", env="OPENROUTER_MODEL")
+    openrouter_model: str = Field(default="x-ai/grok-4-fast:free", env="OPENROUTER_MODEL")  # FREE model!
     openrouter_max_tokens: int = Field(default=4000, env="OPENROUTER_MAX_TOKENS")
     openrouter_temperature: float = Field(default=0.7, env="OPENROUTER_TEMPERATURE")
     openrouter_timeout: int = Field(default=60, env="OPENROUTER_TIMEOUT")
 
     together_enabled: bool = Field(default=True, env="TOGETHER_ENABLED")
     together_api_key: Optional[str] = Field(default=None, env="TOGETHER_API_KEY")
-    together_model: str = Field(default="meta-llama/Llama-3.2-3B-Instruct-Turbo", env="TOGETHER_MODEL")
+    together_model: str = Field(default="meta-llama/Llama-3.3-70B-Instruct-Turbo", env="TOGETHER_MODEL")  # 77.3% MMLU
     together_max_tokens: int = Field(default=4000, env="TOGETHER_MAX_TOKENS")
     together_temperature: float = Field(default=0.7, env="TOGETHER_TEMPERATURE")
     together_timeout: int = Field(default=60, env="TOGETHER_TIMEOUT")
 
     groq_enabled: bool = Field(default=True, env="GROQ_ENABLED")
     groq_api_key: Optional[str] = Field(default=None, env="GROQ_API_KEY")
-    groq_model: str = Field(default="llama-3.1-8b-instant", env="GROQ_MODEL")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", env="GROQ_MODEL")  # 77.3% MMLU, ultra-fast
     groq_max_tokens: int = Field(default=4000, env="GROQ_MAX_TOKENS")
     groq_temperature: float = Field(default=0.7, env="GROQ_TEMPERATURE")
     groq_timeout: int = Field(default=60, env="GROQ_TIMEOUT")
 
     primary_model_provider: str = Field(default="openrouter", env="PRIMARY_MODEL_PROVIDER")
-    primary_model: str = Field(default="xai/grok-4-fast-free", env="PRIMARY_MODEL")
+    primary_model: str = Field(default="x-ai/grok-4-fast:free", env="PRIMARY_MODEL")  # FREE model!
     
     # Google Places Configuration
     google_places_enabled: bool = Field(default=True, env="GOOGLE_PLACES_ENABLED")
@@ -184,20 +184,20 @@ class ServicesConfig(BaseSettings):
         return True
 
     def get_cheapest_model(self) -> tuple[str, str]:
-        """Get the cheapest available model provider and model name"""
+        """Get the cheapest available model provider and model name (ordered by cost-effectiveness)"""
         if self.openrouter_enabled and self.openrouter_api_key:
-            return ("openrouter", self.openrouter_model)
+            return ("openrouter", self.openrouter_model)  # DeepSeek V3 - best performance/cost
         if self.together_enabled and self.together_api_key:
-            return ("together", self.together_model)
+            return ("together", self.together_model)  # Llama 3.3 70B - excellent value
         if self.groq_enabled and self.groq_api_key:
-            return ("groq", self.groq_model)
-        if self.openai_enabled and self.openai_api_key:
-            return ("openai", self.openai_model)
-        if self.anthropic_enabled and self.anthropic_api_key:
-            return ("anthropic", self.anthropic_model)
+            return ("groq", self.groq_model)  # Ultra-fast inference
         if self.perplexity_enabled and self.perplexity_api_key:
-            return ("perplexity", self.perplexity_model)
-        return ("openai", "gpt-4o-mini")
+            return ("perplexity", self.perplexity_model)  # Cheap online model
+        if self.anthropic_enabled and self.anthropic_api_key:
+            return ("anthropic", self.anthropic_model)  # Haiku is cheapest Claude
+        if self.openai_enabled and self.openai_api_key:
+            return ("openai", self.openai_model)  # Fallback for vision tasks
+        return ("openrouter", "deepseek/deepseek-v3")  # Default to best value
     
     class Config:
         env_prefix = "SERVICE_"
