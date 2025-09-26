@@ -29,7 +29,7 @@ class ServicesConfig(BaseSettings):
     # Perplexity Configuration
     perplexity_enabled: bool = Field(default=True, env="PERPLEXITY_ENABLED")
     perplexity_api_key: Optional[str] = Field(default=None, env="PERPLEXITY_API_KEY")
-    perplexity_model: str = Field(default="llama-3.1-sonar-small-128k-online", env="PERPLEXITY_MODEL")
+    perplexity_model: str = Field(default="sonar", env="PERPLEXITY_MODEL")
     perplexity_max_tokens: int = Field(default=4000, env="PERPLEXITY_MAX_TOKENS")
     perplexity_temperature: float = Field(default=0.2, env="PERPLEXITY_TEMPERATURE")
     perplexity_timeout: int = Field(default=60, env="PERPLEXITY_TIMEOUT")

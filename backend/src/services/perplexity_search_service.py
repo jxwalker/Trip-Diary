@@ -22,8 +22,7 @@ class PerplexitySearchService:
     def __init__(self):
         self.api_key = os.getenv("PERPLEXITY_API_KEY", "")
         self.api_url = "https://api.perplexity.ai/chat/completions"
-        # Use the pro model for better results if available
-        self.model = os.getenv("PERPLEXITY_MODEL", "sonar-pro")  # sonar-pro has better web search
+        self.model = os.getenv("PERPLEXITY_MODEL", "sonar")
 
         # Initialize OpenAI client for LLM parsing
         openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -94,7 +93,7 @@ Content to parse:
 
 Return ONLY the JSON array, no markdown, no explanations."""
 
-            model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
+            model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
             
             # Use OpenRouter endpoint for OpenRouter models
             if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
@@ -114,7 +113,7 @@ Return ONLY the JSON array, no markdown, no explanations."""
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.1,
-                response_format={"type": "json_object"}
+                timeout=30.0
             )
 
             result_text = response.choices[0].message.content
@@ -157,8 +156,8 @@ Return ONLY the JSON array, no markdown, no explanations."""
             return []
         
         # Build dynamic search query based on actual preferences
-        cuisine_types = preferences.get("cuisineTypes", ["Local cuisine"])
-        price_range = preferences.get("priceRange", "")
+        cuisine_types = preferences.get("cuisineTypes", preferences.get("cuisine", ["Local cuisine"]))
+        price_range = preferences.get("priceRange", preferences.get("price_range", ""))
         dietary = preferences.get("dietaryRestrictions", [])
         group_type = preferences.get("groupType", "couple")
         
@@ -179,21 +178,27 @@ CRITERIA:
 - Dietary needs: {', '.join(dietary) if dietary else 'No restrictions'}
 - Group: {group_type}
 
-Find 8 highly-rated restaurants that are CURRENTLY OPEN and provide this EXACT information for each:
+Return EXACTLY 8 restaurants as a JSON array with this exact structure:
 
-**[Restaurant Name]**
-Address: [Full street address with zip code]
-Cuisine: [Specific cuisine type]
-Price: [$ to $$$$]
-Phone: [Phone number with area code]
-Website: [Restaurant's official website]
-Reservation link: [Direct OpenTable, Resy, or restaurant booking URL]
-Hours: [Current operating hours]
-Why recommended: [Why this matches their preferences]
-Signature dishes: [3-4 specific must-try dishes with descriptions]
-Review: [Recent review quote from Google/Yelp/TripAdvisor with rating]
+[
+  {{
+    "name": "Restaurant Name",
+    "address": "Full street address with zip code",
+    "cuisine": "Specific cuisine type",
+    "price_range": "$ to $$$$",
+    "phone": "Phone number with area code",
+    "website": "Restaurant's official website URL",
+    "booking_url": "Direct OpenTable, Resy, or restaurant booking URL",
+    "hours": ["Current operating hours"],
+    "description": "Why this matches their preferences and what makes it special",
+    "signature_dishes": ["Dish 1", "Dish 2", "Dish 3"],
+    "rating": 4.5,
+    "review": "Recent review quote from Google/Yelp/TripAdvisor"
+  }}
+]
 
-IMPORTANT: 
+CRITICAL REQUIREMENTS:
+- Return ONLY valid JSON array, no markdown, no explanations
 - Include ONLY restaurants that are currently operating and accepting reservations
 - Provide real phone numbers and working website URLs
 - Include actual booking links from OpenTable, Resy, Tock, or restaurant websites
@@ -201,19 +206,48 @@ IMPORTANT:
         
         try:
             print(f"[DEBUG] Searching restaurants in {destination}...")
-            response = await self._make_perplexity_request(prompt)
+            
+            from .optimized_perplexity_service import OptimizedPerplexityService
+            optimized_service = OptimizedPerplexityService()
+            
+            search_result = await optimized_service.search(
+                query=f"restaurants in {destination}",
+                search_type="restaurants",
+                max_results=8
+            )
+            
+            if not search_result.get("success"):
+                print(f"[ERROR] Optimized search failed: {search_result.get('error', 'Unknown error')}")
+                return []
+            
+            response = search_result.get("results", "")
             print(f"[DEBUG] Got Perplexity response, parsing restaurants...")
             items = await self._parse_with_llm(response, "restaurants")
             print(f"[DEBUG] Parsed {len(items)} restaurants")
             
-            # Filter out obvious placeholders and incomplete entries
-            filtered = [
-                r for r in items
-                if r.get('name') and r.get('address') and 
-                not str(r.get('name')).lower().startswith(('sample', 'placeholder', 'example'))
-            ]
-            print(f"[DEBUG] Filtered to {len(filtered)} valid restaurants")
-            return filtered
+            valid_restaurants = []
+            for restaurant in items:
+                if isinstance(restaurant, dict) and restaurant.get('name'):
+                    valid_restaurant = {
+                        'name': restaurant.get('name', 'Unknown Restaurant'),
+                        'address': restaurant.get('address', 'Address not available'),
+                        'cuisine': restaurant.get('cuisine', 'Various'),
+                        'price_range': restaurant.get('price_range', '$$'),
+                        'phone': restaurant.get('phone', ''),
+                        'website': restaurant.get('website', ''),
+                        'booking_url': restaurant.get('booking_url', ''),
+                        'hours': restaurant.get('hours', []),
+                        'description': restaurant.get('description', 'No description available'),
+                        'signature_dishes': restaurant.get('signature_dishes', []),
+                        'rating': restaurant.get('rating', 0),
+                        'review': restaurant.get('review', '')
+                    }
+                    # Filter out obvious placeholders
+                    if not str(valid_restaurant['name']).lower().startswith(('sample', 'placeholder', 'example')):
+                        valid_restaurants.append(valid_restaurant)
+            
+            print(f"[DEBUG] Validated {len(valid_restaurants)} restaurants")
+            return valid_restaurants
         except Exception as e:
             print(f"[ERROR] Restaurant search failed: {e}")
             return []
@@ -259,41 +293,78 @@ Visitor Profile:
 - Walking: {walking_tolerance}/5 scale (1=minimal, 5=loves walking)
 - Adventure: {adventure_level}/5 scale (1=main tourist spots, 5=hidden gems)
 
-Find 10 MUST-SEE attractions and provide this information for each:
+Return EXACTLY 8 attractions as a JSON array with this exact structure:
 
-**[Attraction Name]**
-Type: [Museum/Park/Monument/Gallery/Market/etc]
-Address: [Full street address with zip]
-Hours: [Current operating hours, note any seasonal changes]
-Price: [Adult admission price, note discounts available]
-Duration: [Typical visit time like "2-3 hours"]
-Why visit: [What makes this special and worth visiting]
-Highlights: [Top 3-4 things to see/experience there]
-Tips: [Insider advice - best time to visit, skip lines, photo spots]
-Website: [Official website for tickets/info]
-Nearby: [Other attractions within 10-minute walk]
+[
+  {{
+    "name": "Attraction Name",
+    "address": "Full street address with zip code",
+    "category": "Museum, Landmark, Park, Entertainment, etc.",
+    "type": "attraction",
+    "price": "Admission cost or Free",
+    "website": "Official website URL",
+    "booking_url": "Ticket booking URL if required",
+    "hours": ["Current operating hours and days"],
+    "duration": "Recommended visit time",
+    "description": "What makes this special and why it matches their interests",
+    "highlights": ["Key thing 1", "Key thing 2", "Key thing 3"],
+    "tips": "Insider tips for visiting",
+    "rating": 4.5,
+    "photo_url": ""
+  }}
+]
 
-Include a mix of:
-- Famous must-see landmarks
-- Museums and galleries
-- Parks and outdoor spaces
-- Markets and shopping areas
-- Viewpoints and photo spots
-- Unique local experiences
-
-Focus on places that are CURRENTLY OPEN and accessible."""
+CRITICAL REQUIREMENTS:
+- Return ONLY valid JSON array, no markdown, no explanations
+- Include ONLY attractions that are currently open to visitors
+- Provide real website URLs and booking links
+- Include current operating information
+- Focus on places that are CURRENTLY OPEN and accessible"""
         
         try:
             print(f"[DEBUG] Searching attractions in {destination}...")
-            response = await self._make_perplexity_request(prompt)
+            
+            from .optimized_perplexity_service import OptimizedPerplexityService
+            optimized_service = OptimizedPerplexityService()
+            
+            search_result = await optimized_service.search(
+                query=f"attractions in {destination}",
+                search_type="attractions",
+                max_results=8
+            )
+            
+            if not search_result.get("success"):
+                print(f"[ERROR] Optimized search failed: {search_result.get('error', 'Unknown error')}")
+                return []
+            
+            response = search_result.get("results", "")
             print(f"[DEBUG] Got Perplexity response for attractions, parsing...")
             items = await self._parse_with_llm(response, "attractions")
             print(f"[DEBUG] Parsed {len(items)} attractions")
             
-            # More lenient filtering
-            filtered = [a for a in items if a.get('name')]
-            print(f"[DEBUG] Filtered to {len(filtered)} valid attractions")
-            return filtered
+            valid_attractions = []
+            for attraction in items:
+                if isinstance(attraction, dict) and attraction.get('name'):
+                    valid_attraction = {
+                        'name': attraction.get('name', 'Unknown Attraction'),
+                        'address': attraction.get('address', 'Address not available'),
+                        'category': attraction.get('category', 'Attraction'),
+                        'type': attraction.get('type', 'attraction'),
+                        'price': attraction.get('price', 'Price not available'),
+                        'website': attraction.get('website', ''),
+                        'booking_url': attraction.get('booking_url', ''),
+                        'hours': attraction.get('hours', []),
+                        'duration': attraction.get('duration', 'Variable'),
+                        'description': attraction.get('description', 'No description available'),
+                        'highlights': attraction.get('highlights', []),
+                        'tips': attraction.get('tips', ''),
+                        'rating': attraction.get('rating', 0),
+                        'photo_url': attraction.get('photo_url', '')
+                    }
+                    valid_attractions.append(valid_attraction)
+            
+            print(f"[DEBUG] Validated {len(valid_attractions)} attractions")
+            return valid_attractions
         except Exception as e:
             print(f"[ERROR] Attraction search failed: {e}")
             return []
@@ -576,7 +647,8 @@ RULES:
             # "search_recency_filter": "month"  # Focus on recent information
         }
         
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=30, connect=10, sock_read=20)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(self.api_url, json=payload, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()

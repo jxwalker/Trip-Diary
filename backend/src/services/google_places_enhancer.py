@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import asyncio
 import aiohttp
+from datetime import datetime
 
 # Load .env from project root
 root_dir = Path(__file__).parent.parent.parent.parent
@@ -18,14 +19,42 @@ load_dotenv(env_path)
 
 class GooglePlacesEnhancer:
     def __init__(self):
-        self.api_key = os.getenv("GOOGLE_MAPS_API_KEY")
-        if self.api_key:
-            self.client = googlemaps.Client(key=self.api_key)
-        else:
-            self.client = None
-            print("[WARNING] GOOGLE_MAPS_API_KEY not found in environment variables")
-            print("[INFO] To enable enhanced maps and attraction details, get a free API key from: https://developers.google.com/maps/documentation/places/web-service/get-api-key")
-            print("[INFO] Then set GOOGLE_MAPS_API_KEY in your environment or .env file")
+        """Initialize Google Places enhancer with circuit breaker"""
+        self.api_key = os.getenv("GOOGLE_SEARCH_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
+        self.client = None if not self.api_key else googlemaps.Client(key=self.api_key)
+        
+        self._failure_count = 0
+        self._max_failures = 5
+        self._circuit_open = False
+        self._last_failure_time = None
+        self._reset_interval = 300  # 5 minutes
+        
+    def _check_circuit_breaker(self) -> bool:
+        """Check if circuit breaker is open (too many failures)"""
+        if not self._circuit_open:
+            return False
+            
+        if self._last_failure_time and (datetime.now() - self._last_failure_time).total_seconds() > self._reset_interval:
+            self._circuit_open = False
+            self._failure_count = 0
+            return False
+            
+        return True
+        
+    def _record_failure(self):
+        """Record API failure for circuit breaker"""
+        self._failure_count += 1
+        self._last_failure_time = datetime.now()
+        if self._failure_count >= self._max_failures:
+            self._circuit_open = True
+            print(f"[WARNING] Google Places circuit breaker opened after {self._failure_count} failures")
+            
+    def _record_success(self):
+        """Record API success for circuit breaker"""
+        self._failure_count = 0
+        if self._circuit_open:
+            self._circuit_open = False
+            print("[INFO] Google Places circuit breaker closed after successful request")
             
     async def enhance_restaurant(self, restaurant: Dict, destination: str) -> Dict:
         """
@@ -33,6 +62,10 @@ class GooglePlacesEnhancer:
         """
         if not self.client:
             print("[WARNING] Google Maps API key not configured")
+            return restaurant
+            
+        if self._check_circuit_breaker():
+            print("[WARNING] Google Places circuit breaker is open, skipping enhancement")
             return restaurant
             
         try:
@@ -122,10 +155,12 @@ class GooglePlacesEnhancer:
                 ]
                 
             print(f"[DEBUG] Enhanced {restaurant.get('name')} with Google Places data")
+            self._record_success()
             return enhanced
             
         except Exception as e:
             print(f"[ERROR] Failed to enhance restaurant {restaurant.get('name')}: {e}")
+            self._record_failure()
             return restaurant
             
     async def _find_booking_url(self, restaurant_name: str, city: str, website: str = "") -> str:
@@ -173,6 +208,18 @@ class GooglePlacesEnhancer:
                 await asyncio.sleep(0.5)
                 
         return enhanced_restaurants
+        
+    def _check_circuit_breaker(self) -> bool:
+        """Check if circuit breaker is open (too many failures)"""
+        if not self._circuit_open:
+            return False
+            
+        if self._last_failure_time and (datetime.now() - self._last_failure_time).total_seconds() > self._reset_interval:
+            self._circuit_open = False
+            self._failure_count = 0
+            return False
+            
+        return True
         
     async def enhance_attraction(self, attraction: Dict, destination: str) -> Dict:
         """

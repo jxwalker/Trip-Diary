@@ -360,7 +360,7 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
             
             response = await self._make_api_request(search_prompt)
             
-            if response and not isinstance(response, str):
+            if response and isinstance(response, str) and response.strip():
                 return {
                     "query": query,
                     "results": response,
@@ -419,7 +419,7 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
             
             response = await self._make_api_request(contextual_prompt)
             
-            if response and isinstance(response, str):
+            if response and isinstance(response, str) and response.strip():
                 return {
                     "query": query,
                     "context": context,
@@ -428,7 +428,7 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
                     "success": True
                 }
             else:
-                logger.error(f"Contextual search failed for query: {query}")
+                logger.error(f"Empty or invalid response for contextual search: {query}")
                 return {
                     "query": query,
                     "context": context,
@@ -457,9 +457,9 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
             for attempt in range(self.config.retry_attempts):
                 try:
                     timeout = aiohttp.ClientTimeout(
-                        total=min(self.config.timeout, 15),  # Cap at 15 seconds
-                        connect=5,  # 5 second connect timeout
-                        sock_read=10  # 10 second read timeout
+                        total=min(self.config.timeout, 30),  # Increase to 30 seconds
+                        connect=10,  # 10 second connect timeout
+                        sock_read=20  # 20 second read timeout
                     )
                     
                     async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -468,8 +468,10 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
                             "Content-Type": "application/json"
                         }
 
+                        model_name = self.config.model if self.config.model in ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro", "sonar-deep-research"] else "sonar"
+                        
                         payload = {
-                            "model": self.config.model,
+                            "model": model_name,
                             "messages": [
                                 {
                                     "role": "system",
@@ -538,7 +540,7 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
 
 Return only the JSON, no markdown, no explanations."""
 
-                model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
                 
                 # Use OpenRouter endpoint for OpenRouter models
                 if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):

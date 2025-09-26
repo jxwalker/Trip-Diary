@@ -114,7 +114,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
         try:
             if self.openai_client:
                 # Use cheap model for testing - check if it's an OpenRouter model
-                model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
+                model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
                 
                 if "/" in model and (model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/", "deepseek/")) or ":" in model):
                     from openai import AsyncOpenAI

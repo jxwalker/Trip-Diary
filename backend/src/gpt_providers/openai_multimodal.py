@@ -16,9 +16,9 @@ class OpenAIMultimodal:
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
         
-        self.model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
+        self.model = os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free")
         
-        if "/" in self.model and self.model.startswith(("xai/", "meta-llama/", "anthropic/", "google/")):
+        if "/" in self.model and self.model.startswith(("x-ai/", "meta-llama/", "anthropic/", "google/")):
             self.client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=os.getenv("OPENROUTER_API_KEY", api_key)

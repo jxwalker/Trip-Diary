@@ -2,6 +2,7 @@
 Enhanced LLM Service
 Implementation of LLMServiceInterface with multi-provider support
 """
+import os
 import json
 import asyncio
 import hashlib
@@ -430,18 +431,23 @@ class EnhancedLLMService(LLMServiceInterface):
         
         return capabilities
     
-    def _get_provider_models(self) -> List[str]:
-        """Get available models for the provider"""
-        if self._provider == LLMProvider.OPENAI:
+    def _get_provider_models(self, provider: LLMProvider) -> List[str]:
+        """Get available models for the specified provider"""
+        if provider == LLMProvider.OPENAI:
             return [
-                os.getenv("PRIMARY_MODEL", "deepseek/deepseek-v3"),
-                "meta-llama/Llama-3.3-70B-Instruct-Turbo", 
-                "llama-3.3-70b-versatile",
-                "gpt-4o-mini"  # Keep for vision tasks
+                "gpt-4o-mini",
+                "gpt-4o",
+                "gpt-3.5-turbo",
+                os.getenv("PRIMARY_MODEL", "gpt-4o-mini"),
             ]
-        elif self._provider == LLMProvider.ANTHROPIC:
+        elif provider == LLMProvider.OPENROUTER:
+            return [
+                "x-ai/grok-4-fast:free",
+                "deepseek/deepseek-v3",
+                "google/gemini-2.5-flash",
+                os.getenv("PRIMARY_MODEL", "x-ai/grok-4-fast:free"),
+            ]
+        elif provider == LLMProvider.ANTHROPIC:
             return [os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")]
-        elif self._provider == LLMProvider.PERPLEXITY:
-            return ["llama-3.1-sonar-small-128k-online", "llama-3.1-sonar-large-128k-online"]
         else:
             return []

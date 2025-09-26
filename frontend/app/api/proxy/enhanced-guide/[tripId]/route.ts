@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tripId: string } }
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
-  const tripId = params.tripId;
+  const { tripId } = await params;
   const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
   try {

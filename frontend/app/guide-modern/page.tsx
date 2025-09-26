@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,10 +48,16 @@ import {
   Check,
   X,
   AlertCircle,
-  ArrowRight,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  ArrowRight,
+  Filter,
+  Search
 } from "lucide-react";
+
+import { HeroSection } from "./components/hero-section";
+import { RestaurantCard } from "./components/restaurant-card";
+import { AttractionCard } from "./components/attraction-card";
 import { cn } from "@/lib/utils";
 
 interface GuideData {
@@ -166,7 +172,7 @@ function ModernGuidePageContent() {
 
   const fetchGuide = async () => {
     try {
-      const response = await fetch(`/api/proxy/enhanced-guide/${tripId}`);
+      const response = await fetch(`http://localhost:8000/api/enhanced-guide/${tripId}`);
       
       if (response.status === 404) {
         router.push(`/preferences-modern?tripId=${tripId}`);
@@ -207,7 +213,7 @@ function ModernGuidePageContent() {
   const handleDownloadPDF = async () => {
     try {
       if (!tripId) throw new Error('Missing tripId');
-      const res = await fetch(`/api/proxy/generate-pdf/${tripId}`, { method: 'POST' });
+      const res = await fetch(`http://localhost:8000/api/generate-pdf/${tripId}`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to generate/download PDF');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -289,7 +295,10 @@ function ModernGuidePageContent() {
   // Filter functions
   const filterByPrice = (items: Array<Record<string, unknown>>, priceKey: string = "price_range") => {
     if (filterPrice.length === 0) return items;
-    return items.filter(item => filterPrice.includes(item[priceKey]));
+    return items.filter(item => {
+      const priceValue = item[priceKey];
+      return typeof priceValue === 'string' && filterPrice.includes(priceValue);
+    });
   };
 
   const filterByBookmark = (items: Array<{ name: string }>) => {
@@ -421,11 +430,11 @@ function ModernGuidePageContent() {
                 )}
 
                 {/* Hidden Gems */}
-                {hiddenGems.length > 0 && (
+                {Array.isArray(hiddenGems) && hiddenGems.length > 0 && (
                   <section id="gems" className="bg-white rounded-xl border p-6 md:p-8">
                     <h3 className="text-xl font-semibold mb-4">Hidden Gems & Local Secrets</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {hiddenGems.map((gem, idx) => (
+                      {hiddenGems.map((gem: any, idx: number) => (
                         <div key={idx} className="p-4 rounded-lg border hover:shadow-sm transition-shadow">
                           <div className="text-sm text-gray-600">Discovery #{idx + 1}</div>
                           <p className="mt-1 text-gray-800">{(gem as any).description || String(gem)}</p>
@@ -738,7 +747,7 @@ function ModernGuidePageContent() {
                   </Card>
                 ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filterByBookmark(filterByPrice(restaurants as Array<Record<string, unknown>>)).map((restaurant, idx: number) => (
+                  {filterByBookmark(filterByPrice(restaurants as Array<Record<string, unknown>>).filter((item): item is { name: string } => typeof item.name === 'string')).map((restaurant, idx: number) => (
                     <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">

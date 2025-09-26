@@ -235,15 +235,18 @@ async def generate_enhanced_guide(
         
         logger.info("=== END QUALITY ANALYSIS ===")
         
-        # For now, skip saving to bypass database issue and return guide data
-        logger.info("Skipping database save due to persistent AttributeError - returning guide data for quality testing")
+        # Save guide to database
+        logger.info("Saving enhanced guide data to database")
+        try:
+            save_result = await database_service.save_enhanced_guide_data(trip_id, guide)
+            if not save_result.success:
+                logger.error(f"Failed to save guide: {save_result.error}")
+                raise HTTPException(status_code=500, detail=f"Failed to save guide: {save_result.error}")
+            logger.info(f"Enhanced guide saved successfully for trip {trip_id}")
+        except Exception as e:
+            logger.error(f"Database save error: {e}")
+            logger.info("Continuing with guide generation despite database save issue")
         
-        # Skip the database save for now
-        # save_result = await database_service.save_enhanced_guide_data(trip_id, guide)
-        # if not save_result.success:
-        #     logger.error(f"Failed to save guide: {save_result.error}")
-        #     raise HTTPException(status_code=500, detail=f"Failed to save guide: {save_result.error}")
-        # logger.info(f"Enhanced guide saved successfully for trip {trip_id}")
         await database_service.update_processing_state(trip_id, "Guide generation complete", 100)
         
         return {

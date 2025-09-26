@@ -17,8 +17,40 @@ from .llm_parser import LLMParser
 from .perplexity_search_service import PerplexitySearchService
 from .weather_service import WeatherService
 from .google_places_enhancer import GooglePlacesEnhancer
-from ..utils.environment import load_project_env, get_api_key
-from ..utils.error_handling import safe_execute, APIError, log_and_return_error
+import os
+from pathlib import Path
+
+def load_project_env():
+    """Load environment variables from .env file"""
+    env_path = Path(__file__).parent.parent.parent.parent / '.env'
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                if line.strip() and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value
+
+def get_api_key(key_name: str) -> str:
+    """Get API key from environment"""
+    return os.getenv(key_name, "")
+import logging
+
+def safe_execute(func, *args, **kwargs):
+    """Safely execute a function with error handling"""
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        logging.error(f"Error executing {func.__name__}: {e}")
+        return None
+
+class APIError(Exception):
+    """Custom API error class"""
+    pass
+
+def log_and_return_error(message: str, error: Exception = None):
+    """Log error and return error response"""
+    logging.error(f"{message}: {error}" if error else message)
+    return {"error": message}
 
 # Load environment variables
 load_project_env()
@@ -929,6 +961,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             # Execute all searches in parallel with error handling
             print(f"[GUIDE] 🚀 Starting parallel searches for {context.get('destination', 'unknown')}...")
             try:
+                print(f"[GUIDE] 🔍 Executing parallel tasks...")
                 weather, restaurants, attractions, events, insights = await asyncio.gather(
                     weather_task,
                     restaurants_task,
@@ -937,19 +970,28 @@ Make it feel like a personalized concierge service, not a generic guide."""
                     insights_task,
                     return_exceptions=True
                 )
+                print(f"[GUIDE] ✅ Parallel execution completed")
 
                 # Check for exceptions and log them
                 if isinstance(attractions, Exception):
-                    print(f"[GUIDE] ❌ Attractions search failed: {attractions}")
+                    print(f"[GUIDE] ❌ Attractions search failed: {type(attractions).__name__}: {attractions}")
+                    import traceback
+                    print(f"[GUIDE] 📋 Attractions traceback: {traceback.format_exception(type(attractions), attractions, attractions.__traceback__)}")
                     attractions = []
                 else:
                     print(f"[GUIDE] ✅ Attractions search succeeded: {len(attractions)} items")
+                    if attractions:
+                        print(f"[GUIDE]   📝 Sample attraction: {attractions[0].get('name', 'N/A')}")
 
                 if isinstance(restaurants, Exception):
-                    print(f"[GUIDE] ❌ Restaurants search failed: {restaurants}")
+                    print(f"[GUIDE] ❌ Restaurants search failed: {type(restaurants).__name__}: {restaurants}")
+                    import traceback
+                    print(f"[GUIDE] 📋 Restaurants traceback: {traceback.format_exception(type(restaurants), restaurants, restaurants.__traceback__)}")
                     restaurants = []
                 else:
                     print(f"[GUIDE] ✅ Restaurants search succeeded: {len(restaurants)} items")
+                    if restaurants:
+                        print(f"[GUIDE]   📝 Sample restaurant: {restaurants[0].get('name', 'N/A')}")
 
                 if isinstance(events, Exception):
                     print(f"[GUIDE] ❌ Events search failed: {events}")
