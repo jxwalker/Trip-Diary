@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { 
   MapPin,
   Calendar,
@@ -55,9 +49,6 @@ import {
   Search
 } from "lucide-react";
 
-import { HeroSection } from "./components/hero-section";
-import { RestaurantCard } from "./components/restaurant-card";
-import { AttractionCard } from "./components/attraction-card";
 import { cn } from "@/lib/utils";
 
 interface GuideData {
@@ -434,10 +425,10 @@ function ModernGuidePageContent() {
                   <section id="gems" className="bg-white rounded-xl border p-6 md:p-8">
                     <h3 className="text-xl font-semibold mb-4">Hidden Gems & Local Secrets</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {hiddenGems.map((gem: any, idx: number) => (
+                      {hiddenGems.map((gem, idx) => (
                         <div key={idx} className="p-4 rounded-lg border hover:shadow-sm transition-shadow">
                           <div className="text-sm text-gray-600">Discovery #{idx + 1}</div>
-                          <p className="mt-1 text-gray-800">{(gem as any).description || String(gem)}</p>
+                          <p className="mt-1 text-gray-800">{gem?.description || String(gem)}</p>
                         </div>
                       ))}
                     </div>

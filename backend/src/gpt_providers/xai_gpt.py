@@ -31,7 +31,7 @@ class XAIGPT(GPTInterface):
             })
             
             response = self.client.messages.create(
-                model="grok-beta",
+                model="x-ai/grok-4-fast:free",
                 max_tokens=2048,
                 messages=messages
             )

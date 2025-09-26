@@ -15,6 +15,7 @@ import aiohttp
 from .guide_parser import GuideParser
 from .llm_parser import LLMParser
 from .perplexity_search_service import PerplexitySearchService
+from .optimized_perplexity_service import OptimizedPerplexityService
 from .weather_service import WeatherService
 from .google_places_enhancer import GooglePlacesEnhancer
 import os
@@ -70,21 +71,33 @@ class EnhancedGuideService:
         # Initialize service dependencies
         self.parser = GuideParser()
         self.llm_parser = LLMParser()
-        self.perplexity_search = PerplexitySearchService()
+        self.perplexity_search = OptimizedPerplexityService()
         self.weather_service = WeatherService()
         self.places_enhancer = GooglePlacesEnhancer()
+        
+        # Initialize Google Places service for direct API access
+        from .enhanced_google_places_service import EnhancedGooglePlacesService
+        self.google_places_service = EnhancedGooglePlacesService()
 
         # Load prompts configuration
         self.prompts = self._load_prompts()
 
-        # API configurations using centralized environment utilities
-        self.perplexity_api_key = get_api_key("perplexity")
-        self.openai_api_key = get_api_key("openai")
-        self.anthropic_api_key = get_api_key("anthropic")
+        # API configurations using direct environment access
+        self.perplexity_api_key = os.getenv("PERPLEXITY_API_KEY", "")
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
-        # Validate required API keys
+        # Validate required API keys - at least one should be available
         if not any([self.perplexity_api_key, self.openai_api_key, self.anthropic_api_key]):
-            raise APIError("At least one LLM API key is required (Perplexity, OpenAI, or Anthropic)")
+            print("Warning: No LLM API keys found, using fallback generation")
+            
+        # Initialize database service
+        try:
+            from ..database.enhanced_database_service import EnhancedDatabaseService
+            self.db_service = EnhancedDatabaseService()
+        except ImportError:
+            print("Warning: Database service not available")
+            self.db_service = None
 
     def _load_prompts(self) -> Dict[str, Any]:
         """Load prompts configuration from JSON file, with a safe default fallback.
@@ -167,7 +180,7 @@ class EnhancedGuideService:
         preferences: Dict,
         extracted_data: Dict,
         progress_callback: Optional[Callable[[int, str], Awaitable[None]]] = None,
-        single_pass: bool = True
+        single_pass: bool = False
     ) -> Dict:
         """
         Generate a comprehensive, personalized travel guide using REAL data
@@ -187,35 +200,7 @@ class EnhancedGuideService:
                 "message": "Please configure PERPLEXITY_API_KEY in your .env file"
             }
 
-        # Prefer single-pass generation for latency
-        if single_pass:
-            if progress_callback:
-                await progress_callback(10, "Building personalized prompt")
-            prompt = self._construct_master_prompt(context)
-            
-            if progress_callback:
-                await progress_callback(20, "Fetching weather forecast")
-            
-            # Get real weather data
-            weather_data = await self.weather_service.get_weather_forecast(
-                destination, start_date, end_date
-            )
-            
-            if progress_callback:
-                await progress_callback(35, "Querying Perplexity")
-            guide = await self._generate_with_perplexity(prompt, context)
-            
-            # Add real weather data to the guide
-            if weather_data and not weather_data.get("error"):
-                guide["weather"] = weather_data.get("daily_forecasts", [])
-                guide["weather_summary"] = weather_data.get("summary", {})
-            
-            if progress_callback:
-                await progress_callback(90, "Parsing and organizing guide")
-            return guide
-        else:
-            # Multi-search mode (slower but more granular)
-            return await self._generate_with_real_searches(context, progress_callback)
+        return await self._generate_with_real_searches(context, progress_callback)
     
     def _build_context(
         self,
@@ -901,13 +886,17 @@ Make it feel like a personalized concierge service, not a generic guide."""
         """Generate guide using real Perplexity searches - NO MOCKS"""
         
         try:
+            if hasattr(self.perplexity_search, 'reset_circuit_breaker'):
+                self.perplexity_search.reset_circuit_breaker()
+                print("[GUIDE] 🔄 Circuit breaker reset for fresh start")
+            
             if progress_callback:
                 await progress_callback(5, "Preparing real-time searches")
             # Format dates for searches
             dates_dict = {
                 "start": context["start_date"],
                 "end": context["end_date"],
-                "formatted": context["dates"]
+                "formatted": context.get("dates", f"{context['start_date']} to {context['end_date']}")
             }
             
             # Run all searches in parallel for efficiency
@@ -922,22 +911,50 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 context["end_date"]
             )
             
-            # Get real restaurants
+            # Get real restaurants using Google Places API
             if progress_callback:
                 await progress_callback(10, "Searching for top restaurants")
-            restaurants_task = self.perplexity_search.search_restaurants(
+            
+            # Extract cuisine preferences for restaurant search
+            cuisine_type = None
+            price_range = None
+            if context.get("preferences"):
+                prefs = context["preferences"]
+                prefs_str = str(prefs) if prefs else ""
+                if "cuisine" in prefs_str.lower():
+                    if "french" in prefs_str.lower():
+                        cuisine_type = "french"
+                    elif "italian" in prefs_str.lower():
+                        cuisine_type = "italian"
+                    elif "japanese" in prefs_str.lower():
+                        cuisine_type = "japanese"
+                    elif "mexican" in prefs_str.lower():
+                        cuisine_type = "mexican"
+                    elif "chinese" in prefs_str.lower():
+                        cuisine_type = "chinese"
+                
+                if "$$$" in prefs_str:
+                    price_range = "3"
+                elif "$$$$" in prefs_str:
+                    price_range = "4"
+                elif "$$" in prefs_str:
+                    price_range = "2"
+                elif "$" in prefs_str:
+                    price_range = "1"
+            
+            restaurants_task = self.google_places_service.search_restaurants(
                 context["destination"],
-                context["preferences"],
-                dates_dict
+                cuisine_type=cuisine_type,
+                price_range=price_range,
+                limit=15
             )
             
-            # Get real attractions
+            # Get real attractions using Google Places API
             if progress_callback:
                 await progress_callback(20, "Preparing attraction recommendations")
-            attractions_task = self.perplexity_search.search_attractions(
+            attractions_task = self.google_places_service.search_attractions(
                 context["destination"],
-                context["preferences"],
-                dates_dict
+                limit=15
             )
             
             # Get real events for the actual dates
@@ -1039,7 +1056,9 @@ Make it feel like a personalized concierge service, not a generic guide."""
             previous_days = []
             
             start_date = datetime.strptime(context["start_date"], "%Y-%m-%d")
-            for day_num in range(context["duration_days"]):
+            end_date = datetime.strptime(context["end_date"], "%Y-%m-%d")
+            duration_days = (end_date - start_date).days + 1
+            for day_num in range(duration_days):
                 current_date = start_date + timedelta(days=day_num)
                 date_str = current_date.strftime("%Y-%m-%d")
                 
@@ -1047,7 +1066,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
                     context["destination"],
                     day_num + 1,
                     date_str,
-                    context["hotel_address"],
+                    context.get("hotel_address", context.get("hotel_info", {}).get("name", context["destination"])),
                     context["preferences"],
                     previous_days
                 )
@@ -1060,7 +1079,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 if day_itinerary.get("afternoon"):
                     previous_days.extend([item for item in day_itinerary["afternoon"] if len(item) > 20][:2])
                 if progress_callback:
-                    pct = 55 + int(30 * (day_num + 1) / max(1, context["duration_days"]))
+                    pct = 55 + int(30 * (day_num + 1) / max(1, duration_days))
                     await progress_callback(min(pct, 85), f"Planning day {day_num + 1} itinerary")
             
             # Build the complete guide with real data
@@ -1072,7 +1091,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 weather_summary = weather.get("summary", {})
                 
                 # Fill in missing days if needed
-                days_needed = context["duration_days"]
+                days_needed = duration_days
                 if len(weather_data) < days_needed:
                     print(f"[WARNING] Only {len(weather_data)} days of weather for {days_needed}-day trip")
                     # Add placeholder for missing days
@@ -1087,8 +1106,8 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 weather_data = insights.get("weather", [])
             
             guide = {
-                "summary": f"Your personalized guide to {context['destination']} from {context['dates']}",
-                "destination_insights": f"Real-time guide for {context['destination']} based on current information and your preferences: {context['preferences_summary']}",
+                "summary": f"Your personalized guide to {context['destination']} from {dates_dict['formatted']}",
+                "destination_insights": f"Real-time guide for {context['destination']} based on current information and your preferences: {context.get('preferences_summary', 'your travel preferences')}",
                 "weather": weather_data,
                 "weather_summary": weather_summary,
                 "daily_itinerary": daily_itinerary,
@@ -1116,7 +1135,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
             print(f"[GUIDE] 🎉 GUIDE GENERATION COMPLETE!")
             print(f"[GUIDE] 📊 Final Guide Summary:")
             print(f"[GUIDE]   📍 Destination: {context['destination']}")
-            print(f"[GUIDE]   📅 Dates: {context['dates']}")
+            print(f"[GUIDE]   📅 Dates: {dates_dict['formatted']}")
             print(f"[GUIDE]   🍽️  Restaurants: {len(restaurants)}")
             print(f"[GUIDE]   🎭 Attractions: {len(attractions)}")
             print(f"[GUIDE]   🎪 Events: {len(events)}")

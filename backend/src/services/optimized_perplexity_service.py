@@ -60,8 +60,8 @@ class OptimizedPerplexityService:
         self._failure_count = 0
         self._last_failure_time = None
         self._circuit_open = False
-        self._circuit_breaker_threshold = 5
-        self._circuit_breaker_timeout = 300
+        self._circuit_breaker_threshold = 10  # Increase threshold to be less aggressive
+        self._circuit_breaker_timeout = 180  # Reduce timeout to 3 minutes
         
         # OpenAI client for parsing (if available)
         openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -70,6 +70,8 @@ class OptimizedPerplexityService:
             self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         else:
             self.openai_client = None
+        
+        self.reset_circuit_breaker()
     
     async def generate_complete_guide_data(
         self,
@@ -314,6 +316,13 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
                 return False
         
         return True
+    
+    def reset_circuit_breaker(self):
+        """Reset circuit breaker to allow API calls"""
+        self._circuit_open = False
+        self._failure_count = 0
+        self._last_failure_time = None
+        logger.info("Circuit breaker manually reset")
     
     def _record_success(self):
         """Record successful API call"""
@@ -604,3 +613,128 @@ Return only the JSON, no markdown, no explanations."""
             "daily_suggestions": [],
             "generated_at": datetime.now().isoformat()
         }
+    
+    async def search_events(self, destination: str, start_date: str, end_date: str, preferences: str) -> List[Dict]:
+        """Search for events in destination during specified dates"""
+        try:
+            query = f"Events and activities in {destination} from {start_date} to {end_date}. Preferences: {preferences}"
+            response = await self.search(query, search_type="events", max_results=10)
+            
+            if response.get("success") and response.get("results"):
+                events_text = response["results"]
+                events = []
+                
+                if isinstance(events_text, str):
+                    lines = events_text.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if line and isinstance(line, str) and any(keyword in line.lower() for keyword in ['event', 'festival', 'concert', 'show', 'exhibition', 'market']):
+                            events.append({
+                                "name": line[:100],  # Truncate long names
+                                "description": line,
+                                "date": start_date,  # Default to start date
+                                "category": "event"
+                            })
+                            if len(events) >= 5:  # Limit to 5 events
+                                break
+                
+                return events
+            else:
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error searching events: {e}")
+            return []
+    
+    async def search_local_insights(self, destination: str, dates_dict: Dict) -> Dict:
+        """Search for local insights and practical information"""
+        try:
+            query = f"Local insights, tips, transportation, and practical information for {destination}"
+            response = await self.search(query, search_type="insights", max_results=5)
+            
+            if response.get("success") and response.get("results"):
+                insights_text = response["results"]
+                
+                if isinstance(insights_text, str):
+                    return {
+                        "transportation": [insights_text[:200]],  # Truncate for transportation
+                        "money": ["Local currency and payment tips"],
+                        "cultural": ["Local customs and etiquette"],
+                        "updates": ["Current local information"],
+                        "tips": [insights_text[:300]] if insights_text else []
+                    }
+                else:
+                    return {
+                        "transportation": [],
+                        "money": [],
+                        "cultural": [],
+                        "updates": [],
+                        "tips": []
+                    }
+            else:
+                return {
+                    "transportation": [],
+                    "money": [],
+                    "cultural": [],
+                    "updates": [],
+                    "tips": []
+                }
+                
+        except Exception as e:
+            logger.error(f"Error searching local insights: {e}")
+            return {
+                "transportation": [],
+                "money": [],
+                "cultural": [],
+                "updates": [],
+                "tips": []
+            }
+    
+    async def search_daily_itinerary(self, destination: str, day_num: int, date_str: str, 
+                                   hotel_address: str, preferences: str, previous_days: List) -> Dict:
+        """Search for daily itinerary suggestions"""
+        try:
+            query = f"Day {day_num} itinerary for {destination} on {date_str}. Hotel: {hotel_address}. Preferences: {preferences}"
+            response = await self.search(query, search_type="itinerary", max_results=3)
+            
+            if response.get("success") and response.get("results"):
+                itinerary_text = response["results"]
+                
+                if isinstance(itinerary_text, str):
+                    return {
+                        "day": day_num,
+                        "date": date_str,
+                        "morning": [f"Morning activity in {destination}"],
+                        "afternoon": [f"Afternoon activity in {destination}"],
+                        "evening": [f"Evening activity in {destination}"],
+                        "notes": itinerary_text[:200] if itinerary_text else ""
+                    }
+                else:
+                    return {
+                        "day": day_num,
+                        "date": date_str,
+                        "morning": [],
+                        "afternoon": [],
+                        "evening": [],
+                        "notes": ""
+                    }
+            else:
+                return {
+                    "day": day_num,
+                    "date": date_str,
+                    "morning": [],
+                    "afternoon": [],
+                    "evening": [],
+                    "notes": ""
+                }
+                
+        except Exception as e:
+            logger.error(f"Error searching daily itinerary: {e}")
+            return {
+                "day": day_num,
+                "date": date_str,
+                "morning": [],
+                "afternoon": [],
+                "evening": [],
+                "notes": ""
+            }
