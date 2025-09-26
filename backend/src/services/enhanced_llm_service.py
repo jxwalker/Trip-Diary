@@ -433,9 +433,9 @@ class EnhancedLLMService(LLMServiceInterface):
     def _get_provider_models(self) -> List[str]:
         """Get available models for the provider"""
         if self._provider == LLMProvider.OPENAI:
-            return ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4-vision-preview"]
+            return ["xai/grok-4-fast-free", "meta-llama/Llama-3.2-3B-Instruct-Turbo", "llama-3.1-8b-instant", "gpt-4o-mini"]
         elif self._provider == LLMProvider.ANTHROPIC:
-            return ["claude-3-sonnet-20240229", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
+            return [os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")]
         elif self._provider == LLMProvider.PERPLEXITY:
             return ["llama-3.1-sonar-small-128k-online", "llama-3.1-sonar-large-128k-online"]
         else:

@@ -9,23 +9,23 @@ from typing import Optional, Dict, Any
 class ServicesConfig(BaseSettings):
     """External services configuration"""
     
-    # OpenAI Configuration
+    # OpenAI Configuration (fallback for vision tasks)
     openai_enabled: bool = Field(default=True, env="OPENAI_ENABLED")
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    openai_model: str = Field(default="gpt-4", env="OPENAI_MODEL")
-    openai_vision_model: str = Field(default="gpt-4-vision-preview", env="OPENAI_VISION_MODEL")
+    openai_model: str = Field(default="gpt-4o-mini", env="OPENAI_MODEL")
+    openai_vision_model: str = Field(default="gpt-4o-mini", env="OPENAI_VISION_MODEL")
     openai_max_tokens: int = Field(default=4000, env="OPENAI_MAX_TOKENS")
     openai_temperature: float = Field(default=0.7, env="OPENAI_TEMPERATURE")
     openai_timeout: int = Field(default=60, env="OPENAI_TIMEOUT")
-    
-    # Anthropic Configuration
+
+    # Anthropic Configuration (fallback)
     anthropic_enabled: bool = Field(default=True, env="ANTHROPIC_ENABLED")
     anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
-    anthropic_model: str = Field(default="claude-3-sonnet-20240229", env="ANTHROPIC_MODEL")
+    anthropic_model: str = Field(default="claude-3-haiku-20240307", env="ANTHROPIC_MODEL")
     anthropic_max_tokens: int = Field(default=4000, env="ANTHROPIC_MAX_TOKENS")
     anthropic_temperature: float = Field(default=0.7, env="ANTHROPIC_TEMPERATURE")
     anthropic_timeout: int = Field(default=60, env="ANTHROPIC_TIMEOUT")
-    
+
     # Perplexity Configuration
     perplexity_enabled: bool = Field(default=True, env="PERPLEXITY_ENABLED")
     perplexity_api_key: Optional[str] = Field(default=None, env="PERPLEXITY_API_KEY")
@@ -33,6 +33,30 @@ class ServicesConfig(BaseSettings):
     perplexity_max_tokens: int = Field(default=4000, env="PERPLEXITY_MAX_TOKENS")
     perplexity_temperature: float = Field(default=0.2, env="PERPLEXITY_TEMPERATURE")
     perplexity_timeout: int = Field(default=60, env="PERPLEXITY_TIMEOUT")
+
+    openrouter_enabled: bool = Field(default=True, env="OPENROUTER_ENABLED")
+    openrouter_api_key: Optional[str] = Field(default=None, env="OPENROUTER_API_KEY")
+    openrouter_model: str = Field(default="xai/grok-4-fast-free", env="OPENROUTER_MODEL")
+    openrouter_max_tokens: int = Field(default=4000, env="OPENROUTER_MAX_TOKENS")
+    openrouter_temperature: float = Field(default=0.7, env="OPENROUTER_TEMPERATURE")
+    openrouter_timeout: int = Field(default=60, env="OPENROUTER_TIMEOUT")
+
+    together_enabled: bool = Field(default=True, env="TOGETHER_ENABLED")
+    together_api_key: Optional[str] = Field(default=None, env="TOGETHER_API_KEY")
+    together_model: str = Field(default="meta-llama/Llama-3.2-3B-Instruct-Turbo", env="TOGETHER_MODEL")
+    together_max_tokens: int = Field(default=4000, env="TOGETHER_MAX_TOKENS")
+    together_temperature: float = Field(default=0.7, env="TOGETHER_TEMPERATURE")
+    together_timeout: int = Field(default=60, env="TOGETHER_TIMEOUT")
+
+    groq_enabled: bool = Field(default=True, env="GROQ_ENABLED")
+    groq_api_key: Optional[str] = Field(default=None, env="GROQ_API_KEY")
+    groq_model: str = Field(default="llama-3.1-8b-instant", env="GROQ_MODEL")
+    groq_max_tokens: int = Field(default=4000, env="GROQ_MAX_TOKENS")
+    groq_temperature: float = Field(default=0.7, env="GROQ_TEMPERATURE")
+    groq_timeout: int = Field(default=60, env="GROQ_TIMEOUT")
+
+    primary_model_provider: str = Field(default="openrouter", env="PRIMARY_MODEL_PROVIDER")
+    primary_model: str = Field(default="xai/grok-4-fast-free", env="PRIMARY_MODEL")
     
     # Google Places Configuration
     google_places_enabled: bool = Field(default=True, env="GOOGLE_PLACES_ENABLED")
@@ -110,8 +134,11 @@ class ServicesConfig(BaseSettings):
         return v
     
     def get_enabled_services(self) -> Dict[str, bool]:
-        """Get dictionary of enabled services"""
+        """Get dictionary of enabled services (cheapest first)"""
         return {
+            'openrouter': self.openrouter_enabled,
+            'together': self.together_enabled,
+            'groq': self.groq_enabled,
             'openai': self.openai_enabled,
             'anthropic': self.anthropic_enabled,
             'perplexity': self.perplexity_enabled,
@@ -127,6 +154,12 @@ class ServicesConfig(BaseSettings):
         """Get dictionary of missing API keys for enabled services"""
         missing = {}
         
+        if self.openrouter_enabled and not self.openrouter_api_key:
+            missing['openrouter'] = True
+        if self.together_enabled and not self.together_api_key:
+            missing['together'] = True
+        if self.groq_enabled and not self.groq_api_key:
+            missing['groq'] = True
         if self.openai_enabled and not self.openai_api_key:
             missing['openai'] = True
         if self.anthropic_enabled and not self.anthropic_api_key:
@@ -149,6 +182,22 @@ class ServicesConfig(BaseSettings):
             service_names = ', '.join(missing.keys())
             raise ValueError(f'Missing API keys for enabled services: {service_names}')
         return True
+
+    def get_cheapest_model(self) -> tuple[str, str]:
+        """Get the cheapest available model provider and model name"""
+        if self.openrouter_enabled and self.openrouter_api_key:
+            return ("openrouter", self.openrouter_model)
+        if self.together_enabled and self.together_api_key:
+            return ("together", self.together_model)
+        if self.groq_enabled and self.groq_api_key:
+            return ("groq", self.groq_model)
+        if self.openai_enabled and self.openai_api_key:
+            return ("openai", self.openai_model)
+        if self.anthropic_enabled and self.anthropic_api_key:
+            return ("anthropic", self.anthropic_model)
+        if self.perplexity_enabled and self.perplexity_api_key:
+            return ("perplexity", self.perplexity_model)
+        return ("openai", "gpt-4o-mini")
     
     class Config:
         env_prefix = "SERVICE_"

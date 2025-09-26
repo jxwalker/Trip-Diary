@@ -95,7 +95,7 @@ Content to parse:
 Return ONLY the JSON array, no markdown, no explanations."""
 
             response = await self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                 messages=[
                     {"role": "system", "content": f"You are a travel data parser. Extract {data_type} information and return only valid JSON."},
                     {"role": "user", "content": prompt}

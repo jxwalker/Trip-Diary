@@ -539,7 +539,7 @@ Return as JSON array with keys: day, date, morning, afternoon, evening, transpor
 Return only the JSON, no markdown, no explanations."""
 
                 llm_response = await self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                     messages=[
                         {"role": "system", "content": f"Extract {data_type} data as JSON."},
                         {"role": "user", "content": parse_prompt}

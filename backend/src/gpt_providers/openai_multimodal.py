@@ -16,7 +16,7 @@ class OpenAIMultimodal:
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4o"  # GPT-4 with vision capabilities
+        self.model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
         
     def encode_image(self, image_path: str) -> str:
         """Encode image to base64."""

@@ -448,7 +448,7 @@ class GuideEvaluator:
 
         try:
             response = await self.openai_client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}

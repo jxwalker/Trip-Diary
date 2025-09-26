@@ -184,7 +184,7 @@ class MultimodalLLMExtractor:
                     })
                 
                 response = await self.openai_client.chat.completions.create(
-                    model="gpt-4o",  # or "gpt-4-vision-preview"
+                    model=os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                     messages=messages,
                     max_tokens=4096,
                     temperature=0.1
@@ -203,7 +203,7 @@ class MultimodalLLMExtractor:
                 # Add metadata
                 result['_metadata'] = {
                     'extraction_method': 'multimodal_vision',
-                    'model': 'gpt-4o',
+                    'model': os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                     'pages_processed': len(image_data_list)
                 }
                 
@@ -227,7 +227,7 @@ class MultimodalLLMExtractor:
                     })
                 
                 response = await self.claude_client.messages.create(
-                    model="claude-3-sonnet-20240229",  # or claude-3-opus-20240229
+                    model=os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                     max_tokens=4096,
                     temperature=0.1,
                     messages=[
@@ -244,7 +244,7 @@ class MultimodalLLMExtractor:
                     result = json.loads(json_match.group())
                     result['_metadata'] = {
                         'extraction_method': 'multimodal_vision',
-                        'model': 'claude-3-sonnet',
+                        'model': os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                         'pages_processed': len(image_data_list)
                     }
                     return result

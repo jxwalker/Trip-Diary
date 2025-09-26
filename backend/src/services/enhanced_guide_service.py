@@ -529,7 +529,7 @@ Make it feel like a personalized concierge service, not a generic guide."""
                 url = "https://api.openai.com/v1/chat/completions"
                 
                 payload = {
-                    "model": "gpt-4-turbo-preview",
+                    "model": os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                     "messages": [
                         {
                             "role": "system",

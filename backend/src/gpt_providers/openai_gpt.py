@@ -8,7 +8,7 @@ class OpenAIGPT:
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo-1106" # "gpt-4-turbo-preview"  # or "gpt-3.5-turbo-1106"
+        self.model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
 
     def generate_text(self, prompt: str, system: str | None = None) -> Dict[str, Any]:
         """Generate structured travel data from text."""

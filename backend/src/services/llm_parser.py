@@ -202,7 +202,7 @@ Return ONLY the JSON object, no other text."""
                 }
                 
                 payload = {
-                    "model": "gpt-4-turbo-preview",
+                    "model": os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free"),
                     "messages": [
                         {
                             "role": "system",
@@ -244,7 +244,7 @@ Return ONLY the JSON object, no other text."""
                 }
                 
                 payload = {
-                    "model": "claude-3-haiku-20240307",
+                    "model": os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                     "max_tokens": 4000,
                     "messages": [
                         {

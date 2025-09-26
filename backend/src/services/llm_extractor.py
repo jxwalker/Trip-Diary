@@ -114,7 +114,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
         try:
             if self.openai_client:
                 # Use cheap model for testing
-                model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+                model = os.getenv("PRIMARY_MODEL", "xai/grok-4-fast-free")
                 
                 # More specific prompt for better extraction
                 system_prompt = """You are an expert travel document parser specialized in extracting structured data from flight tickets, hotel bookings, and itineraries.
@@ -189,7 +189,7 @@ Return ONLY the JSON object, no markdown, no explanations."""
                 
             elif self.claude_client:
                 response = await self.claude_client.messages.create(
-                    model="claude-3-haiku-20240307",
+                    model=os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                     max_tokens=2000,
                     temperature=0.1,
                     messages=[
