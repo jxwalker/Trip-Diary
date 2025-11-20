@@ -3,6 +3,7 @@ from src.gpt_providers.openai_gpt import OpenAIGPT
 from src.gpt_providers.claude_gpt import ClaudeGPT
 from src.gpt_providers.xai_gpt import XAIGPT
 from src.gpt_providers.sambanova_gpt import SambanovaGPT
+from src.gpt_providers.gemini_gpt import GeminiGPT
 from src.gpt_interfaces.gpt_interface import GPTInterface
 import os
 from dotenv import load_dotenv
@@ -15,7 +16,8 @@ class GPTSelector:
             "openai": (OpenAIGPT, 'OPENAI_API_KEY'),
             "claude": (ClaudeGPT, 'ANTHROPIC_API_KEY'),
             "xai": (XAIGPT, 'XAI_API_KEY'),
-            "sambanova": (SambanovaGPT, 'SAMBANOVA_API_KEY')
+            "sambanova": (SambanovaGPT, 'SAMBANOVA_API_KEY'),
+            "gemini": (GeminiGPT, 'GOOGLE_API_KEY')
         }
         
     def get_provider(self, provider_name: str = "openai") -> GPTInterface:

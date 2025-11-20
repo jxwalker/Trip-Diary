@@ -14,6 +14,7 @@ from ...services.immediate_guide_generator import ImmediateGuideGenerator
 from ...services.cleanup_service import CleanupService
 from ...services.enhanced_database_service import EnhancedDatabaseService
 from ...services.luxury_guide_service import LuxuryGuideService
+from ...services.gemini_guide_service import GeminiGuideService
 from ...database import TripDatabase
 from ...utils.environment import load_project_env
 from ...utils.error_handling import ConfigurationError
@@ -51,7 +52,7 @@ class ServiceContainer:
             self._services['enhanced_guide_service'] = EnhancedGuideService()
             self._services['fast_guide_service'] = FastGuideService()
             self._services['optimized_guide_service'] = OptimizedGuideService()
-            
+
             # Optional services - only initialize if API keys are available
             try:
                 self._services['immediate_guide_generator'] = ImmediateGuideGenerator()
@@ -59,7 +60,15 @@ class ServiceContainer:
             except Exception as e:
                 logger.warning(f"Immediate guide generator not available: {e}")
                 self._services['immediate_guide_generator'] = None
-            
+
+            # Gemini guide service (magazine-quality guides)
+            try:
+                self._services['gemini_guide_service'] = GeminiGuideService()
+                logger.info("Gemini guide service initialized (magazine-quality guides)")
+            except Exception as e:
+                logger.warning(f"Gemini guide service not available: {e}")
+                self._services['gemini_guide_service'] = None
+
             # Use enhanced database service but keep legacy for compatibility
             self._services['database_service'] = EnhancedDatabaseService()
             # Lock the database service to prevent override
@@ -151,6 +160,10 @@ class ServiceContainer:
     def get_trip_database(self) -> TripDatabase:
         """Get trip database"""
         return self.get_service('trip_database')
+
+    def get_gemini_guide_service(self) -> GeminiGuideService:
+        """Get Gemini guide service for magazine-quality guides"""
+        return self.get_service('gemini_guide_service')
 
 
 # Global container instance

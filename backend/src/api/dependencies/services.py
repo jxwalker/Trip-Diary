@@ -14,6 +14,7 @@ from ...services.immediate_guide_generator import ImmediateGuideGenerator
 from ...services.cleanup_service import CleanupService
 from ...services.enhanced_database_service import EnhancedDatabaseService
 from ...services.luxury_guide_service import LuxuryGuideService
+from ...services.gemini_guide_service import GeminiGuideService
 from ...database import TripDatabase
 
 
@@ -67,6 +68,11 @@ def get_luxury_guide_service() -> LuxuryGuideService:
     return container.get_service('luxury_guide_service')
 
 
+def get_gemini_guide_service() -> GeminiGuideService:
+    """Dependency function for Gemini guide service (magazine-quality guides)"""
+    return container.get_gemini_guide_service()
+
+
 # Type aliases for dependency injection
 PDFProcessorDep = Annotated[PDFProcessor, Depends(get_pdf_processor)]
 LLMExtractorDep = Annotated[LLMExtractor, Depends(get_llm_extractor)]
@@ -78,3 +84,4 @@ CleanupServiceDep = Annotated[CleanupService, Depends(get_cleanup_service)]
 DatabaseServiceDep = Annotated[EnhancedDatabaseService, Depends(get_database_service)]
 TripDatabaseDep = Annotated[TripDatabase, Depends(get_trip_database)]
 LuxuryGuideServiceDep = Annotated[LuxuryGuideService, Depends(get_luxury_guide_service)]
+GeminiGuideServiceDep = Annotated[GeminiGuideService, Depends(get_gemini_guide_service)]

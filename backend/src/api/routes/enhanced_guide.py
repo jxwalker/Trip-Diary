@@ -15,7 +15,8 @@ from ..dependencies.services import (
     EnhancedGuideServiceDep,
     FastGuideServiceDep,
     OptimizedGuideServiceDep,
-    LuxuryGuideServiceDep
+    LuxuryGuideServiceDep,
+    GeminiGuideServiceDep
 )
 from ...services.magazine_pdf_service import MagazinePDFService
 from ...utils.validation import validate_trip_id
@@ -609,8 +610,157 @@ async def generate_magazine_pdf(
         raise
     except Exception as e:
         logger.error(f"Magazine PDF generation failed for trip {trip_id}: {e}")
-        
+
         raise HTTPException(
             status_code=500,
             detail=create_error_response(e, "magazine PDF generation")
+        )
+
+
+@router.post("/generate-gemini-guide")
+async def generate_gemini_guide(
+    request: GenerateGuideRequest,
+    background_tasks: BackgroundTasks,
+    database_service: DatabaseServiceDep,
+    gemini_guide_service: GeminiGuideServiceDep
+) -> Dict[str, Any]:
+    """
+    Generate magazine-quality travel guide using Google Gemini 2.0
+
+    This endpoint produces premium, magazine-quality guides with:
+    - Evocative, literary writing style (like Condé Nast Traveler)
+    - Rich cultural and historical context
+    - Specific, actionable recommendations with insider tips
+    - Magazine-quality narrative flow
+
+    Args:
+        request: Guide generation request with destination, dates, preferences
+        background_tasks: Background task manager
+        database_service: Database service for state management
+        gemini_guide_service: Gemini guide service
+
+    Returns:
+        Generated magazine-quality guide
+
+    Example request:
+        ```json
+        {
+            "destination": "Paris",
+            "start_date": "2024-06-15",
+            "end_date": "2024-06-20",
+            "hotel_info": {"name": "Hotel Example", "address": "123 Rue..."},
+            "preferences": {
+                "food": 9,
+                "culture": 8,
+                "luxury": 7,
+                "adventure": 4
+            },
+            "extracted_data": {}
+        }
+        ```
+    """
+    trip_id = str(uuid.uuid4())
+
+    logger.info(f"Gemini magazine guide generation requested", extra={
+        "trip_id": trip_id,
+        "destination": request.destination,
+        "dates": f"{request.start_date} to {request.end_date}",
+        "service": "gemini-2.0-flash-exp"
+    })
+
+    try:
+        # Check if Gemini service is available
+        if not gemini_guide_service:
+            raise HTTPException(
+                status_code=503,
+                detail="Gemini guide service not available. Please configure GOOGLE_API_KEY or GEMINI_API_KEY."
+            )
+
+        # Initialize processing state
+        await database_service.create_processing_state(
+            trip_id, "Initializing Gemini magazine-quality guide generation..."
+        )
+
+        # Generate the magazine-quality guide
+        guide = await gemini_guide_service.generate_magazine_guide(
+            destination=request.destination,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            hotel_info=request.hotel_info,
+            preferences=request.preferences,
+            extracted_data=request.extracted_data,
+            progress_callback=lambda progress, message:
+                database_service.update_processing_state(trip_id, message, progress)
+        )
+
+        # Check for errors
+        if guide.get("error"):
+            await database_service.update_processing_state(
+                trip_id, f"Generation failed: {guide['error']}"
+            )
+            return {
+                "trip_id": trip_id,
+                "status": "error",
+                "error": guide["error"],
+                "message": guide.get("message", "Gemini guide generation failed")
+            }
+
+        # Log quality metrics
+        logger.info("=== GEMINI GUIDE QUALITY ANALYSIS ===")
+        logger.info(f"Generated with: {guide.get('generated_with', 'unknown')}")
+        logger.info(f"Quality level: {guide.get('quality_level', 'unknown')}")
+        logger.info(f"Generation time: {guide.get('generation_time_seconds', 0):.1f}s")
+        logger.info(f"Content length: {len(guide.get('raw_content', ''))} chars")
+
+        restaurant_count = len(guide.get("restaurants", []))
+        attraction_count = len(guide.get("attractions", []))
+        has_weather = bool(guide.get("weather"))
+        has_itinerary = bool(guide.get("daily_itinerary"))
+
+        logger.info(f"Restaurants: {restaurant_count}")
+        logger.info(f"Attractions: {attraction_count}")
+        logger.info(f"Weather: {has_weather}")
+        logger.info(f"Daily Itinerary: {has_itinerary}")
+
+        # Sample content quality
+        if guide.get("summary"):
+            logger.info(f"Summary length: {len(guide['summary'])} chars")
+        if guide.get("destination_insights"):
+            logger.info(f"Destination insights: {len(guide['destination_insights'])} chars")
+
+        logger.info("=== END GEMINI QUALITY ANALYSIS ===")
+
+        # Update completion status
+        await database_service.update_processing_state(
+            trip_id, "Magazine-quality guide generation complete", 100
+        )
+
+        return {
+            "trip_id": trip_id,
+            "status": "success",
+            "message": "Magazine-quality guide generated successfully with Gemini 2.0",
+            "guide": guide,
+            "generation_time": guide.get("generation_time_seconds"),
+            "generated_with": guide.get("generated_with"),
+            "quality_level": guide.get("quality_level", "magazine"),
+            "validation_passed": guide.get("validation_passed", False)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Gemini guide generation failed: {str(e)}", extra={
+            "trip_id": trip_id,
+            "destination": request.destination
+        })
+        import traceback
+        traceback.print_exc()
+
+        await database_service.update_processing_state(
+            trip_id, f"Error: {str(e)}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Gemini guide generation failed: {str(e)}"
         )
