@@ -213,16 +213,18 @@ class GeminiGuideService:
 
             # Generate the guide using Gemini
             if progress_callback:
-                await progress_callback(25, "Generating magazine-quality guide with Gemini 2.0")
+                await progress_callback(25, "Generating magazine-quality guide with Gemini 3 Pro")
 
             system_prompt = self._build_system_prompt(context)
 
-            # Call Gemini with high temperature for creative writing
+            # Call Gemini 3 with optimized parameters for creative writing
+            # Note: Gemini 3 is less verbose by default, so we use higher temperature
+            # and explicit prompting for creative, literary style
             result = await self.gemini.generate_text_async(
                 prompt=master_prompt,
                 system=system_prompt,
-                temperature=0.85,  # Higher for creative, magazine-style writing
-                max_tokens=8192
+                temperature=0.95,  # Higher for Gemini 3 to encourage creative, verbose output
+                max_tokens=16384  # Gemini 3 supports up to 64K, using 16K for guides
             )
 
             if "error" in result:
@@ -279,8 +281,21 @@ class GeminiGuideService:
             }
 
     def _build_system_prompt(self, context: Dict) -> str:
-        """Build the system prompt with editorial guidelines."""
+        """Build the system prompt with editorial guidelines optimized for Gemini 3."""
         base = self.prompts["editorial_system"]["base"]
+
+        # CRITICAL for Gemini 3: Explicitly request verbose, creative output
+        # Gemini 3 is less verbose by default and prefers direct answers
+        gemini3_instructions = """
+
+**CRITICAL INSTRUCTIONS FOR GEMINI 3:**
+You MUST write in a verbose, creative, literary style for this travel guide.
+DO NOT be concise or direct - this is a magazine feature, not a factual report.
+EXPAND on every detail with rich, evocative language and sensory descriptions.
+WRITE LONG, engaging paragraphs that transport the reader to the destination.
+INCLUDE specific cultural context, historical anecdotes, and insider knowledge.
+AIM FOR MAXIMUM DETAIL - restaurant write-ups should be 150-200 words each.
+This is premium content for a luxury travel magazine - be expansive and literary."""
 
         guidelines = "\n\n**STYLE GUIDELINES:**\n" + "\n".join(
             f"- {g}" for g in self.prompts["editorial_system"]["style_guidelines"]
@@ -296,7 +311,7 @@ class GeminiGuideService:
             voice = self.prompts["persona_voices"][persona]
             persona_voice = f"\n\n**VOICE FOR THIS TRAVELER:**\nTone: {voice['tone']}\nPriorities: {voice['priorities']}\nLanguage: {voice['language']}"
 
-        return base + guidelines + standards + persona_voice
+        return base + gemini3_instructions + guidelines + standards + persona_voice
 
     def _construct_magazine_prompt(self, context: Dict) -> str:
         """Construct the comprehensive magazine-style prompt."""

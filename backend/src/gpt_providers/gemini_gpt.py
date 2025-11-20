@@ -15,18 +15,30 @@ class GeminiGPT(GPTInterface):
     - Long-form content generation
     """
 
-    def __init__(self, api_key: str = None, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, api_key: str = None, model: str = None):
         """Initialize Gemini provider.
 
         Args:
             api_key: Google AI API key (or uses GOOGLE_API_KEY env var)
             model: Model to use. Options:
-                - gemini-2.0-flash-exp (recommended: fast, high quality, experimental)
-                - gemini-1.5-pro (production-ready, very capable)
-                - gemini-1.5-flash (fast, good quality)
+                - gemini-3-pro-preview (LATEST: best for complex tasks, broad knowledge)
+                - gemini-2.0-flash-exp (fast, high quality, experimental)
+                - gemini-2.0-flash-thinking-exp (advanced reasoning)
+                - gemini-1.5-pro-latest (production stable)
+                - gemini-1.5-flash-latest (fast, efficient)
+
+        Gemini 3 Pro features:
+            - 1M token context / 64K output
+            - Knowledge cutoff: January 2025
+            - Advanced reasoning across modalities
+            - Note: Less verbose by default - prompts should explicitly request creative/literary style
         """
         if api_key is None:
             api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+
+        if model is None:
+            # Check for model in environment, default to Gemini 3 Pro Preview
+            model = os.getenv('GEMINI_MODEL', 'gemini-3-pro-preview')
 
         if not api_key:
             raise ValueError("Gemini API key not found. Set GOOGLE_API_KEY or GEMINI_API_KEY")
